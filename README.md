@@ -11,4 +11,4 @@ Resources:
  
 To do:
 
-- <check 74AHCT125  3V to 5V converter>
+- check 74AHCT125  3V to 5V converter
