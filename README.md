@@ -21,6 +21,7 @@ LitLedLights, they are Lit
 - [ ] control leds
   - [x] get leds to light
   - [ ] control leds
+    - [ ] Library (spi_ws281x?)
   - [ ] make API
 - [ ] get coords
   - [ ] setup camera
@@ -31,4 +32,7 @@ LitLedLights, they are Lit
   - [ ] control leds...
   - [ ] coords to pixel
   - [ ] 
+- expansion
+  - [ ] controller on rpi
+  - [ ] manymany ledled
 - [x] have fun
