@@ -24,16 +24,16 @@ LitLedLights, they are Lit
   - [x] control leds
     - [x] Library (adafruit-circuitpython-neopixel)
   - [ ] make API
-- [ ] get coords
+- [ ] coords
   - [ ] setup camera
-  - [ ] live view camera?
+    - [ ] live view camera?
   - [ ] get pts from picture/video
   - [ ] combine pictures
   - [ ] save and share coords (gift?)
 - [ ] API
-  - [ ] connect git
   - [ ] organise pkg
-  - [ ] get pixels
+    - [ ] connect git
+  - [x] get pixels
   - [ ] coords to pixel
   - [ ] simple animations
   - [ ] examples
