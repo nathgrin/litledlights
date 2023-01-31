@@ -77,11 +77,98 @@ def tst2():
 			
 		vcap.release()
 		
+
+def interupted_imaging():
+	def instruct_lights(strip,current,binary_ind,bins,color_on=(128,128,128),color_off=(0,0,0)):
+		if current == "on":
+			strip.fill(color_on)
+		elif current == "binary":
+			for l in range(len(strip)):
+				strip[l] = color_on if int(bins[l][binary_ind]) else color_off
+			
+		else:
+			strip.fill(color_off)
+			
+		strip.show()
+			
+	def fmt_fname(current,binary_ind):
+		fname = "img_"
+		if current == "binary":
+			fname += "binary{}".format(binary_ind)
+		else:
+			fname += current
+		fname += ".png"
+		return fname
+		
+		
+	loc = "_tmp/"
+	nbits = None
+	
+	# strip
+	strip = get_strip()# if strip is None else strip
+	
+	# Bit preparation
+	inlist = range(len(strip))
+	bins = [format(n, 'b') for n in inlist]
+	lens = [ len(n) for n in bins ]
+	nbits = max(lens) if nbits is None else max(max(lens),nbits) # Watch out, theres no warning here!
+	bins = [ x.zfill(nbits) for x in bins ]
+	
+	# CAM
+	cam = cv2.VideoCapture(0)
+	cv2.namedWindow("tst")
+	
+	# Setup
+	order = [ "rdycheck","off","on","binary" ]
+	color_on = (32,32,32)
+	
+	ind = 0
+	current = order[ind]
+	binary_ind = 0
+	
+	strip.fill( (0,0,0) )
+	
+	with strip:
+		
+		try:
+			
+			while True:
+				ret,frame = cam.read()
+				frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+				
+				cv2.imshow("tst",frame)
+				
+				k = cv2.waitKey(25)
+				if k%256 == 27:
+					# ESC pressed
+					print("Escape hit, closing...")
+					break
+				elif k%256 == 32:
+					# SPACE pressed
+					img_name = fmt_fname(current,binary_ind)
+					cv2.imwrite(loc+img_name, frame)
+					print("{} written!".format(loc+img_name))
+					
+					
+					if current != "binary":
+						ind += 1
+						current = order[ind]
+					else:
+						binary_ind += 1
+						if binary_ind == nbits:
+							print("DONE binary")
+							break
+					instruct_lights(strip,current,binary_ind,bins,color_on=color_on)
+			
+		finally: 
+			cam.release()
+			cv2.destroyAllWindows()
+	
 	
 
 def main():
-	# ~ tst2()
-	# ~ exit()
+	interupted_imaging()
+	exit()
 	cam = cv2.VideoCapture(0)
 	# Settings
 	loc = "_tmp/"
