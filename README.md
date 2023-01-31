@@ -1,21 +1,21 @@
+
 # litledlights
+
 LitLedLights, they are Lit
 
-
-#### Resources:
+## Resources
 
 - adafruit
-    - <https://learn.adafruit.com/neopixels-on-raspberry-pi/raspberry-pi-wiring>
-    - <https://learn.adafruit.com/neopixels-on-raspberry-pi/python-usage>
-    - [adafruit neopixel uberguide](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&ved=2ahUKEwisw86m_uz8AhVFM-wKHQVvAJgQFnoECA8QAQ&url=https%3A%2F%2Fcdn-learn.adafruit.com%2Fdownloads%2Fpdf%2Fadafruit-neopixel-uberguide.pdf&usg=AOvVaw1-UNr6xUSFV5fscJPYqsFR)
- 
- 
-#### To do:
+  - <https://learn.adafruit.com/neopixels-on-raspberry-pi/raspberry-pi-wiring>
+  - <https://learn.adafruit.com/neopixels-on-raspberry-pi/python-usage>
+  - [adafruit neopixel uberguide](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&ved=2ahUKEwisw86m_uz8AhVFM-wKHQVvAJgQFnoECA8QAQ&url=https%3A%2F%2Fcdn-learn.adafruit.com%2Fdownloads%2Fpdf%2Fadafruit-neopixel-uberguide.pdf&usg=AOvVaw1-UNr6xUSFV5fscJPYqsFR)
+
+## To do
 
 - level converter "chip"
 - robust wiring
 
-#### Roadmap:
+## Roadmap
 
 - [x] setup rpi
 - [x] link up stuff
