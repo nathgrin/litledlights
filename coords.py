@@ -61,6 +61,10 @@ def sequential_fotography(strip=None,
     ind = 0
     t = 0
     
+    # BG img
+    ret, img_bg = cam.read()
+    
+    
     try:
         while True:
             
@@ -68,6 +72,7 @@ def sequential_fotography(strip=None,
             if not ret:
                 print("failed to grab frame")
                 break
+            frame = cv2.subtract(frame,img_bg)
             cv2.imshow("test", frame)
     
             t += 1
@@ -94,6 +99,8 @@ def sequential_fotography(strip=None,
     finally:
         cam.release()
         cv2.destroyAllWindows()
+        strip.fill( color_off )
+        strip.show()
 
 
 def main():
