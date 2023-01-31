@@ -94,6 +94,8 @@ def sequential_fotography(strip=None,
                 cv2.imwrite(img_name, frame)
                 print("{} written!".format(img_name))
                 
+                
+                
                 ind += 1
                 if ind == nleds:
                     print("We got em all")
@@ -104,9 +106,16 @@ def sequential_fotography(strip=None,
         strip.fill( color_off )
         strip.show()
 
+def find_light(img):
+    cv2.imshow(img)
 
 def main():
-    sequential_fotography()
+    
+    img = cv2.imread("_tmp/leD_24")
+    find_light(img)
+    
+        
+    # sequential_fotography()
     
     
 if __name__ == "__main__":
