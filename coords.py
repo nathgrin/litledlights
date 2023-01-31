@@ -46,24 +46,26 @@ def sequential_fotography(strip=None,
                             loc = "_tmp/"
                             ):
     """example from stackoverflow, in turn stolen from the "docs" """
-    # Ini
+    # Strip
     strip = get_strip() if strip is None else strip
     strip.fill( color_off )
     strip.show()
     
-    nleds = len(strip)
     
-    
+    # setup
     cam = cv2.VideoCapture(0)
+    cv2.namedWindow("Cam")
     
-    cv2.namedWindow("test")
-    
+    # params
+    nleds = len(strip)
     ind = 0
     t = 0
     
     # BG img
     ret, img_bg = cam.read()
+    img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
     
+        
     
     try:
         while True:
@@ -72,8 +74,8 @@ def sequential_fotography(strip=None,
             if not ret:
                 print("failed to grab frame")
                 break
-            frame = cv2.subtract(frame,img_bg)
-            cv2.imshow("test", frame)
+            frame = cv2.subtract(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY),img_bg)
+            cv2.imshow("Cam", frame)
     
             t += 1
             k = cv2.waitKey(1)
