@@ -24,6 +24,17 @@ def run_clear(args):
 def run_tst(args):
     print("There is no test :(")
 
+def run_one(args):
+    color_on = ( 125,125,125 )
+    
+    strip = get_strip()
+    
+    ind = args.ind[0]
+    
+    strip[ind] = color_on
+    strip.show()
+
+
 
 def main(argv):
     parser = argparse.ArgumentParser(prog="lll")
@@ -37,6 +48,10 @@ def main(argv):
 
     tst_parser = subparsers.add_parser('tst')
     tst_parser.set_defaults(func=run_tst)
+
+    one_parser = subparsers.add_parser('one')
+    one_parser.set_defaults(func=run_one)
+    one_parser.add_argument('ind',type=int,nargs=1,help="index of the led")
 
     args = parser.parse_args(argv)
     if not hasattr(args, 'func'):

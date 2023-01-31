@@ -1,6 +1,7 @@
 
 import cv2
 import time
+import numpy as np
 
 from utils import get_strip,clear
 
@@ -43,9 +44,17 @@ def sequential_fotography(strip=None,
                             color_off = (0,0,0),
                             color_on = (255,255,255),
                             
+                            delta_t = 5,# in arbitrary units
                             loc = "_tmp/"
                             ):
-    """example from stackoverflow, in turn stolen from the "docs" """
+    """example from stackoverflow, in turn stolen from the "docs" 
+    
+    like matt parker does it. 
+    Turn on each light in sequence and get brightest pixels
+    
+    
+    
+    """
     # Strip
     strip = get_strip() if strip is None else strip
     strip.fill( color_off )
@@ -65,6 +74,7 @@ def sequential_fotography(strip=None,
     ret, img_bg = cam.read()
     img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
     
+    led_xy = [None for x in range(nleds)]
         
     
     try:
@@ -83,7 +93,7 @@ def sequential_fotography(strip=None,
                 # ESC pressed
                 print("Escape hit, closing...")
                 break
-            elif k%256 == 32 or t%15 == 0:
+            elif k%256 == 32 or t%delta_t == 0:
                 # SPACE pressed
                 
                 strip[ind-1] = color_off
@@ -94,6 +104,9 @@ def sequential_fotography(strip=None,
                 cv2.imwrite(img_name, frame)
                 print("{} written!".format(img_name))
                 
+                xy = find_light(frame)
+                
+                led_xy[ind] = xy
                 
                 
                 ind += 1
@@ -105,17 +118,31 @@ def sequential_fotography(strip=None,
         cv2.destroyAllWindows()
         strip.fill( color_off )
         strip.show()
+    
+    return led_xy
 
-def find_light(img):
-    cv2.imshow(img)
+def find_light(img)->tuple[float,float]:
+    
+    
+    ind = img > 180
+    
+    x,y = np.mean(np.where(ind), axis=1)
+        
+    
+    # print(x,y)
+    
+    return (x,y)
+    
+    
 
 def main():
     
-    img = cv2.imread("_tmp/leD_24")
-    find_light(img)
+    # img = cv2.imread("_tmp/leD_24")
+    # find_light(img)
     
         
-    # sequential_fotography()
+    led_xy = sequential_fotography()
+    print(led_xy)
     
     
 if __name__ == "__main__":
