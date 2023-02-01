@@ -68,14 +68,17 @@ def sequential_fotography(strip=None,
     # params
     nleds = len(strip)
     ind = 0
-    t = 0
+    t = -1
+    started = False
     
     # BG img
     ret, img_bg = cam.read()
     img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
     
+    # Prep
     led_xy = [None for x in range(nleds)]
-        
+    
+    print(" > Press space to start, b for new background image ")
     
     try:
         while True:
@@ -84,37 +87,51 @@ def sequential_fotography(strip=None,
             if not ret:
                 print("failed to grab frame")
                 break
+            
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             frame = cv2.subtract(frame,img_bg)
             # frame = cv2.absdiff(frame,img_bg)
             cv2.imshow("Cam", frame)
     
-            t += 1
+            if started: t += 1
+            
             k = cv2.waitKey(1)
             if k%256 == 27:
                 # ESC pressed
-                print("Escape hit, closing...")
+                print(" > Escape hit, closing...")
                 break
+            elif k == ord('b'):
+                # hit b
+                # update background img
+                print("update background..")
+                ret, img_bg = cam.read()
+                img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
+                
             elif k%256 == 32 or t%delta_t == 0:
                 # SPACE pressed
-                
-                strip[ind-1] = color_off
-                strip[ind]   = color_on
-                strip.show()
-                
-                img_name = loc+"led_{}.png".format(ind)
-                cv2.imwrite(img_name, frame)
-                print("{} written!".format(img_name))
-                
-                xy = find_light(frame)
-                
-                led_xy[ind] = xy
-                
-                
-                ind += 1
-                if ind == nleds:
-                    print("We got em all")
-                    break
+                # print(t,started)
+                if started:
+                    strip[ind-1] = color_off
+                    strip[ind]   = color_on
+                    strip.show()
+                    
+                    img_name = loc+"led_{}.png".format(ind)
+                    cv2.imwrite(img_name, frame)
+                    # print("{} written!".format(img_name))
+                    
+                    xy = find_light(frame)
+                    
+                    led_xy[ind] = xy
+                    
+                    
+                    ind += 1
+                    if ind == nleds:
+                        print(" > We got em all")
+                        break
+                else:
+                    print(" > Vamonos")
+                    t = 0 # reset t because we can
+                    started = True
     finally:
         cam.release()
         cv2.destroyAllWindows()
@@ -125,8 +142,10 @@ def sequential_fotography(strip=None,
 
 def find_light(img)->tuple[float,float]:
     """
-    get brightest pixels
+    follow matt, simply get brightest pixels
     """
+    
+    
     
     
     ind = img > 180
@@ -138,6 +157,19 @@ def find_light(img)->tuple[float,float]:
     
     return (x,y)
     
+
+def coords_write(fname: str, coords: list[tuple[float,float]])->None:
+    import json
+    
+    
+    with open(fname,'w') as thefile:
+        thefile.write(json.dumps(coords))
+
+def coords_read(fname: str) -> list[tuple[float,float]]: 
+    import json
+    with open(fname,'r') as thefile:
+        out = thefile.readline()
+    return out
     
 
 def main():
@@ -145,9 +177,33 @@ def main():
     # img = cv2.imread("_tmp/leD_24")
     # find_light(img)
     
+    n_images = 2 # how many images do we use
+    
+    coords = []
+    
+    for i in range(n_images):
+        ok = False
+        while not ok:
+            led_xy = sequential_fotography()
+            # print(led_xy)
+            isok = input("You happy? Enter to accept, anything else to redo")
+            ok = isok == ""
+            if not ok:
+                print("Not happy, try again")
+            else:
+                print(" > Next!")
         
-    led_xy = sequential_fotography()
-    print(led_xy)
+        coords.append(led_xy)
+        
+        fname = "_tmp/"+"coords_{}.txt".format(i)
+        coords_write(fname,led_xy)
+    
+    for i in range(n_images):
+        fname = "_tmp/"+"coords_{}.txt".format(i)
+        print(coords_read(fname))
+    
+    
+    
     
     
 if __name__ == "__main__":
