@@ -50,7 +50,7 @@ def sequential_fotography(strip=None,
     """example from stackoverflow, in turn stolen from the "docs" 
     
     like matt parker does it. 
-    Turn on each light in sequence and get brightest pixels
+    Turn on each light in sequence and 
     
     
     
@@ -84,7 +84,9 @@ def sequential_fotography(strip=None,
             if not ret:
                 print("failed to grab frame")
                 break
-            frame = cv2.subtract(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY),img_bg)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            frame = cv2.subtract(frame,img_bg)
+            # frame = cv2.absdiff(frame,img_bg)
             cv2.imshow("Cam", frame)
     
             t += 1
@@ -122,6 +124,9 @@ def sequential_fotography(strip=None,
     return led_xy
 
 def find_light(img)->tuple[float,float]:
+    """
+    get brightest pixels
+    """
     
     
     ind = img > 180
