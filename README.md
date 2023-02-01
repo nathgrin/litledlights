@@ -32,11 +32,12 @@ LitLedLights, they are Lit
   - [ ] save and share coords (gift?)
 - [ ] API
   - [ ] organise pkg
-    - [ ] connect git
+    - [x] connect git
   - [x] get pixels
   - [ ] coords to pixel
   - [ ] simple animations
   - [ ] examples
+- [ ] virtual env for testing/animating
 - expansion
   - [ ] controller on rpi
   - [ ] manymany ledled
