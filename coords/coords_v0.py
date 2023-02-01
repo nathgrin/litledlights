@@ -122,6 +122,7 @@ def interrupted_imaging(strip=None,order:list[str]=[],
     
  
 def get_blob_params():
+    # some guy on stack overflow put this together claiming it fit his purpose (edited)
     blob_params = cv2.SimpleBlobDetector_Params()
     # images are converted to many binary b/w layers. Then 0 searches for dark blobs, 255 searches for bright blobs. Or you set the filter to "false", then it finds bright and dark blobs, both.
     blob_params.filterByColor = True
