@@ -3,9 +3,12 @@ import cv2
 import time
 import numpy as np
 
-from utils import get_strip,clear
+try:
+    from utils import get_strip,clear
 
-from leds import blink_binary
+    from leds import blink_binary
+except:
+    print("imports failed..")
 
     
 def tst():
@@ -158,28 +161,25 @@ def find_light(img)->tuple[float,float]:
     return (x,y)
     
 
-def coords_write(fname: str, coords: list[tuple[float,float]])->None:
+def coords2d_write(fname: str, coords2d: list[tuple[float,float]])->None:
     import json
     
     
     with open(fname,'w') as thefile:
-        thefile.write(json.dumps(coords))
+        thefile.write(json.dumps(coords2d))
 
-def coords_read(fname: str) -> list[tuple[float,float]]: 
+def coords2d_read(fname: str) -> list[tuple[float,float]]: 
     import json
     with open(fname,'r') as thefile:
-        out = thefile.readline()
+        out = json.loads(thefile.readline())
     return out
     
 
-def main():
+def get_coords2d_from_multiple_angles(n_images):
     
-    # img = cv2.imread("_tmp/leD_24")
-    # find_light(img)
     
-    n_images = 2 # how many images do we use
     
-    coords = []
+    coords2d_list = []
     
     for i in range(n_images):
         ok = False
@@ -193,15 +193,136 @@ def main():
             else:
                 print(" > Next!")
         
-        coords.append(led_xy)
+        coords2d_list.append(led_xy)
         
-        fname = "_tmp/"+"coords_{}.txt".format(i)
-        coords_write(fname,led_xy)
+        fname = "_tmp/"+"coords2d_{}.txt".format(i)
+        coords2d_write(fname,led_xy)
     
-    for i in range(n_images):
-        fname = "_tmp/"+"coords_{}.txt".format(i)
-        print(coords_read(fname))
+    return coords2d_list
+
+
+def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_images: int=None) -> list[tuple[float,float,float]]:
     
+    if coords2d_list is None:
+        coords2d_list = []
+        for i in range(n_images):
+            fname = "_tmp/"+"coords2d_{}.txt".format(i)
+            coords2d_list.append( coords2d_read(fname) )
+    
+    # print(coords2d)
+    
+    
+    import itertools
+    
+    coords3d_list = []
+    
+    # For each pair of coord lists (image)
+    for coords2d1,coords2d2 in itertools.combinations(coords2d_list,2):
+        
+        coords3d = triangulate( coords2d1,coords2d2 )
+        
+        # print(coords3d)
+        coords3d_list.append(coords3d)
+
+        
+        coords3d = coords3d.transpose()
+    
+    return coords3d_list
+    
+    
+def filter_nans(pts1,pts2):
+    # Filter nans
+    thenans = []
+    for i in range(len(pts1)):
+        if np.any(np.isnan(pts1[i])):
+            thenans.append(i)
+    for i in range(len(pts2)):
+        if np.any(np.isnan(pts2[i])):
+            thenans.append(i)
+    
+    # convert to int?
+    pts1 = [ pts1[i] for i in range(len(pts1)) if i not in thenans ]
+    pts2 = [ pts2[i] for i in range(len(pts2)) if i not in thenans ]
+    # pts1 = [ np.int32(pts1[i]) for i in range(len(pts1)) if i not in thenans ]
+    # pts2 = [ np.int32(pts2[i]) for i in range(len(pts2)) if i not in thenans ]
+    pts1,pts2 = np.array(pts1),np.array(pts2)
+    # no more nans
+    # print(pts2)
+    return pts1,pts2
+    
+def opencvexample(pts1,pts2):
+    
+    pts1,pts2 = filter_nans(pts1,pts2)
+    import cv2 as cv
+    
+    # pts1 = np.int32(pts1)
+    # pts2 = np.int32(pts2)
+    
+    
+    F, mask = cv.findFundamentalMat(pts1,pts2,cv.FM_LMEDS)
+    
+    print(F,mask)
+    # We select only inlier points
+    pts1 = pts1[mask.ravel()==1]
+    pts2 = pts2[mask.ravel()==1]
+    
+def triangulate(pts1,pts2):
+    """
+    from https://stackoverflow.com/questions/58543362/determining-3d-locations-from-two-images-using-opencv-traingulatepoints-units
+    """
+    pts1,pts2 = np.array(pts1),np.array(pts2)
+    # print(pts1,pts2)
+    # ind = np.logical_or( np.isnan(pts1) , np.isnan(pts2) )
+    # print(ind)
+    # pts1,pts2 = pts1[ind],pts2[ind]
+    
+    
+    cameraMatrix = np.array([[1, 0,0],[0,1,0],[0,0,1]])        
+    F,m1 = cv2.findFundamentalMat(pts1, pts2) # apparently not necessary
+
+    # using the essential matrix can get you the rotation/translation bet. cameras, although there are two possible rotations: 
+    E,m2 = cv2.findEssentialMat(pts1, pts2, cameraMatrix, cv2.RANSAC, 0.999, 1.0)
+    Re1, Re2, t_E = cv2.decomposeEssentialMat(E)
+
+    # recoverPose gets you an unambiguous R and t. One of the R's above does agree with the R determined here. RecoverPose can already triangulate, I check by hand below to compare results. 
+    K_l = cameraMatrix
+    K_r = cameraMatrix
+    retval, R, t, mask2, triangulatedPoints = cv2.recoverPose(E,pts1, pts2, cameraMatrix,distanceThresh=0.5)
+    # retval, R, t, mask2, triangulatedPoints = cv2.recoverPose(E,pts_l_norm, pts_r_norm, cameraMatrix,distanceThresh=0.5)
+
+    # given R,t you can  explicitly find 3d locations using projection 
+    M_r = np.concatenate((R,t),axis=1)
+    M_l = np.concatenate((np.eye(3,3),np.zeros((3,1))),axis=1)
+    proj_r = np.dot(cameraMatrix,M_r)
+    proj_l = np.dot(cameraMatrix,M_l)
+    points_4d_hom = cv2.triangulatePoints(proj_l, proj_r, np.expand_dims(pts1, axis=1), np.expand_dims(pts2, axis=1))
+    points_4d = points_4d_hom / np.tile(points_4d_hom[-1, :], (4, 1))
+    points_3d = points_4d[:3, :].T
+    return points_3d
+    
+
+def main():
+    n_images = 2 # how many images do we use
+    
+    coords2d_list = None
+    # coords2d_list = get_coords2d_from_multiple_angles(n_images)
+    
+    coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images)
+    
+    import matplotlib.pyplot as plt
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    
+    for coords3d in coords3d_list:
+        coords3d = coords3d.transpose()
+        ax.scatter(coords3d[0], coords3d[1], coords3d[2], marker='o')
+    
+    
+    plt.show()
+    
+    # Combine
+    
+    # Fix missing
     
     
     
