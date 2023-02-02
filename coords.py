@@ -82,7 +82,7 @@ def sequential_fotography(strip=None,
     # Prep
     led_xy = [None for x in range(nleds)]
     
-    start = time.now()
+    start = time.time()
     
     print(" > Press space to start, b for new background image, f to toggle background subtract of preview")
     
@@ -126,7 +126,7 @@ def sequential_fotography(strip=None,
                 # SPACE pressed
                 # print(t,started)
                 if started:
-                    print("TIME",delta_t,time.now()-start)
+                    print("TIME",delta_t,time.time()-start)
                     strip[ind-1] = color_off
                     strip[ind]   = color_on
                     strip.show()
@@ -214,7 +214,7 @@ def get_coords2d_from_multiple_angles(n_images):
     return coords2d_list
 
 
-def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_images: int=None) -> list[tuple[float,float,float]]:
+def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_images: int=None,camera_matrix=None) -> list[tuple[float,float,float]]:
     
     if coords2d_list is None:
         coords2d_list = []
@@ -228,17 +228,20 @@ def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_imag
     import itertools
     
     coords3d_list = []
+    cnt = 0
     
     # For each pair of coord lists (image)
     for coords2d1,coords2d2 in itertools.combinations(coords2d_list,2):
         
-        coords3d = triangulate( coords2d1,coords2d2 )
+        coords3d = triangulate( coords2d1,coords2d2 ,camera_matrix=camera_matrix)
         
         # print(coords3d)
         coords3d_list.append(coords3d)
-
         
-        coords3d = coords3d.transpose()
+        np.savetxt( "_tmp/"+"coords3d_{}.txt".format(cnt) ,coords3d)
+        
+        cnt += 1
+        # coords3d = coords3d.transpose()
     
     return coords3d_list
     
@@ -279,7 +282,7 @@ def opencvexample(pts1,pts2):
     pts1 = pts1[mask.ravel()==1]
     pts2 = pts2[mask.ravel()==1]
     
-def triangulate(pts1,pts2):
+def triangulate(pts1,pts2, camera_matrix=None):
     """
     from https://stackoverflow.com/questions/58543362/determining-3d-locations-from-two-images-using-opencv-traingulatepoints-units
     """
@@ -289,8 +292,10 @@ def triangulate(pts1,pts2):
     # print(ind)
     # pts1,pts2 = pts1[ind],pts2[ind]
     
-    
-    cameraMatrix = np.array([[1, 0,0],[0,1,0],[0,0,1]])        
+    if camera_matrix is None:
+        cameraMatrix = np.array([[1, 0,0],[0,1,0],[0,0,1]])        
+    else:
+        cameraMatrix = camera_matrix
     F,m1 = cv2.findFundamentalMat(pts1, pts2) # apparently not necessary
 
     # using the essential matrix can get you the rotation/translation bet. cameras, although there are two possible rotations: 
@@ -315,18 +320,29 @@ def triangulate(pts1,pts2):
     
 
 def main():
-    n_images = 2 # how many images do we use
+    
+    # From calibatrion
+    camera_matrix = np.array([ [1.06996313e+03,0.00000000e+00,3.15927309e+02],
+                               [0.00000000e+00,7.98554626e+02,2.30317334e+02],
+                               [0.00000000e+00,0.00000000e+00,1.00000000e+00]])
+
+    
+    n_images = 4 # how many images do we use
     
     coords2d_list = None
-    coords2d_list = get_coords2d_from_multiple_angles(n_images)
-    input("DONE")
-    coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images)
+    # coords2d_list = get_coords2d_from_multiple_angles(n_images)
+    # input("DONE")
+    
+    coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images,camera_matrix=camera_matrix)
+    
+    print(len(coords3d_list))
     
     import matplotlib.pyplot as plt
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
     
     for coords3d in coords3d_list:
+        
         coords3d = coords3d.transpose()
         ax.scatter(coords3d[0], coords3d[1], coords3d[2], marker='o')
     
