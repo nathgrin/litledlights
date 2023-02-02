@@ -73,6 +73,7 @@ def sequential_fotography(strip=None,
     ind = 0
     t = -1
     started = False
+    preview_subtract = True
     
     # BG img
     ret, img_bg = cam.read()
@@ -81,7 +82,9 @@ def sequential_fotography(strip=None,
     # Prep
     led_xy = [None for x in range(nleds)]
     
-    print(" > Press space to start, b for new background image ")
+    start = time.now()
+    
+    print(" > Press space to start, b for new background image, f to toggle background subtract of preview")
     
     try:
         while True:
@@ -92,9 +95,14 @@ def sequential_fotography(strip=None,
                 break
             
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            frame = cv2.subtract(frame,img_bg)
+            if preview_subtract:
+                preview = cv2.subtract(frame,img_bg)
+            else:
+                preview = frame
             # frame = cv2.absdiff(frame,img_bg)
-            cv2.imshow("Cam", frame)
+            cv2.imshow("Cam", preview)
+            
+            frame = cv2.subtract(frame,img_bg)
     
             if started: t += 1
             
@@ -102,7 +110,11 @@ def sequential_fotography(strip=None,
             if k%256 == 27:
                 # ESC pressed
                 print(" > Escape hit, closing...")
+                led_xy = None
                 break
+            elif k == ord('f'):
+                preview_subtract = not preview_subtract # toggle
+                print("preview subtract turned",preview_subtract)
             elif k == ord('b'):
                 # hit b
                 # update background img
@@ -114,6 +126,7 @@ def sequential_fotography(strip=None,
                 # SPACE pressed
                 # print(t,started)
                 if started:
+                    print("TIME",delta_t,time.now()-start)
                     strip[ind-1] = color_off
                     strip[ind]   = color_on
                     strip.show()
@@ -305,8 +318,8 @@ def main():
     n_images = 2 # how many images do we use
     
     coords2d_list = None
-    # coords2d_list = get_coords2d_from_multiple_angles(n_images)
-    
+    coords2d_list = get_coords2d_from_multiple_angles(n_images)
+    input("DONE")
     coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images)
     
     import matplotlib.pyplot as plt
