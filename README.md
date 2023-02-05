@@ -25,6 +25,7 @@ LitLedLights, they are Lit
     - [x] Library (adafruit-circuitpython-neopixel)
   - [ ] make API
 - [ ] coords
+  - [ ] clean up sequential photography function
   - [ ] setup camera
     - [ ] live view camera?
     - [ ] calibrate camera
@@ -32,6 +33,9 @@ LitLedLights, they are Lit
   - [ ] combine pictures
   - [ ] save and share coords (gift?)
 - [ ] API
+  - [ ] fix index error `lll one 155`
+  - [ ] setup/settings file with
+    - nleds
   - [ ] organise pkg
     - [x] connect git
   - [x] get pixels
