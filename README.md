@@ -27,6 +27,7 @@ LitLedLights, they are Lit
 - [ ] coords
   - [ ] setup camera
     - [ ] live view camera?
+    - [ ] calibrate camera
   - [ ] get pts from picture/video
   - [ ] combine pictures
   - [ ] save and share coords (gift?)
