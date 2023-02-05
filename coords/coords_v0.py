@@ -2,7 +2,7 @@
 import cv2
 import time
 
-# from utils import get_strip,clear
+from utils import get_strip,clear
 
 # from leds import blink_binary
 
