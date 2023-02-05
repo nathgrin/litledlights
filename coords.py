@@ -45,7 +45,7 @@ def tst():
     
 def sequential_fotography(strip=None,
                             color_off = (0,0,0),
-                            color_on = (255,255,255),
+                            color_on = (101,101,101),
                             
                             delta_t = 5,# in arbitrary units
                             loc = "_tmp/"
@@ -327,10 +327,10 @@ def main():
                                [0.00000000e+00,0.00000000e+00,1.00000000e+00]])
 
     
-    n_images = 4 # how many images do we use
+    n_images = 2 # how many images do we use
     
     coords2d_list = None
-    # coords2d_list = get_coords2d_from_multiple_angles(n_images)
+    coords2d_list = get_coords2d_from_multiple_angles(n_images)
     # input("DONE")
     
     coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images,camera_matrix=camera_matrix)
@@ -344,6 +344,8 @@ def main():
     for coords3d in coords3d_list:
         
         coords3d = coords3d.transpose()
+        for i in range(len(coords3d)):
+            coords3d[i] = coords3d[i]/np.nanmean(coords3d[i])
         ax.scatter(coords3d[0], coords3d[1], coords3d[2], marker='o')
     
     
