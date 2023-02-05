@@ -47,7 +47,7 @@ def sequential_fotography(strip=None,
                             color_off = (0,0,0),
                             color_on = (255,255,255),
                             
-                            delta_t = 5,# in arbitrary units
+                            delta_t = 10,# in arbitrary units
                             loc = "_tmp/"
                             ):
     """example from stackoverflow, in turn stolen from the "docs" 
@@ -72,6 +72,7 @@ def sequential_fotography(strip=None,
     nleds = len(strip)
     ind = 0
     t = -1
+    
     started = False
     preview_subtract = True
     
@@ -84,7 +85,7 @@ def sequential_fotography(strip=None,
     
     start = time.time()
     
-    print(" > Press space to start, b for new background image, f to toggle background subtract of preview")
+    print(" > Press space to start,\n b for new background image,\n f to toggle background subtract of preview")
     
     try:
         while True:
@@ -126,7 +127,7 @@ def sequential_fotography(strip=None,
                 # SPACE pressed
                 # print(t,started)
                 if started:
-                    print("TIME",delta_t,time.time()-start)
+                    print("Frame",ind,time.time()-start)
                     strip[ind-1] = color_off
                     strip[ind]   = color_on
                     strip.show()
