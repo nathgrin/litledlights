@@ -10,7 +10,7 @@ def clear(strip: neopixel.NeoPixel=None):
 
 
 def get_strip(output_pin: board.pin=board.D18,
-        num_pixels: int=50,
+        num_pixels: int=200,
         brightness: float=1.,
         pixel_order: neopixel.RGB=neopixel.RGB,
         auto_write: bool=False
