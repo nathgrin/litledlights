@@ -142,7 +142,6 @@ def sequential_fotography(strip=None,
             elif started and t%delta_t == 0:
                 # print(t,started)
                 
-                print("Frame",ind,time.time()-start)
                 
                 img_name = loc+"led_{}.png".format(ind)
                 cv2.imwrite(img_name, frame)
@@ -152,6 +151,7 @@ def sequential_fotography(strip=None,
                 
                 coords2d[ind] = xy
                 
+                print("Frame",ind,time.time()-start,xy)
                 
                 ind += 1
                 if ind == nleds:
