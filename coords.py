@@ -3,6 +3,8 @@ import cv2
 import time
 import numpy as np
 
+import os
+
 try:
     from utils import get_strip,clear
 
@@ -66,7 +68,8 @@ def sequential_fotography(strip=None,
     
     # setup
     cam = cv2.VideoCapture(0)
-    cv2.namedWindow("Cam")
+    window_name = "Cam"
+    cv2.namedWindow(window_name)
     
     # params
     nleds = len(strip)
@@ -101,7 +104,7 @@ def sequential_fotography(strip=None,
             else:
                 preview = frame
             # frame = cv2.absdiff(frame,img_bg)
-            cv2.imshow("Cam", preview)
+            cv2.imshow(window_name, preview)
             
             frame = cv2.subtract(frame,img_bg)
     
@@ -123,32 +126,37 @@ def sequential_fotography(strip=None,
                 ret, img_bg = cam.read()
                 img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
                 
-            elif k%256 == 32 or t%delta_t == 0:
+            elif k%256 == 32:
                 # SPACE pressed
+
+                print(" > Vamonos")
+                t = 0 # reset t because we can
+                started = True
+                
+            elif started and (t+delta_t//2)%delta_t == 0:
+                
+                strip[ind-1] = color_off
+                strip[ind]   = color_on
+                strip.show()
+                
+            elif started and t%delta_t == 0:
                 # print(t,started)
-                if started:
-                    print("Frame",ind,time.time()-start)
-                    strip[ind-1] = color_off
-                    strip[ind]   = color_on
-                    strip.show()
-                    
-                    img_name = loc+"led_{}.png".format(ind)
-                    cv2.imwrite(img_name, frame)
-                    # print("{} written!".format(img_name))
-                    
-                    xy = find_light(frame)
-                    
-                    coords2d[ind] = xy
-                    
-                    
-                    ind += 1
-                    if ind == nleds:
-                        print(" > We got em all")
-                        break
-                else:
-                    print(" > Vamonos")
-                    t = 0 # reset t because we can
-                    started = True
+                
+                print("Frame",ind,time.time()-start)
+                
+                img_name = loc+"led_{}.png".format(ind)
+                cv2.imwrite(img_name, frame)
+                # print("{} written!".format(img_name))
+                
+                xy = find_light(frame)
+                
+                coords2d[ind] = xy
+                
+                
+                ind += 1
+                if ind == nleds:
+                    print(" > We got em all")
+                    break
     finally:
         cam.release()
         cv2.destroyAllWindows()
@@ -157,17 +165,23 @@ def sequential_fotography(strip=None,
     
     return coords2d
 
-def find_light(img)->tuple[float,float]:
+def find_light(img,
+               blur_radius: int=9, # has to be odd!
+               )->tuple[float,float]:
     """
     follow matt, simply get brightest pixels
     """
     
     
+    blur = cv2.GaussianBlur(img, (blur_radius,blur_radius),cv2.BORDER_DEFAULT)
+    
+    ind = blur > 100
+    y,x = np.mean(np.where(ind),axis=1)
     
     
-    ind = img > 180
+    # ind = img > 180
     
-    x,y = np.mean(np.where(ind), axis=1)
+    # x,y = np.mean(np.where(ind), axis=1)
         
     
     # print(x,y)
@@ -213,7 +227,7 @@ def get_coords2d_from_multiple_angles(n_images):
         
         coords2d_list.append(coords2d)
         
-        fname = "_tmp/"+"coords2d_{}.txt".format(i)
+        fname = os.path.join("_tmp","coords2d_{}.txt".format(i))
         coords2d_write(fname,coords2d)
     
     return coords2d_list
