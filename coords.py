@@ -202,6 +202,8 @@ def coords2d_read(fname: str) -> list[tuple[float,float]]:
         out = json.loads(thefile.readline())
     return np.array(out)
     
+def coords3d_read(fname: str) -> list[tuple[float,float,float]]:
+    return np.loadtxt(fname)
 
 def get_coords2d_from_multiple_angles(n_images):
     
@@ -240,11 +242,11 @@ def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_imag
         for i in range(n_images):
             fname = "_tmp/"+"coords2d_{}.txt".format(i)
             coords2d_list.append( coords2d_read(fname) )
-            coords2d_list[-1] = coords2d_list[-1].transpose()
-            print(coords2d_list[-1])
-            import matplotlib.pyplot as plt
-            plt.plot(coords2d_list[-1][0],coords2d_list[-1][1],marker='o',ls='')
-        plt.show()
+        #     coords2d_list[-1] = coords2d_list[-1].transpose()
+        #     print(coords2d_list[-1])
+        #     import matplotlib.pyplot as plt
+        #     plt.plot(coords2d_list[-1][0],coords2d_list[-1][1],marker='o',ls='')
+        # plt.show()
     
     # print(coords2d)
     
@@ -273,6 +275,7 @@ def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_imag
         # coords3d = coords3d.transpose()
     
     return coords3d_list
+    
     
     
 def filter_nans(pts1,pts2):
@@ -395,12 +398,33 @@ def main():
     n_images = 6 # how many images do we use
     
     coords2d_list = None
-    coords2d_list = get_coords2d_from_multiple_angles(n_images)
+    # coords2d_list = get_coords2d_from_multiple_angles(n_images)
     # input("DONE")
     
-    coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images,camera_matrix=camera_matrix)
+    coords3d_list = None
+    # coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images,camera_matrix=camera_matrix)
+    
+    if coords3d_list is None:
+        coords3d_list = []
+        for i in range(n_images*(n_images-1)//2):
+            fname = os.path.join("_tmp","coords3d_{}.txt".format(i))
+            coords3d_list.append( coords3d_read(fname) )
     
     print(len(coords3d_list))
+    
+    # find common non-nans
+    any_isnan = np.sum(np.isnan(coords3d_list[0]),axis=1)
+    for coords3d in coords3d_list:
+        any_isnan = np.logical_or(any_isnan, np.sum(np.isnan(coords3d),axis=1) )
+    
+    ind_nonans = np.where(~any_isnan)
+    
+    ind1,ind2 = ind_nonans[0][0],ind_nonans[0][1]
+    print(ind_nonans)
+    print(ind1,ind2)
+    
+    print(coords3d_list[0][ind1])
+    
     
     import matplotlib.pyplot as plt
     fig = plt.figure()
@@ -408,9 +432,13 @@ def main():
     
     for coords3d in coords3d_list:
         
+        
+        norm = np.sqrt( np.sum( np.square(coords3d[ind1]-coords3d[ind2])) )
+        
         coords3d = coords3d.transpose()
+        
         for i in range(len(coords3d)):
-            coords3d[i] = coords3d[i]/np.nanmean(coords3d[i])
+            coords3d[i] = (coords3d[i]-coords3d[i][ind1])/norm
         ax.scatter(coords3d[0], coords3d[1], coords3d[2], marker='o')
     
     
