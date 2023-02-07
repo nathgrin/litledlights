@@ -416,7 +416,7 @@ def rthetaphi_to_xyz(rthetaphi):
     z = rthetaphi[0]*np.cos(rthetaphi[1])
     return np.array([x,y,z])
 
-def combine_coords3d(coords3d_list):
+def combine_coords3d(coords3d_list: list,n_images: int):
     
     if coords3d_list is None:
         coords3d_list = []
