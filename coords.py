@@ -385,7 +385,97 @@ def triangulate_full(pts1,pts2, camera_matrix=None):
     points_4d = points_4d_hom / np.tile(points_4d_hom[-1, :], (4, 1))
     points_3d = points_4d[:3, :].T
     return points_3d
+  
+def xyz_to_rthetaphi(xyz): # https://stackoverflow.com/questions/4116658/faster-numpy-cartesian-to-spherical-coordinate-conversion
     
+    xy = xyz[0]**2 + xyz[1]**2
+    r = np.sqrt(xy + xyz[2]**2)
+    theta = np.arctan2(np.sqrt(xy), xyz[2]) # for elevation angle defined from Z-axis down
+    #ptsnew[:,4] = np.arctan2(xyz[:,2], np.sqrt(xy)) # for elevation angle defined from XY-plane up
+    phi = np.arctan2(xyz[1], xyz[0])
+    return np.array([r,theta,phi])
+    
+def rthetaphi_to_xyz(rthetaphi):
+    x = rthetaphi[0]*np.sin(rthetaphi[1])*np.cos(rthetaphi[2])
+    y = rthetaphi[0]*np.sin(rthetaphi[1])*np.sin(rthetaphi[2])
+    z = rthetaphi[0]*np.cos(rthetaphi[1])
+    return np.array([x,y,z])
+
+def combine_coords3d(coords3d_list):
+    
+    if coords3d_list is None:
+        coords3d_list = []
+        for i in range(n_images*(n_images-1)//2):
+            fname = os.path.join("_tmp","coords3d_{}.txt".format(i))
+            coords3d_list.append( coords3d_read(fname) )
+    
+    print(len(coords3d_list))
+    
+    # find common non-nans
+    any_isnan = np.sum(np.isnan(coords3d_list[0]),axis=1)
+    for coords3d in coords3d_list:
+        any_isnan = np.logical_or(any_isnan, np.sum(np.isnan(coords3d),axis=1) )
+    
+    ind_nonans = np.where(~any_isnan)
+    
+    # ind1,ind2 = ind_nonans[0][0],ind_nonans[0][1]
+    ind1,ind2,ind3 = 102,114,185
+    print("no nans!:",ind_nonans)
+    print("Chosen inds:",ind1,ind2)
+    
+    print(coords3d_list[0][ind1])
+    ref_ind1_xyz = coords3d_list[0][ind1]
+    ref_ind1_rthetaphi = xyz_to_rthetaphi( ref_ind1_xyz )
+    
+    ref_ind2_xyz = coords3d_list[0][ind2]
+    ref_ind2_rthetaphi = xyz_to_rthetaphi( ref_ind2_xyz )
+    
+    turn_theta = ref_ind1_rthetaphi[1]-ref_ind2_rthetaphi[1]
+    turn_phi   = ref_ind1_rthetaphi[2]-ref_ind2_rthetaphi[2]
+    print("turn theta phi",turn_theta,turn_phi)
+    
+    
+    import matplotlib.pyplot as plt
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    
+    for coords3d in coords3d_list:
+        
+        
+        norm = np.sqrt( np.sum( np.square(coords3d[ind1]-coords3d[ind2])) )
+        
+        coords3d = coords3d.transpose()
+        
+        for i in range(len(coords3d)): # Move to coordinate system
+            coords3d[i] = (coords3d[i]-coords3d[i][ind1])/norm
+        
+        coords3d_spherical = xyz_to_rthetaphi(coords3d)
+        
+        #  Rotate!
+        coords3d_spherical[1] = coords3d_spherical[1] - coords3d_spherical[1][ind2]
+        coords3d_spherical[2] = coords3d_spherical[2] - coords3d_spherical[2][ind3]
+        # coords3d_spherical[1] = coords3d_spherical[1] - (coords3d_spherical[1][ind2]-ref_ind2_rthetaphi[1])
+        # coords3d_spherical[2] = coords3d_spherical[2] - (coords3d_spherical[2][ind2]-ref_ind2_rthetaphi[2])
+        
+        c2 = rthetaphi_to_xyz(coords3d_spherical)
+        
+        # for i in range(len(c2[0])):
+        # i = ind1
+        # ax.scatter(c2[0][i],c2[1][i],c2[2][i],marker='o')
+        # ax.scatter(c2[0][ind1],c2[1][ind1],c2[2][ind1],marker='o',c='k')
+        # ax.scatter(c2[0][ind2],c2[1][ind2],c2[2][ind2],marker='o',c='r')
+            
+        
+        
+        
+        # ax.scatter(coords3d[0], coords3d[1], coords3d[2], marker='o')
+        ind = coords3d_spherical[0] < 1.2
+        ax.scatter(c2[0][ind], c2[1][ind], c2[2][ind], marker='o',c='k')
+        ax.scatter(c2[0][ind1], c2[1][ind1], c2[2][ind1], marker='o',c='r')
+        ax.scatter(c2[0][ind2], c2[1][ind2], c2[2][ind2], marker='o',c='r')
+        ax.scatter(c2[0][ind3], c2[1][ind3], c2[2][ind3], marker='o',c='r')
+        # ax.scatter(c2[0], c2[1], c2[2], marker='o')
+    plt.show()
 
 def main():
     
@@ -404,6 +494,9 @@ def main():
     coords3d_list = None
     # coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images,camera_matrix=camera_matrix)
     
+    # Combine
+    # combine_coords3d(coords3d_list)
+    
     if coords3d_list is None:
         coords3d_list = []
         for i in range(n_images*(n_images-1)//2):
@@ -419,32 +512,22 @@ def main():
     
     ind_nonans = np.where(~any_isnan)
     
-    ind1,ind2 = ind_nonans[0][0],ind_nonans[0][1]
-    print(ind_nonans)
-    print(ind1,ind2)
-    
-    print(coords3d_list[0][ind1])
-    
-    
-    import matplotlib.pyplot as plt
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
-    
+    # ind1,ind2 = ind_nonans[0][0],ind_nonans[0][1]
+    ind1,ind2,ind3 = 14,154,185
+    print("no nans!:",ind_nonans)
+    print("Chosen inds:",ind1,ind2)
+    import matplotlib.pyplot as plt 
     for coords3d in coords3d_list:
         
-        
-        norm = np.sqrt( np.sum( np.square(coords3d[ind1]-coords3d[ind2])) )
+        norm = np.sqrt(np.sum(np.square(coords3d[ind1]-coords3d[ind2])))
         
         coords3d = coords3d.transpose()
-        
-        for i in range(len(coords3d)):
-            coords3d[i] = (coords3d[i]-coords3d[i][ind1])/norm
-        ax.scatter(coords3d[0], coords3d[1], coords3d[2], marker='o')
-    
-    
+        for i in range(3):
+            coords3d[i] = (coords3d[i] - coords3d[i][ind1])/norm
+        coords3d_spherical = xyz_to_rthetaphi(coords3d)
+        # print(coords3d_spherical)
+        plt.plot(range(len(coords3d_spherical[0])),coords3d_spherical[0],marker= 'o',ls= '')
     plt.show()
-    
-    # Combine
     
     # Fix missing
     
