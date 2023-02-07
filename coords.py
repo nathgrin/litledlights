@@ -60,6 +60,9 @@ def sequential_fotography(strip=None,
     
     
     """
+    
+    help_msg = "Press h for help,\n space to start,\n b for new background image,\n f to toggle background subtract of preview"
+    
     # Strip
     strip = get_strip() if strip is None else strip
     strip.fill( color_off )
@@ -88,7 +91,7 @@ def sequential_fotography(strip=None,
     
     start = time.time()
     
-    print(" > Press space to start,\n b for new background image,\n f to toggle background subtract of preview")
+    print(" >",help_msg)
     
     try:
         while True:
@@ -116,6 +119,8 @@ def sequential_fotography(strip=None,
                 print(" > Escape hit, closing...")
                 coords2d = None
                 break
+            elif k == ord('h'):
+                print(help_msg)
             elif k == ord('f'):
                 preview_subtract = not preview_subtract # toggle
                 print("preview subtract turned",preview_subtract)
@@ -203,8 +208,7 @@ def coords2d_read(fname: str) -> list[tuple[float,float]]:
     return np.array(out)
     
 
-def get_coords2d_from_multiple_angles(n_images):
-    
+def get_coords2d_from_multiple_angles(n_images: int,loc: str="_tmp") -> list:
     
     
     coords2d_list = []
@@ -216,8 +220,17 @@ def get_coords2d_from_multiple_angles(n_images):
             # print(coords2d)
             if coords2d is not None:
                 print("NaN/tot: {}/{}".format(np.sum(np.isnan(coords2d)),len(coords2d)))
-                isok = input("You happy? Enter to accept, anything else to redo: ")
-                ok = isok == ""
+                
+                img_bg = cv2.imread(os.path.join(loc,"background.png"))
+                for i in range(len(coords2d)):
+                    img_bg = cv2.putText(img_bg,str(i),coords2d[i],cv2.FONT_HERSHEY_SIMPLEX,1,(255,0,0),2,cv2.LINE_AA)
+                cv2.imshow("Background with found lights",img_bg)
+                
+                print("You happy? Enter to accept, anything else to redo")
+                k = cv2.waitKey(0)
+                
+                ok = k%256 == 10
+                
             else:
                 ok = False
             if not ok:
@@ -227,7 +240,7 @@ def get_coords2d_from_multiple_angles(n_images):
         
         coords2d_list.append(coords2d)
         
-        fname = os.path.join("_tmp","coords2d_{}.txt".format(i))
+        fname = os.path.join(loc,"coords2d_{}.txt".format(i))
         coords2d_write(fname,coords2d)
     
     return coords2d_list
