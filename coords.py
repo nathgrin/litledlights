@@ -125,6 +125,8 @@ def sequential_fotography(strip=None,
                 print("update background..")
                 ret, img_bg = cam.read()
                 img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
+                img_name = loc+"background.png"
+                cv2.imwrite(img_name, img_bg)
                 
             elif k%256 == 32:
                 # SPACE pressed
@@ -517,7 +519,14 @@ def main():
     print("no nans!:",ind_nonans)
     print("Chosen inds:",ind1,ind2)
     import matplotlib.pyplot as plt 
-    for coords3d in coords3d_list:
+    
+    colors = ['r','k','c','b','hotpink','g']
+    n = -1
+    # for coords3d in coords3d_list:
+    import itertools
+    for i1,i2 in itertools.combinations(range(6),2):
+        n += 1
+        coords3d = coords3d_list[n]
         
         norm = np.sqrt(np.sum(np.square(coords3d[ind1]-coords3d[ind2])))
         
@@ -526,7 +535,9 @@ def main():
             coords3d[i] = (coords3d[i] - coords3d[i][ind1])/norm
         coords3d_spherical = xyz_to_rthetaphi(coords3d)
         # print(coords3d_spherical)
-        plt.plot(range(len(coords3d_spherical[0])),coords3d_spherical[0],marker= 'o',ls= '')
+        # plt.plot(range(len(coords3d_spherical[0])),coords3d_spherical[0],marker= 'o',ls= '')
+        plt.plot(range(len(coords3d_spherical[0])),coords3d_spherical[0],marker= 'o',ls= '',c=colors[i1])
+        
     plt.show()
     
     # Fix missing
