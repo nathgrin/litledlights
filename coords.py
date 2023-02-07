@@ -50,7 +50,7 @@ def sequential_fotography(strip=None,
                             color_on = (255,255,255),
                             
                             delta_t = 10,# in arbitrary units
-                            loc = "_tmp/"
+                            loc = "_tmp"
                             ):
     """example from stackoverflow, in turn stolen from the "docs" 
     
@@ -130,7 +130,7 @@ def sequential_fotography(strip=None,
                 print("update background..")
                 ret, img_bg = cam.read()
                 img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
-                img_name = loc+"background.png"
+                img_name = os.path.join(loc,"background.png")
                 cv2.imwrite(img_name, img_bg)
                 
             elif k%256 == 32:
@@ -150,7 +150,7 @@ def sequential_fotography(strip=None,
                 # print(t,started)
                 
                 
-                img_name = loc+"led_{}.png".format(ind)
+                img_name = os.path.join(loc,"led_{}.png".format(ind))
                 cv2.imwrite(img_name, frame)
                 # print("{} written!".format(img_name))
                 
@@ -503,7 +503,7 @@ def main():
     n_images = 6 # how many images do we use
     
     coords2d_list = None
-    # coords2d_list = get_coords2d_from_multiple_angles(n_images)
+    coords2d_list = get_coords2d_from_multiple_angles(n_images)
     # input("DONE")
     
     coords3d_list = None
