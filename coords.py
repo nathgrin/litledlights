@@ -251,7 +251,7 @@ def get_coords2d_from_multiple_angles(n_images: int,loc: str="_tmp") -> list:
     return coords2d_list
 
 
-def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_images: int=None,camera_matrix=None,distortions:np.array=None) -> list[tuple[float,float,float]]:
+def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_images: int=None,camera_matrix=None,distortions:np.array=None,new_camera_matrix:np.array=None) -> list[tuple[float,float,float]]:
     
     if coords2d_list is None:
         coords2d_list = []
@@ -267,12 +267,16 @@ def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_imag
     # print(coords2d)
     
     # Undistort
-    for i in range(len( coords2d_list )):
-        print(distortions)
-        undistorted = cv2.undistortPoints(coords2d_list[i], camera_matrix, distortions)
-        undistorted = np.array([ x[0] for x in undistorted ])
-        
-        coords2d_list[i] = undistorted
+    
+    if distortions is not None and new_camera_matrix is not None: # This doesnt work!
+        print("This doesn't work!")
+        for i in range(len( coords2d_list )):
+            print(distortions)
+            undistorted = cv2.undistortPoints(coords2d_list[i], camera_matrix, distortions,None,new_camera_matrix)
+            # undistorted = np.array([ x[0] for x in undistorted ])
+            undistorted = np.squeeze(undistorted)
+            print(undistorted)
+            coords2d_list[i] = undistorted
     
     import itertools
     
@@ -282,7 +286,7 @@ def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_imag
     # For each pair of coord lists (image)
     # for coords2d1,coords2d2 in itertools.combinations(coords2d_list,2):
     for ind1, ind2 in itertools.combinations(range(len(coords2d_list)),2):
-        print(ind1,ind2)
+        print("cnt",cnt,"ind1 ind2",ind1,ind2)
         coords2d1,coords2d2 = coords2d_list[ind1],coords2d_list[ind2]
         
         
@@ -511,13 +515,55 @@ def combine_coords3d(coords3d_list: list,n_images: int):
         # ax.scatter(c2[0], c2[1], c2[2], marker='o')
     plt.show()
 
+def calibrate_updown(coords3d):
+    import keyboard
+    white = (155,155,155)
+    red = (155,0,0)
+    off = (0,0,0)
+    
+    
+    strip = get_strip()
+    
+    n_leds = strip.numPixels
+    
+    
+    while True:
+        ind_w = np.random.randint(n_leds)
+        ind_r = np.random.randint(n_leds)
+        # swwwwwwwwwtrip. show()
+        print("Which is up? (W)hite, (R)ed or (I) don't know")
+        while True:
+            k = keyboard.read_key()
+            
+            if k == "esc":
+                print("ESC: Quit")
+                break
+            elif k == "w" or k == "r" or k == "i":
+                break
+            print(k)
+        if k == "esc":
+            break
+        elif k == "w":
+            print("White above")
+        elif k == "r":
+            print("Red above")
+        elif k == "i":
+            print("I don't know")
+            
+            
+        time.sleep(0.1)
+
 def main():
     
     # From calibatrion
     camera_matrix = np.array([ [1.06996313e+03,0.00000000e+00,3.15927309e+02],
                                [0.00000000e+00,7.98554626e+02,2.30317334e+02],
-                               [0.00000000e+00,0.00000000e+00,1.00000000e+00]])
-    distortions = np.array([ 2.03990656e-01,-4.10106338e+01,3.88358091e-02,5.41687259e-02,3.86933501e+02])
+                               [0.00000000e+00,0.00000000e+00,1.00000000e+00]]) # "new camera mtx"
+    new_camera_matrix = None
+    # camera_matrix = None#np.array([ [5.532296390058696716e+02,0.000000000000000000e+00,3.092664256633688638e+02],
+                            #    [0.000000000000000000e+00,5.004930172490122686e+02,2.534310435736532838e+02],
+                            #    [0.000000000000000000e+00,0.000000000000000000e+00,1.000000000000000000e+00] ]) # first camera mtx
+    distortions = None#np.array([ 2.03990656e-01,-4.10106338e+01,3.88358091e-02,5.41687259e-02,3.86933501e+02 ]) # this didnt work, i suspect the calibration is imperfect
 
     
     n_images = 6 # how many images do we use
@@ -529,10 +575,10 @@ def main():
     # input("DONE")
     
     coords3d_list = None
-    coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images,camera_matrix=camera_matrix,distortions=distortions)
+    # coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images,camera_matrix=camera_matrix,distortions=distortions,new_camera_matrix=new_camera_matrix)
     
     # Combine
-    # combine_coords3d(coords3d_list)
+    # combine_coords3d(coords3d_list) # this doesnt work
     
     if coords3d_list is None:
         coords3d_list = []
@@ -540,40 +586,18 @@ def main():
             fname = os.path.join("_tmp","coords3d_{}.txt".format(i))
             coords3d_list.append( coords3d_read(fname) )
     
-    print(len(coords3d_list))
+    # for now, just pick one of them
+    coords3d_ind = 1
     
-    # find common non-nans
-    any_isnan = np.sum(np.isnan(coords3d_list[0]),axis=1)
-    for coords3d in coords3d_list:
-        any_isnan = np.logical_or(any_isnan, np.sum(np.isnan(coords3d),axis=1) )
+    coords3d = coords3d_list[ coords3d_ind ]
     
-    ind_nonans = np.where(~any_isnan)
+    # fig = plt.figure()
+    # ax = fig.add_subplot(projection='3d')
     
-    # ind1,ind2 = ind_nonans[0][0],ind_nonans[0][1]
-    ind1,ind2,ind3 = 14,154,185
-    print("no nans!:",ind_nonans)
-    print("Chosen inds:",ind1,ind2)
-    import matplotlib.pyplot as plt 
+    # ax.plot(coords3d.transpose()[0],coords3d.transpose()[1],coords3d.transpose()[2],marker='o',ls='')
+    # plt.show()
     
-    colors = ['r','k','c','b','hotpink','g']
-    n = -1
-    # for coords3d in coords3d_list:
-    import itertools
-    for i1,i2 in itertools.combinations(range(6),2):
-        n += 1
-        coords3d = coords3d_list[n]
-        
-        norm = np.sqrt(np.sum(np.square(coords3d[ind1]-coords3d[ind2])))
-        
-        coords3d = coords3d.transpose()
-        for i in range(3):
-            coords3d[i] = (coords3d[i] - coords3d[i][ind1])/norm
-        coords3d_spherical = xyz_to_rthetaphi(coords3d)
-        # print(coords3d_spherical)
-        # plt.plot(range(len(coords3d_spherical[0])),coords3d_spherical[0],marker= 'o',ls= '')
-        plt.plot(range(len(coords3d_spherical[0])),coords3d_spherical[0],marker= 'o',ls= '',c=colors[i1])
-        
-    plt.show()
+    calibrate_updown(coords3d)
     
     # Fix missing
     
