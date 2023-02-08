@@ -530,7 +530,7 @@ def calibrate_updown(coords3d):
     while True:
         ind_w = np.random.randint(n_leds)
         ind_r = np.random.randint(n_leds)
-        # swwwwwwwwwtrip. show()
+        strip.show()
         print("Which is up? (W)hite, (R)ed or (I) don't know")
         while True:
             k = keyboard.read_key()
