@@ -2,6 +2,7 @@
 import cv2
 import time
 import numpy as np
+import matplotlib.pyplot as plt
 
 import os
 
@@ -250,21 +251,28 @@ def get_coords2d_from_multiple_angles(n_images: int,loc: str="_tmp") -> list:
     return coords2d_list
 
 
-def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_images: int=None,camera_matrix=None) -> list[tuple[float,float,float]]:
+def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_images: int=None,camera_matrix=None,distortions:np.array=None) -> list[tuple[float,float,float]]:
     
     if coords2d_list is None:
         coords2d_list = []
         for i in range(n_images):
             fname = "_tmp/"+"coords2d_{}.txt".format(i)
             coords2d_list.append( coords2d_read(fname) )
-        #     coords2d_list[-1] = coords2d_list[-1].transpose()
-        #     print(coords2d_list[-1])
-        #     import matplotlib.pyplot as plt
-        #     plt.plot(coords2d_list[-1][0],coords2d_list[-1][1],marker='o',ls='')
-        # plt.show()
+            # coords2d_list[-1] = coords2d_list[-1].transpose()
+            # print(coords2d_list[-1])
+            # plt.plot(coords2d_list[-1][0],coords2d_list[-1][1],marker='o',ls='')
+            # plt.gca().invert_yaxis()
+            # plt.show()
     
     # print(coords2d)
     
+    # Undistort
+    for i in range(len( coords2d_list )):
+        print(distortions)
+        undistorted = cv2.undistortPoints(coords2d_list[i], camera_matrix, distortions)
+        undistorted = np.array([ x[0] for x in undistorted ])
+        
+        coords2d_list[i] = undistorted
     
     import itertools
     
@@ -278,8 +286,20 @@ def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_imag
         coords2d1,coords2d2 = coords2d_list[ind1],coords2d_list[ind2]
         
         
+        # plt.plot(coords2d1[0],coords2d1[1],marker='o',ls='')
+        plt.plot(coords2d1.transpose()[0],coords2d1.transpose()[1],marker='o',ls='')
+        plt.plot(coords2d2.transpose()[0],coords2d2.transpose()[1],marker='o',ls='')
+        plt.gca().invert_yaxis()
+        plt.show()
         
         coords3d = triangulate( coords2d1,coords2d2 ,camera_matrix=camera_matrix)
+        
+        
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        ax.plot(coords3d.transpose()[0],coords3d.transpose()[1],coords3d.transpose()[2],marker='o',ls='')
+        
+        plt.show()
         
         # print(coords3d)
         coords3d_list.append(coords3d)
@@ -450,7 +470,6 @@ def combine_coords3d(coords3d_list: list,n_images: int):
     print("turn theta phi",turn_theta,turn_phi)
     
     
-    import matplotlib.pyplot as plt
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
     
@@ -498,16 +517,19 @@ def main():
     camera_matrix = np.array([ [1.06996313e+03,0.00000000e+00,3.15927309e+02],
                                [0.00000000e+00,7.98554626e+02,2.30317334e+02],
                                [0.00000000e+00,0.00000000e+00,1.00000000e+00]])
+    distortions = np.array([ 2.03990656e-01,-4.10106338e+01,3.88358091e-02,5.41687259e-02,3.86933501e+02])
 
     
     n_images = 6 # how many images do we use
     
     coords2d_list = None
-    coords2d_list = get_coords2d_from_multiple_angles(n_images)
+    # coords2d_list = get_coords2d_from_multiple_angles(n_images)
+    
+    
     # input("DONE")
     
     coords3d_list = None
-    # coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images,camera_matrix=camera_matrix)
+    coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images,camera_matrix=camera_matrix,distortions=distortions)
     
     # Combine
     # combine_coords3d(coords3d_list)

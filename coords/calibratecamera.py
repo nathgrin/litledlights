@@ -1,6 +1,7 @@
 import cv2 as cv # ...stupid example
 import cv2
 import numpy as np
+import os
 
 def getpictures():
     """example from stackoverflow, in turn stolen from the "docs" """
@@ -28,7 +29,7 @@ def getpictures():
             break
         elif k%256 == 32:
             # SPACE pressed
-            img_name = "_tmp/calibrateframe_{}.png".format(img_counter)
+            img_name = os.path.join("_tmp","calibrateframe_{}.png".format(img_counter))
             cv2.imwrite(img_name, frame)
             img_list.append(frame)
             print("{} written!".format(img_name))
@@ -93,7 +94,8 @@ def main():
     if img_list is None:
         img_list = []
         for img_counter in range(9):
-            img_name = "_tmp/calibrateframe_{}.png".format(img_counter)
+            img_name = os.path.join("_tmp","calibrateframe_{}.png".format(img_counter))
+            print(img_name,os.path.exists(img_name))
             img = cv2.imread(img_name)
             img_list.append(img)
             
@@ -103,14 +105,15 @@ def main():
     ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, resolution, None, None)
     
     print("first matrix",mtx)
-    np.savetxt("_tmp/"+"cameramtx.txt", mtx)
+    print("distortion", dist )
+    np.savetxt(os.path.join("_tmp","cameramtx.txt"), mtx)
     
     # img = cv.imread('left12.jpg')
     h,  w = img.shape[:2]
     newcameramtx, roi = cv.getOptimalNewCameraMatrix(mtx, dist, (w,h), 1, (w,h))
     
     print("secondmatrix", newcameramtx)
-    np.savetxt("_tmp/"+"newcameramtx.txt",newcameramtx)
+    np.savetxt(os.path.join("_tmp","newcameramtx.txt"),newcameramtx)
     
 if __name__ == "__main__":
     main()
