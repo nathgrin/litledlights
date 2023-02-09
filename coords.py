@@ -524,34 +524,42 @@ def calibrate_updown(coords3d):
     
     strip = get_strip()
     
-    n_leds = strip.numPixels
+    n_leds = strip.n
     
+    window = cv2.namedWindow("UpDown")
+    try:
     
-    while True:
-        ind_w = np.random.randint(n_leds)
-        ind_r = np.random.randint(n_leds)
-        strip.show()
-        print("Which is up? (W)hite, (R)ed or (I) don't know")
         while True:
-            k = keyboard.read_key()
+            ind_w = np.random.randint(n_leds)
+            ind_r = np.random.randint(n_leds)
             
-            if k == "esc":
+            strip.fill(off)
+            strip[ind_w] = white
+            strip[ind_r] = red
+            
+            strip.show()
+            print("Which is up? (W)hite, (R)ed or (I) don't know")
+            
+            
+            k = cv2.waitKey(0)
+                
+            if k%256 == 27:
+                # ESC pressed
                 print("ESC: Quit")
                 break
-            elif k == "w" or k == "r" or k == "i":
-                break
-            print(k)
-        if k == "esc":
-            break
-        elif k == "w":
-            print("White above")
-        elif k == "r":
-            print("Red above")
-        elif k == "i":
-            print("I don't know")
-            
-            
-        time.sleep(0.1)
+            elif k == ord('w'):
+                print("White above")
+            elif k == ord('r'):
+                print("Red above")
+            elif k == ord('i'):
+                print("I don't know")
+                
+                
+            time.sleep(0.1)
+    finally:
+        cv2.destroyAllWindows()
+        strip.fill((0,0,0))
+        strip.show()
 
 def main():
     
