@@ -1,6 +1,13 @@
 from utils import get_strip
 import time
 
+def plane(strip=None,
+        color:tuple[int]=(255,255,255),
+        dt: float=1., loop: bool=False,
+        off_color:tuple[int]=(0,0,0)):
+    
+    strip = get_strip() if strip is None else strip
+    
 
 def cycle_sequential(strip=None,
         color:tuple[int]=(255,255,255),

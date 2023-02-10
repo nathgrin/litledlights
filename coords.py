@@ -7,11 +7,10 @@ import matplotlib.pyplot as plt
 import os
 
 try:
-    from utils import get_strip,clear
-
-    from leds import blink_binary
+    from utils import get_strip
 except:
-    print("imports failed..")
+    print("import failed")
+
 
     
 def tst():
@@ -440,15 +439,28 @@ def rthetaphi_to_xyz(rthetaphi):
     z = rthetaphi[0]*np.cos(rthetaphi[1])
     return np.array([x,y,z])
 
-def combine_coords3d(coords3d_list: list,n_images: int):
+
+def rotationmtx(axis:np.array,angle:float) -> np.array:
+    #https://en.wikipedia.org/wiki/Rotation_matrix
+    axis = axis/np.linalg.norm(axis)
+    x,y,z = axis[0],axis[1],axis[2]
+    costheta = np.cos(angle)
+    sintheta = np.sin(angle)
+    onemincos = 1.-costheta
+    R = np.array( [
+        [ costheta + x*x*onemincos , x*y*onemincos-z*sintheta , x*z*onemincos+y*sintheta ],
+        [ y*x*onemincos + z*sintheta , costheta+y*y*onemincos , y*z*onemincos - x*sintheta ],
+        [ z*x*onemincos - y*sintheta , z*y*onemincos+x*sintheta , costheta+z*z*onemincos ]
+    ] )
+    return R
+
+def npunit(index:int,size=3):
+    arr = np.zeros(size)
+    arr[index] = 1.
+    return arr
+
+def combine_coords3d(coords3d_list: list):
     
-    if coords3d_list is None:
-        coords3d_list = []
-        for i in range(n_images*(n_images-1)//2):
-            fname = os.path.join("_tmp","coords3d_{}.txt".format(i))
-            coords3d_list.append( coords3d_read(fname) )
-    
-    print(len(coords3d_list))
     
     # find common non-nans
     any_isnan = np.sum(np.isnan(coords3d_list[0]),axis=1)
@@ -462,40 +474,50 @@ def combine_coords3d(coords3d_list: list,n_images: int):
     print("no nans!:",ind_nonans)
     print("Chosen inds:",ind1,ind2)
     
-    print(coords3d_list[0][ind1])
-    ref_ind1_xyz = coords3d_list[0][ind1]
-    ref_ind1_rthetaphi = xyz_to_rthetaphi( ref_ind1_xyz )
-    
-    ref_ind2_xyz = coords3d_list[0][ind2]
-    ref_ind2_rthetaphi = xyz_to_rthetaphi( ref_ind2_xyz )
-    
-    turn_theta = ref_ind1_rthetaphi[1]-ref_ind2_rthetaphi[1]
-    turn_phi   = ref_ind1_rthetaphi[2]-ref_ind2_rthetaphi[2]
-    print("turn theta phi",turn_theta,turn_phi)
-    
     
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
+    ax.set_xlabel('$x$')
+    ax.set_ylabel('$y$')
+    ax.set_zlabel('$z$')
     
-    for coords3d in coords3d_list:
-        
+    
+    for ind,coords3d in enumerate(coords3d_list): # SKIPPING FIRST BY HAND BAD!
+        print("...",ind)
         
         norm = np.sqrt( np.sum( np.square(coords3d[ind1]-coords3d[ind2])) )
         
         coords3d = coords3d.transpose()
         
+        
         for i in range(len(coords3d)): # Move to coordinate system
             coords3d[i] = (coords3d[i]-coords3d[i][ind1])/norm
+        
+        
+        # rotate ind2 onto the x-axis
+        phi = np.arctan2(coords3d[1][ind2], coords3d[0][ind2])
+        # print("Angle",phi)
+        coords3d = np.dot( rotationmtx(npunit(2),-phi) , coords3d )
+        # rotate ind2 onto the z-axis
+        phi = np.arctan2(coords3d[0][ind2],coords3d[2][ind2])
+        # print("Angle",phi)
+        coords3d = np.dot( rotationmtx(npunit(1),-phi) , coords3d )
+        # rotate ind3 onto the x-axis
+        phi = np.arctan2(coords3d[1][ind3], coords3d[0][ind3])
+        # print("Angle",phi)
+        coords3d = np.dot( rotationmtx(npunit(2),-phi) , coords3d )
+        
+        # print("ind2",coords3d[0][ind2],coords3d[1][ind2],coords3d[2][ind2])
         
         coords3d_spherical = xyz_to_rthetaphi(coords3d)
         
         #  Rotate!
-        coords3d_spherical[1] = coords3d_spherical[1] - coords3d_spherical[1][ind2]
-        coords3d_spherical[2] = coords3d_spherical[2] - coords3d_spherical[2][ind3]
+        # coords3d_spherical[1] = coords3d_spherical[1] - coords3d_spherical[1][ind2]
+        # coords3d_spherical[2] = coords3d_spherical[2] - coords3d_spherical[2][ind3]
         # coords3d_spherical[1] = coords3d_spherical[1] - (coords3d_spherical[1][ind2]-ref_ind2_rthetaphi[1])
         # coords3d_spherical[2] = coords3d_spherical[2] - (coords3d_spherical[2][ind2]-ref_ind2_rthetaphi[2])
         
-        c2 = rthetaphi_to_xyz(coords3d_spherical)
+        c2 = coords3d#rthetaphi_to_xyz(coords3d_spherical)
         
         # for i in range(len(c2[0])):
         # i = ind1
@@ -506,13 +528,21 @@ def combine_coords3d(coords3d_list: list,n_images: int):
         
         
         
-        # ax.scatter(coords3d[0], coords3d[1], coords3d[2], marker='o')
-        ind = coords3d_spherical[0] < 1.2
+        # ax.scatter(coords3d[0], coords3d[1], coords3d[2], marker='o',c='c')
+        ind = coords3d_spherical[0] < 5
         ax.scatter(c2[0][ind], c2[1][ind], c2[2][ind], marker='o',c='k')
-        ax.scatter(c2[0][ind1], c2[1][ind1], c2[2][ind1], marker='o',c='r')
-        ax.scatter(c2[0][ind2], c2[1][ind2], c2[2][ind2], marker='o',c='r')
-        ax.scatter(c2[0][ind3], c2[1][ind3], c2[2][ind3], marker='o',c='r')
+        # ax.scatter(c2[0][ind1], c2[1][ind1], c2[2][ind1], marker='o',c='r')
+        # ax.scatter(c2[0][ind2], c2[1][ind2], c2[2][ind2], marker='o',c='r')
+        # ax.scatter(c2[0][ind3], c2[1][ind3], c2[2][ind3], marker='o',c='r')
         # ax.scatter(c2[0], c2[1], c2[2], marker='o')
+        # print("OPKTA")
+        
+        # 2d
+        # plt.plot(c2[0][ind2],c2[2][ind2],c='r',ls='',marker='o')
+        # plt.plot(c2[0][ind3],c2[2][ind3],c='k',ls='',marker='o')
+        # plt.plot(c2[0],c2[1],c='r',ls='',marker='o')
+        # plt.plot(c2[2],c2[1],c='k',ls='',marker='o')
+        # plt.plot(c2[0],c2[2],c='c',ls='',marker='o')
     plt.show()
 
 def calibrate_updown(coords3d):
@@ -526,7 +556,10 @@ def calibrate_updown(coords3d):
     
     n_leds = strip.n
     
+    # Setup
     window = cv2.namedWindow("UpDown")
+    
+    
     try:
     
         while True:
@@ -540,6 +573,10 @@ def calibrate_updown(coords3d):
             strip.show()
             print("Which is up? (W)hite, (R)ed or (I) don't know")
             
+            fig = plt.figure()
+            ax = fig.add_subplot(projection='3d')
+            ax.plot(coords3d.transpose()[0],coords3d.transpose()[1],coords3d.transpose()[2],marker='o',ls='')
+            plt.show()
             
             k = cv2.waitKey(0)
                 
@@ -560,6 +597,9 @@ def calibrate_updown(coords3d):
         cv2.destroyAllWindows()
         strip.fill((0,0,0))
         strip.show()
+
+def get_coords(fname="coords.txt"):
+    return np.loadtxt(fname)
 
 def main():
     
@@ -585,19 +625,35 @@ def main():
     coords3d_list = None
     # coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images,camera_matrix=camera_matrix,distortions=distortions,new_camera_matrix=new_camera_matrix)
     
-    # Combine
-    # combine_coords3d(coords3d_list) # this doesnt work
-    
     if coords3d_list is None:
         coords3d_list = []
         for i in range(n_images*(n_images-1)//2):
             fname = os.path.join("_tmp","coords3d_{}.txt".format(i))
             coords3d_list.append( coords3d_read(fname) )
     
+    for i,coords3d in enumerate(coords3d_list):
+        # Swap x and y for physics convention for xyz
+        # Mirror in y (artifact of CV y-axis convention)
+        coords3d = coords3d.transpose()
+        tmp1 = coords3d[1].copy()
+        tmp2 = coords3d[2].copy()
+        coords3d[1],coords3d[2] = tmp2,-tmp1 
+        coords3d_list[i] = coords3d.transpose()
+    
+    which = [1]
+    coords3d_list = [ coords3d_list[i] for i in which ]
+    
+    
+    # Combine
+    combine_coords3d(coords3d_list) # this doesnt work
+    
+    
     # for now, just pick one of them
-    coords3d_ind = 1
+    coords3d_ind = 0
     
     coords3d = coords3d_list[ coords3d_ind ]
+    
+    
     
     # fig = plt.figure()
     # ax = fig.add_subplot(projection='3d')
@@ -605,7 +661,9 @@ def main():
     # ax.plot(coords3d.transpose()[0],coords3d.transpose()[1],coords3d.transpose()[2],marker='o',ls='')
     # plt.show()
     
-    calibrate_updown(coords3d)
+    # calibrate_updown(coords3d)
+    
+    np.savetxt("coords.txt",coords3d,header="x\ty\tz")
     
     # Fix missing
     
