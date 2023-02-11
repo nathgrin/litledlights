@@ -26,21 +26,39 @@ LitLedLights, they are Lit
   - [ ] make API
 - [ ] coords
   - [ ] clean up sequential photography function
-  - [ ] setup camera
-    - [ ] live view camera?
-    - [ ] calibrate camera
-  - [ ] get pts from picture/video
-  - [ ] combine pictures
+  - [x] setup camera
+    - [x] live view camera?
+    - [x] calibrate camera
+  - [x] get pts from picture/video
+    - [ ] improve get pts
+    - [ ] combine pictures
+    - [ ] rotate coords
+    - [ ] fix wrong coords
+    - [ ] fix missing coords
   - [ ] save and share coords (gift?)
 - [ ] API
   - [ ] fix index error `lll one 155`
   - [ ] setup/settings file with
-    - nleds
+    - nleds (or get automatically?)
   - [ ] organise pkg
     - [x] connect git
+  - [ ] Color module
+    - [ ] calibrate colors (orange = yellow ?!)
+    - [ ] conversions
+  - [x] strip module
+    - [ ] finish fancy indexing implementation
+    - [ ] integrate Color object
+  - [ ] coord module
+    - [ ] utils for plotting
+    - [ ] automate moar
+    - [ ] coordinate systems (spherical, cilindrical)
+    - [ ] normalisation
   - [x] get pixels
-  - [ ] coords to pixel
+  - [x] coords to pixel
+    - [x] improve indexing
+  - [ ] Pre-rendered animations
   - [ ] simple animations
+  - [ ] facilitate overlapping animations
   - [ ] examples
 - [ ] virtual env for testing/animating
 - expansion
