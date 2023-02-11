@@ -250,7 +250,7 @@ def get_coords2d_from_multiple_angles(n_images: int,loc: str="_tmp") -> list:
     return coords2d_list
 
 
-def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_images: int=None,camera_matrix=None,distortions:np.array=None,new_camera_matrix:np.array=None) -> list[tuple[float,float,float]]:
+def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_images: int=None,camera_matrix=None,distortions:np.ndarray=None,new_camera_matrix:np.ndarray=None) -> list[tuple[float,float,float]]:
     
     if coords2d_list is None:
         coords2d_list = []
@@ -440,7 +440,7 @@ def rthetaphi_to_xyz(rthetaphi):
     return np.array([x,y,z])
 
 
-def rotationmtx(axis:np.array,angle:float) -> np.array:
+def rotationmtx(axis:np.ndarray,angle:float) -> np.array:
     #https://en.wikipedia.org/wiki/Rotation_matrix
     axis = axis/np.linalg.norm(axis)
     x,y,z = axis[0],axis[1],axis[2]
@@ -598,8 +598,49 @@ def calibrate_updown(coords3d):
         strip.fill((0,0,0))
         strip.show()
 
-def get_coords(fname="coords.txt"):
+def get_coords(fname:str="coords.txt"):
     return np.loadtxt(fname)
+
+
+def coords3d_flag_bad_coords(coords3d:np.ndarray):
+    
+    
+    # Calc all distances forwardly
+    thecopy = coords3d.copy()
+    thecopy = np.roll(thecopy,-1,axis=0)
+    thecopy[-1] = np.nan * thecopy[-1]
+    # ind1,ind2 = 103,104
+    # print(coords3d[ind1],coords3d[ind2])
+    # print(thecopy[ind1],thecopy[ind2])
+    
+    dists = np.sum(np.square(coords3d-thecopy),axis=1) # SQUARED distances
+    
+    cutoff = 5.*np.nanmean(dists)/3. # average r squared is 3/5 of radius
+    print("Cutoff",cutoff)
+    
+    
+    
+    # print(dists)
+    # plt.plot(np.sort(dists),range(len(dists)))
+    # plt.show()
+    
+    coords3d = coords3d.transpose()
+    eps = np.nanmean(dists)*0.01 # allow a bit of slack
+    ind = dists <= cutoff + eps
+    ind_nan = np.isnan(dists)
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    
+    ax.plot(coords3d[0][ind],coords3d[1][ind],coords3d[2][ind],marker='o',ls='',c='k')
+    ax.plot(coords3d[0][ind_nan],coords3d[1][ind_nan],coords3d[2][ind_nan],marker='o',ls='',c='r') # ...
+    
+    ind_other = np.logical_and(~ind,~ind_nan)
+    ax.plot(coords3d[0][ind_other],coords3d[1][ind_other],coords3d[2][ind_other],marker='o',ls='',c='c') # ...
+    
+    
+    plt.show()
+    
 
 def main():
     
@@ -645,14 +686,19 @@ def main():
     
     
     # Combine
-    combine_coords3d(coords3d_list) # this doesnt work
+    coords3d = None
+    # combine_coords3d(coords3d_list) # this doesnt work
     
     
     # for now, just pick one of them
-    coords3d_ind = 0
+    if coords3d is None:
+        coords3d_ind = 0
+        coords3d = coords3d_list[ coords3d_ind ]
     
-    coords3d = coords3d_list[ coords3d_ind ]
+    # Find bad
+    coords3d_flag_bad_coords(coords3d)
     
+    # Fix missing
     
     
     # fig = plt.figure()
@@ -661,11 +707,12 @@ def main():
     # ax.plot(coords3d.transpose()[0],coords3d.transpose()[1],coords3d.transpose()[2],marker='o',ls='')
     # plt.show()
     
+    # Calibrate direction of axes
     # calibrate_updown(coords3d)
     
+    # Done, save
     np.savetxt("coords.txt",coords3d,header="x\ty\tz")
     
-    # Fix missing
     
     
     
