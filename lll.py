@@ -5,10 +5,12 @@ import sys
 import board
 import neopixel
 
+import numpy as np
 import time
 
 from utils import get_strip,clear
 
+import leds
 
 
 def run_off(args):
@@ -22,11 +24,56 @@ def run_clear(args):
 
 
 def run_tst(args):
-    print("There is no test :(")
+    # print("There is no test :(")
+    
+    color = ( 75,75,75 )
+    
+    strip = get_strip()
+        
+    with strip:
+        strip.fill( (0,0,0) )
+        
+        print("Planes:")
+        print("  z-direction up")
+        nml = np.array([0,0,1])
+        leds.moving_plane(nml,strip=strip, color=color)
+        print("  z-direction down")
+        nml = np.array([0,0,-1])
+        leds.moving_plane(nml,strip=strip, color=color)
+        print("  x-direction")
+        nml = np.array([1,0,0])
+        leds.moving_plane(nml,strip=strip, color=color)
+        print("  y-direction")
+        nml = np.array([0,1,0])
+        leds.moving_plane(nml,strip=strip, color=color)
+        print("  xz-direction")
+        nml = np.array([1,0,1])
+        leds.moving_plane(nml,strip=strip, color=color)
+        
+        print("Coords cmap:")
+        print("  z-direction")
+        nml = np.array([0,0,1])
+        leds.colormap_coords(nml)
+        time.sleep(3)
+        print("  x-direction")
+        nml = np.array([1,0,0])
+        leds.colormap_coords(nml)
+        time.sleep(3)
+        print("  y-direction")
+        nml = np.array([0,1,0])
+        leds.colormap_coords(nml)
+        time.sleep(3)
+    
+    
+def run_huphollandhup(args):
+    strip = get_strip()
+    with strip:
+        leds.huphollandhup(strip=strip)
 
 def run_one(args):
-    color_on = ( 125,125,125 )
+    color_on = (225,156,65)#( 125,125,125 )
     
+    print(color_on)
     strip = get_strip()
     
     ind = args.ind[0]
@@ -48,6 +95,9 @@ def main(argv):
 
     tst_parser = subparsers.add_parser('tst')
     tst_parser.set_defaults(func=run_tst)
+    
+    tst_parser = subparsers.add_parser('huphollandhup')
+    tst_parser.set_defaults(func=run_huphollandhup)
 
     one_parser = subparsers.add_parser('one')
     one_parser.set_defaults(func=run_one)

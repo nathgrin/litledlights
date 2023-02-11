@@ -1,6 +1,6 @@
 import os
+import ledstrip
 try:
-    import ledstrip
     import neopixel
     import board
     rpimode = True
