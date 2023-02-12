@@ -41,7 +41,7 @@ def getpictures():
     return img_list
     
 def get_objpoints(img_list):
-    n,m = 4,3
+    n,m = 7,7#4,3
     # termination criteria
     criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
     # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
@@ -65,12 +65,12 @@ def get_objpoints(img_list):
             print("found corners")
             nfound += 1
             objpoints.append(objp)
-            corners2 = cv.cornerSubPix(gray,corners, (11,11), (-1,-1), criteria)
+            corners2 = cv.cornerSubPix(gray,corners, (11,11), (-1,-1), criteria) # refine corners
             imgpoints.append(corners2)
             # Draw and display the corners
             cv.drawChessboardCorners(img, (m,n), corners2, ret)
             cv.imshow('img', img)
-            cv.waitKey(50)
+            cv.waitKey(0)
         else:
             print("failed corners")
             
@@ -93,7 +93,7 @@ def main():
     
     if img_list is None:
         img_list = []
-        for img_counter in range(9):
+        for img_counter in range(12):
             img_name = os.path.join("_tmp","calibrateframe_{}.png".format(img_counter))
             print(img_name,os.path.exists(img_name))
             img = cv2.imread(img_name)
@@ -104,16 +104,24 @@ def main():
     
     ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, resolution, None, None)
     
+    
+    fname = os.path.join("_tmp","cameramtx.txt")
+    print("fname",fname)
+    
     print("first matrix",mtx)
     print("distortion", dist )
-    np.savetxt(os.path.join("_tmp","cameramtx.txt"), mtx)
+    np.savetxt(fname, mtx, header="first camera mtx")
+    
     
     # img = cv.imread('left12.jpg')
     h,  w = img.shape[:2]
     newcameramtx, roi = cv.getOptimalNewCameraMatrix(mtx, dist, (w,h), 1, (w,h))
     
     print("secondmatrix", newcameramtx)
-    np.savetxt(os.path.join("_tmp","newcameramtx.txt"),newcameramtx)
+    
+    with open(fname,'a') as thefile:
+        np.savetxt(thefile,dist, header="distortions")
+        np.savetxt(thefile,newcameramtx, header="optimal new camera mtx")
     
 if __name__ == "__main__":
     main()

@@ -44,6 +44,32 @@ def tst():
     cam.release()
     cv2.destroyAllWindows()
 
+def initiate_sequential_fotography():
+    ok = False
+    while not ok:
+        coords2d = sequential_fotography()
+        # print(coords2d)
+        if coords2d is not None:
+            print("NaN/tot: {}/{}".format(np.sum(np.isnan(coords2d)),len(coords2d)))
+            
+            # img_bg = cv2.imread(os.path.join(loc,"background.png"))
+            # for i in range(len(coords2d)):
+                # img_bg = cv2.putText(img_bg,str(i),coords2d[i],cv2.FONT_HERSHEY_SIMPLEX,1,(255,0,0),2,cv2.LINE_AA)
+            # cv2.imshow("Background with found lights",img_bg)
+            
+            print("You happy? Enter to accept, anything else to redo")
+            theinput = input("")
+            # k = cv2.waitKey(0)
+            
+            ok = theinput == ""#k%256 == 10
+            
+        else:
+            ok = False
+        if not ok:
+            print("Not happy, try again")
+        else:
+            print(" > Happy!")
+    return coords2d
     
 def sequential_fotography(strip=None,
                             color_off = (0,0,0),
@@ -158,7 +184,7 @@ def sequential_fotography(strip=None,
                 
                 coords2d[ind] = xy
                 
-                print("Frame",ind,time.time()-start,xy)
+                print("Frame",ind,"%.02f"%(time.time()-start),xy)
                 
                 ind += 1
                 if ind == nleds:
@@ -182,7 +208,7 @@ def find_light(img,
     
     blur = cv2.GaussianBlur(img, (blur_radius,blur_radius),cv2.BORDER_DEFAULT)
     
-    ind = blur > 100
+    ind = blur > 80#100
     y,x = np.mean(np.where(ind),axis=1)
     
     
@@ -218,29 +244,8 @@ def get_coords2d_from_multiple_angles(n_images: int,loc: str="_tmp") -> list:
     coords2d_list = []
     
     for i in range(n_images):
-        ok = False
-        while not ok:
-            coords2d = sequential_fotography()
-            # print(coords2d)
-            if coords2d is not None:
-                print("NaN/tot: {}/{}".format(np.sum(np.isnan(coords2d)),len(coords2d)))
-                
-                img_bg = cv2.imread(os.path.join(loc,"background.png"))
-                for i in range(len(coords2d)):
-                    img_bg = cv2.putText(img_bg,str(i),coords2d[i],cv2.FONT_HERSHEY_SIMPLEX,1,(255,0,0),2,cv2.LINE_AA)
-                cv2.imshow("Background with found lights",img_bg)
-                
-                print("You happy? Enter to accept, anything else to redo")
-                k = cv2.waitKey(0)
-                
-                ok = k%256 == 10
-                
-            else:
-                ok = False
-            if not ok:
-                print("Not happy, try again")
-            else:
-                print(" > Next!")
+        
+        coords2d = initiate_sequential_fotography()
         
         coords2d_list.append(coords2d)
         
@@ -640,9 +645,9 @@ def coords3d_flag_bad_coords(coords3d:np.ndarray):
     
     
     plt.show()
-    
 
-def main():
+def firstcalibration():
+
     
     # From calibatrion
     camera_matrix = np.array([ [1.06996313e+03,0.00000000e+00,3.15927309e+02],
@@ -654,8 +659,20 @@ def main():
                             #    [0.000000000000000000e+00,0.000000000000000000e+00,1.000000000000000000e+00] ]) # first camera mtx
     distortions = None#np.array([ 2.03990656e-01,-4.10106338e+01,3.88358091e-02,5.41687259e-02,3.86933501e+02 ]) # this didnt work, i suspect the calibration is imperfect
 
+
+def main():
     
-    n_images = 6 # how many images do we use
+    # From calibatrion
+    # camera_matrix = np.array( [[794.0779295    0.         334.41476339]
+     # [  0.         790.21709526 248.42875997]
+     # [  0.           0.           1.        ]] )  # first camera mtx
+    distortions = None#np.array( [[ 2.05088975e-01 -1.09124274e+00  4.90025360e-04  1.83144614e-02       2.58532256e+00]]
+    camera_matrix = np.array( [[802.89550781,0,340.40239924],
+     [  0,793.20324707 ,247.94272481],
+     [  0,0,1.        ]]) # newcameramtx
+    new_camera_matrix = None
+
+    n_images = 4 # how many images do we use
     
     coords2d_list = None
     # coords2d_list = get_coords2d_from_multiple_angles(n_images)
@@ -664,7 +681,7 @@ def main():
     # input("DONE")
     
     coords3d_list = None
-    # coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images,camera_matrix=camera_matrix,distortions=distortions,new_camera_matrix=new_camera_matrix)
+    coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images,camera_matrix=camera_matrix,distortions=distortions,new_camera_matrix=new_camera_matrix)
     
     if coords3d_list is None:
         coords3d_list = []
@@ -681,7 +698,7 @@ def main():
         coords3d[1],coords3d[2] = tmp2,-tmp1 
         coords3d_list[i] = coords3d.transpose()
     
-    which = [1]
+    which = [0]
     coords3d_list = [ coords3d_list[i] for i in which ]
     
     
@@ -696,22 +713,24 @@ def main():
         coords3d = coords3d_list[ coords3d_ind ]
     
     # Find bad
-    coords3d_flag_bad_coords(coords3d)
+    # coords3d_flag_bad_coords(coords3d)
     
     # Fix missing
     
-    
-    # fig = plt.figure()
-    # ax = fig.add_subplot(projection='3d')
-    
-    # ax.plot(coords3d.transpose()[0],coords3d.transpose()[1],coords3d.transpose()[2],marker='o',ls='')
-    # plt.show()
     
     # Calibrate direction of axes
     # calibrate_updown(coords3d)
     
     # Done, save
     np.savetxt("coords.txt",coords3d,header="x\ty\tz")
+    
+    
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    
+    ax.plot(coords3d.transpose()[0],coords3d.transpose()[1],coords3d.transpose()[2],marker='o',ls='')
+    plt.show()
     
     
     

@@ -71,9 +71,9 @@ def run_huphollandhup(args):
         leds.huphollandhup(strip=strip)
 
 def run_one(args):
-    color_on = (225,156,65)#( 125,125,125 )
+    color_on = ( 125,125,125 )
     
-    print(color_on)
+    # print(color_on)
     strip = get_strip()
     
     ind = args.ind[0]
