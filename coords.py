@@ -257,29 +257,21 @@ def get_coords2d_from_multiple_angles(n_images: int,loc: str="_tmp") -> list:
 
 def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_images: int=None,camera_matrix=None,distortions:np.ndarray=None,new_camera_matrix:np.ndarray=None) -> list[tuple[float,float,float]]:
     
-    if coords2d_list is None:
-        coords2d_list = []
-        for i in range(n_images):
-            fname = "_tmp/"+"coords2d_{}.txt".format(i)
-            coords2d_list.append( coords2d_read(fname) )
-            # coords2d_list[-1] = coords2d_list[-1].transpose()
-            # print(coords2d_list[-1])
-            # plt.plot(coords2d_list[-1][0],coords2d_list[-1][1],marker='o',ls='')
-            # plt.gca().invert_yaxis()
-            # plt.show()
     
     # print(coords2d)
     
     # Undistort
     
-    if distortions is not None and new_camera_matrix is not None: # This doesnt work!
-        print("This doesn't work!")
+    if distortions is not None:# and new_camera_matrix is not None: # This doesnt work!
+        print("Undistorting!")
         for i in range(len( coords2d_list )):
-            print(distortions)
-            undistorted = cv2.undistortPoints(coords2d_list[i], camera_matrix, distortions,None,new_camera_matrix)
-            # undistorted = np.array([ x[0] for x in undistorted ])
+            # print(distortions)
+            # undistorted = cv2.undistortPoints(coords2d_list[i], camera_matrix, distortions,None,new_camera_matrix)
+            if new_camera_matrix is None:
+                new_camera_matrix = camera_matrix
+            undistorted = cv2.undistortPoints(coords2d_list[i], camera_matrix, distortions, P=new_camera_matrix) 
             undistorted = np.squeeze(undistorted)
-            print(undistorted)
+            # print(undistorted)
             coords2d_list[i] = undistorted
     
     import itertools
@@ -295,8 +287,8 @@ def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_imag
         
         
         # plt.plot(coords2d1[0],coords2d1[1],marker='o',ls='')
-        plt.plot(coords2d1.transpose()[0],coords2d1.transpose()[1],marker='o',ls='')
-        plt.plot(coords2d2.transpose()[0],coords2d2.transpose()[1],marker='o',ls='')
+        plt.plot(coords2d1.transpose()[0],coords2d1.transpose()[1],marker='o',ls='',c='k')
+        plt.plot(coords2d2.transpose()[0],coords2d2.transpose()[1],marker='o',ls='',c='r')
         plt.gca().invert_yaxis()
         plt.show()
         
@@ -305,7 +297,7 @@ def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_imag
         
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
-        ax.plot(coords3d.transpose()[0],coords3d.transpose()[1],coords3d.transpose()[2],marker='o',ls='')
+        ax.plot(coords3d.transpose()[0],coords3d.transpose()[1],coords3d.transpose()[2],marker='o',ls='',c='k')
         
         plt.show()
         
@@ -477,7 +469,7 @@ def combine_coords3d(coords3d_list: list):
     # ind1,ind2 = ind_nonans[0][0],ind_nonans[0][1]
     ind1,ind2,ind3 = 102,114,185
     print("no nans!:",ind_nonans)
-    print("Chosen inds:",ind1,ind2)
+    print("Chosen inds:",ind1,ind2,ind3)
     
     
     fig = plt.figure()
@@ -486,6 +478,7 @@ def combine_coords3d(coords3d_list: list):
     ax.set_ylabel('$y$')
     ax.set_zlabel('$z$')
     
+    out = []
     
     for ind,coords3d in enumerate(coords3d_list): # SKIPPING FIRST BY HAND BAD!
         print("...",ind)
@@ -512,15 +505,11 @@ def combine_coords3d(coords3d_list: list):
         # print("Angle",phi)
         coords3d = np.dot( rotationmtx(npunit(2),-phi) , coords3d )
         
+        out.append(coords3d)
         # print("ind2",coords3d[0][ind2],coords3d[1][ind2],coords3d[2][ind2])
         
         coords3d_spherical = xyz_to_rthetaphi(coords3d)
         
-        #  Rotate!
-        # coords3d_spherical[1] = coords3d_spherical[1] - coords3d_spherical[1][ind2]
-        # coords3d_spherical[2] = coords3d_spherical[2] - coords3d_spherical[2][ind3]
-        # coords3d_spherical[1] = coords3d_spherical[1] - (coords3d_spherical[1][ind2]-ref_ind2_rthetaphi[1])
-        # coords3d_spherical[2] = coords3d_spherical[2] - (coords3d_spherical[2][ind2]-ref_ind2_rthetaphi[2])
         
         c2 = coords3d#rthetaphi_to_xyz(coords3d_spherical)
         
@@ -532,13 +521,14 @@ def combine_coords3d(coords3d_list: list):
             
         
         
+        print("ind1",c2[0][ind1], c2[1][ind1], c2[2][ind1],"ind2",c2[0][ind2], c2[1][ind2], c2[2][ind2],"ind3",c2[0][ind3], c2[1][ind3], c2[2][ind3])
         
         # ax.scatter(coords3d[0], coords3d[1], coords3d[2], marker='o',c='c')
         ind = coords3d_spherical[0] < 5
         ax.scatter(c2[0][ind], c2[1][ind], c2[2][ind], marker='o',c='k')
-        # ax.scatter(c2[0][ind1], c2[1][ind1], c2[2][ind1], marker='o',c='r')
-        # ax.scatter(c2[0][ind2], c2[1][ind2], c2[2][ind2], marker='o',c='r')
-        # ax.scatter(c2[0][ind3], c2[1][ind3], c2[2][ind3], marker='o',c='r')
+        ax.scatter(c2[0][ind1], c2[1][ind1], c2[2][ind1], marker='o',c='r')
+        ax.scatter(c2[0][ind2], c2[1][ind2], c2[2][ind2], marker='o',c='r')
+        ax.scatter(c2[0][ind3], c2[1][ind3], c2[2][ind3], marker='o',c='r')
         # ax.scatter(c2[0], c2[1], c2[2], marker='o')
         # print("OPKTA")
         
@@ -549,6 +539,29 @@ def combine_coords3d(coords3d_list: list):
         # plt.plot(c2[2],c2[1],c='k',ls='',marker='o')
         # plt.plot(c2[0],c2[2],c='c',ls='',marker='o')
     plt.show()
+    
+    
+    for i in range(len(out)):
+        coords3d = out[i]
+        print(i,"nan",np.sum(np.isnan(coords3d)))
+        plt.plot(range(len(coords3d[0])),coords3d[0],marker='o',ls='-',label=str(i))
+    plt.legend()
+    plt.show()
+    for i in range(len(out)):
+        coords3d = out[i]
+        print(i,"nan",np.sum(np.isnan(coords3d)))
+        plt.plot(range(len(coords3d[0])),coords3d[1],marker='o',ls='-',label=str(i))
+    plt.legend()
+    plt.show()
+    for i in range(len(out)):
+        coords3d = out[i]
+        print(i,"nan",np.sum(np.isnan(coords3d)))
+        plt.plot(range(len(coords3d[0])),coords3d[2],marker='o',ls='-',label=str(i))
+    plt.legend()
+    plt.show()
+    
+    
+    return None
 
 def calibrate_updown(coords3d):
     import keyboard
@@ -663,13 +676,14 @@ def firstcalibration():
 def main():
     
     # From calibatrion
-    # camera_matrix = np.array( [[794.0779295    0.         334.41476339]
-     # [  0.         790.21709526 248.42875997]
-     # [  0.           0.           1.        ]] )  # first camera mtx
-    distortions = None#np.array( [[ 2.05088975e-01 -1.09124274e+00  4.90025360e-04  1.83144614e-02       2.58532256e+00]]
+    # Somehow things work better when new_camera_mtx=new_camera_mtx = new_camera_mtx
+    # camera_matrix = np.array( [[794.0779295,0.,334.41476339],
+    #                            [  0.,790.21709526,248.42875997],
+    #                            [  0.,0.,1.        ]] )  # first camera mtx
+    distortions = np.array( [[ 2.05088975e-01 ,-1.09124274e+00 , 4.90025360e-04 , 1.83144614e-02   ,    2.58532256e+00]] )
     camera_matrix = np.array( [[802.89550781,0,340.40239924],
-     [  0,793.20324707 ,247.94272481],
-     [  0,0,1.        ]]) # newcameramtx
+                               [  0,793.20324707 ,247.94272481],
+                               [  0,0,1.        ]]) # newcameramtx
     new_camera_matrix = None
 
     n_images = 4 # how many images do we use
@@ -678,7 +692,16 @@ def main():
     # coords2d_list = get_coords2d_from_multiple_angles(n_images)
     
     
-    # input("DONE")
+    if coords2d_list is None:
+        coords2d_list = []
+        for i in range(n_images):
+            fname = "_tmp/"+"coords2d_{}.txt".format(i)
+            coords2d_list.append( coords2d_read(fname) )
+            # coords2d_list[-1] = coords2d_list[-1].transpose()
+            # print(coords2d_list[-1])
+            # plt.plot(coords2d_list[-1][0],coords2d_list[-1][1],marker='o',ls='')
+            # plt.gca().invert_yaxis()
+            # plt.show()
     
     coords3d_list = None
     # coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images,camera_matrix=camera_matrix,distortions=distortions,new_camera_matrix=new_camera_matrix)
@@ -692,19 +715,21 @@ def main():
     for i,coords3d in enumerate(coords3d_list):
         # Swap x and y for physics convention for xyz
         # Mirror in y (artifact of CV y-axis convention)
+        # well.. this only matters if rotation calibaration doesnt work!
         coords3d = coords3d.transpose()
         tmp1 = coords3d[1].copy()
         tmp2 = coords3d[2].copy()
         coords3d[1],coords3d[2] = tmp2,-tmp1 
         coords3d_list[i] = coords3d.transpose()
     
-    which = [0]
-    coords3d_list = [ coords3d_list[i] for i in which ]
+    # which = [0]
+    # coords3d_list = [ coords3d_list[i] for i in which ]
     
     
     # Combine
     coords3d = None
-    # combine_coords3d(coords3d_list) # this doesnt work
+    # this doesnt do anything, just tries to rotate some, actually works to some extend
+    # coords3d = combine_coords3d(coords3d_list) 
     
     
     # for now, just pick one of them
@@ -728,8 +753,10 @@ def main():
     
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
-    
-    ax.plot(coords3d.transpose()[0],coords3d.transpose()[1],coords3d.transpose()[2],marker='o',ls='')
+    ax.set_xlabel('$x$')
+    ax.set_ylabel('$y$')
+    ax.set_zlabel('$z$')
+    ax.plot(coords3d.transpose()[0],coords3d.transpose()[1],coords3d.transpose()[2],marker='o',ls='',c='k')
     plt.show()
     
     
