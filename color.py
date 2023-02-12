@@ -6,7 +6,7 @@ class Color(object):
 # maybe this should be a json file
 red = (200,16,46) # bad, more like pink
 namedcolors = {
-        'orange': (255,155,0),
+        'orange': (255,117,0),
         'red': red,
         'pink': (227,28,121),
         'blue': (0,61,165),

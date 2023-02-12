@@ -467,7 +467,7 @@ def combine_coords3d(coords3d_list: list):
     ind_nonans = np.where(~any_isnan)
     
     # ind1,ind2 = ind_nonans[0][0],ind_nonans[0][1]
-    ind1,ind2,ind3 = 102,114,185
+    ind1,ind2,ind3 = 150,142,185
     print("no nans!:",ind_nonans)
     print("Chosen inds:",ind1,ind2,ind3)
     
@@ -560,8 +560,8 @@ def combine_coords3d(coords3d_list: list):
     plt.legend()
     plt.show()
     
-    
-    return None
+    which = 1
+    return out[which].transpose()
 
 def calibrate_updown(coords3d):
     import keyboard
@@ -728,8 +728,8 @@ def main():
     
     # Combine
     coords3d = None
-    # this doesnt do anything, just tries to rotate some, actually works to some extend
-    # coords3d = combine_coords3d(coords3d_list) 
+    # this doesnt combine, just picks one and rotates it around
+    coords3d = combine_coords3d(coords3d_list) 
     
     
     # for now, just pick one of them

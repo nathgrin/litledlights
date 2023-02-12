@@ -111,12 +111,12 @@ def huphollandhup(strip=None,
         # [0] + [1]*sin( [2]*x - [3]*t + [4] )
         # cnst_red  = [1.8*dz/3.,dz/30.,2.*np.pi/1.,2.*np.pi/2.,0]
         # cnst_blue = [0.8*dz/3.,dz/30.,2.*np.pi/1.,2.*np.pi/1.3,0]
-        cnst_red  = [1.8*dz/3.,0,0,0,0]
-        cnst_blue = [0.8*dz/3.,0,0,0,0]
+        cnst_red  = [2.*dz/3.,0,0,0,0]
+        cnst_blue = [1.*dz/3.,0,0,0,0]
         
-        cnst_val_red   = [0.5,0.2,2.*np.pi/3.,2.*np.pi/2.,0]
-        cnst_val_white = [0.5,0.2,2.*np.pi/3.,2.*np.pi/2.,0]
-        cnst_val_blue  = [0.5,0.2,2.*np.pi/3.,2.*np.pi/2.,0]
+        cnst_val_red   = [0.5,0.2,2.*np.pi/1.,2.*np.pi/2.,0]
+        cnst_val_white = [0.5,0.2,2.*np.pi/1.,2.*np.pi/2.,0]
+        cnst_val_blue  = [0.5,0.2,2.*np.pi/1.,2.*np.pi/2.,0]
         
         
         def sinfunc(x,t,cnst):

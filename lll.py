@@ -54,15 +54,15 @@ def run_tst(args):
         print("  z-direction")
         nml = np.array([0,0,1])
         leds.colormap_coords(nml)
-        time.sleep(3)
+        input("enter to continue")
         print("  x-direction")
         nml = np.array([1,0,0])
         leds.colormap_coords(nml)
-        time.sleep(3)
+        input("enter to continue")
         print("  y-direction")
         nml = np.array([0,1,0])
         leds.colormap_coords(nml)
-        time.sleep(3)
+        input("enter to continue")
     
     
 def run_huphollandhup(args):
