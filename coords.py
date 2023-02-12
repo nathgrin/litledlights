@@ -681,7 +681,7 @@ def main():
     # input("DONE")
     
     coords3d_list = None
-    coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images,camera_matrix=camera_matrix,distortions=distortions,new_camera_matrix=new_camera_matrix)
+    # coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images,camera_matrix=camera_matrix,distortions=distortions,new_camera_matrix=new_camera_matrix)
     
     if coords3d_list is None:
         coords3d_list = []
@@ -709,7 +709,7 @@ def main():
     
     # for now, just pick one of them
     if coords3d is None:
-        coords3d_ind = 0
+        coords3d_ind = 1
         coords3d = coords3d_list[ coords3d_ind ]
     
     # Find bad
