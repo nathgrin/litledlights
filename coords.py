@@ -472,11 +472,11 @@ def combine_coords3d(coords3d_list: list):
     print("Chosen inds:",ind1,ind2,ind3)
     
     
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
-    ax.set_xlabel('$x$')
-    ax.set_ylabel('$y$')
-    ax.set_zlabel('$z$')
+    # fig = plt.figure()
+    # ax = fig.add_subplot(projection='3d')
+    # ax.set_xlabel('$x$')
+    # ax.set_ylabel('$y$')
+    # ax.set_zlabel('$z$')
     
     out = []
     
@@ -525,10 +525,10 @@ def combine_coords3d(coords3d_list: list):
         
         # ax.scatter(coords3d[0], coords3d[1], coords3d[2], marker='o',c='c')
         ind = coords3d_spherical[0] < 5
-        ax.scatter(c2[0][ind], c2[1][ind], c2[2][ind], marker='o',c='k')
-        ax.scatter(c2[0][ind1], c2[1][ind1], c2[2][ind1], marker='o',c='r')
-        ax.scatter(c2[0][ind2], c2[1][ind2], c2[2][ind2], marker='o',c='r')
-        ax.scatter(c2[0][ind3], c2[1][ind3], c2[2][ind3], marker='o',c='r')
+        # ax.scatter(c2[0][ind], c2[1][ind], c2[2][ind], marker='o',c='k')
+        # ax.scatter(c2[0][ind1], c2[1][ind1], c2[2][ind1], marker='o',c='r')
+        # ax.scatter(c2[0][ind2], c2[1][ind2], c2[2][ind2], marker='o',c='r')
+        # ax.scatter(c2[0][ind3], c2[1][ind3], c2[2][ind3], marker='o',c='r')
         # ax.scatter(c2[0], c2[1], c2[2], marker='o')
         # print("OPKTA")
         
@@ -538,27 +538,27 @@ def combine_coords3d(coords3d_list: list):
         # plt.plot(c2[0],c2[1],c='r',ls='',marker='o')
         # plt.plot(c2[2],c2[1],c='k',ls='',marker='o')
         # plt.plot(c2[0],c2[2],c='c',ls='',marker='o')
-    plt.show()
+    # plt.show()
     
     
-    for i in range(len(out)):
-        coords3d = out[i]
-        print(i,"nan",np.sum(np.isnan(coords3d)))
-        plt.plot(range(len(coords3d[0])),coords3d[0],marker='o',ls='-',label=str(i))
-    plt.legend()
-    plt.show()
-    for i in range(len(out)):
-        coords3d = out[i]
-        print(i,"nan",np.sum(np.isnan(coords3d)))
-        plt.plot(range(len(coords3d[0])),coords3d[1],marker='o',ls='-',label=str(i))
-    plt.legend()
-    plt.show()
-    for i in range(len(out)):
-        coords3d = out[i]
-        print(i,"nan",np.sum(np.isnan(coords3d)))
-        plt.plot(range(len(coords3d[0])),coords3d[2],marker='o',ls='-',label=str(i))
-    plt.legend()
-    plt.show()
+    # for i in range(len(out)):
+    #     coords3d = out[i]
+    #     print(i,"nan",np.sum(np.isnan(coords3d)))
+    #     plt.plot(range(len(coords3d[0])),coords3d[0],marker='o',ls='-',label=str(i))
+    # plt.legend()
+    # plt.show()
+    # for i in range(len(out)):
+    #     coords3d = out[i]
+    #     print(i,"nan",np.sum(np.isnan(coords3d)))
+    #     plt.plot(range(len(coords3d[0])),coords3d[1],marker='o',ls='-',label=str(i))
+    # plt.legend()
+    # plt.show()
+    # for i in range(len(out)):
+    #     coords3d = out[i]
+    #     print(i,"nan",np.sum(np.isnan(coords3d)))
+    #     plt.plot(range(len(coords3d[0])),coords3d[2],marker='o',ls='-',label=str(i))
+    # plt.legend()
+    # plt.show()
     
     which = 1
     return out[which].transpose()
@@ -647,16 +647,23 @@ def coords3d_flag_bad_coords(coords3d:np.ndarray):
     ind = dists <= cutoff + eps
     ind_nan = np.isnan(dists)
     
+    print("ind dist",np.sum(ind))
+    print("nan",np.sum(np.isnan(coords3d)),"nandist",np.sum(ind_nan))
+    
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
+    ax.set_xlabel('$x$')
+    ax.set_ylabel('$y$')
+    ax.set_zlabel('$z$')
     
+    ax.plot(coords3d[0],coords3d[1],coords3d[2],marker='',ls='-',c='k')
     ax.plot(coords3d[0][ind],coords3d[1][ind],coords3d[2][ind],marker='o',ls='',c='k')
     ax.plot(coords3d[0][ind_nan],coords3d[1][ind_nan],coords3d[2][ind_nan],marker='o',ls='',c='r') # ...
     
     ind_other = np.logical_and(~ind,~ind_nan)
     ax.plot(coords3d[0][ind_other],coords3d[1][ind_other],coords3d[2][ind_other],marker='o',ls='',c='c') # ...
     
-    
+    # ax.invert_yaxis()
     plt.show()
 
 def firstcalibration():
@@ -712,18 +719,16 @@ def main():
             fname = os.path.join("_tmp","coords3d_{}.txt".format(i))
             coords3d_list.append( coords3d_read(fname) )
     
-    for i,coords3d in enumerate(coords3d_list):
+    # for i,coords3d in enumerate(coords3d_list):
         # Swap x and y for physics convention for xyz
         # Mirror in y (artifact of CV y-axis convention)
         # well.. this only matters if rotation calibaration doesnt work!
-        coords3d = coords3d.transpose()
-        tmp1 = coords3d[1].copy()
-        tmp2 = coords3d[2].copy()
-        coords3d[1],coords3d[2] = tmp2,-tmp1 
-        coords3d_list[i] = coords3d.transpose()
+        # coords3d = coords3d.transpose()
+        # tmp1 = coords3d[1].copy()
+        # tmp2 = coords3d[2].copy()
+        # coords3d[1],coords3d[2] = tmp2,-tmp1 
+        # coords3d_list[i] = coords3d.transpose()
     
-    # which = [0]
-    # coords3d_list = [ coords3d_list[i] for i in which ]
     
     
     # Combine
@@ -738,7 +743,7 @@ def main():
         coords3d = coords3d_list[ coords3d_ind ]
     
     # Find bad
-    # coords3d_flag_bad_coords(coords3d)
+    coords3d_flag_bad_coords(coords3d)
     
     # Fix missing
     
@@ -747,7 +752,7 @@ def main():
     # calibrate_updown(coords3d)
     
     # Done, save
-    np.savetxt("coords.txt",coords3d,header="x\ty\tz")
+    # np.savetxt("coords.txt",coords3d,header="x\ty\tz")
     
     
     
