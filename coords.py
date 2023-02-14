@@ -4,6 +4,8 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
+import color
+
 import os
 
 try:
@@ -484,13 +486,13 @@ def combine_coords3d(coords3d_list: list):
             
             print("Chosen inds:",ind1,ind2,ind3)
             strip.fill( (0,0,0) )
-            strip[ind1] = red
-            strip[ind2] = blue
-            strip[ind3] = white
+            strip[ind1] = color.red
+            strip[ind2] = color.blue
+            strip[ind3] = color.white
             strip.show()
             
             print('Give 3 , separated indices, or "y" if ok.' )
-            theinput = input("Origin (red), z-point/unit lengthp (blue), x-point (red)")
+            theinput = input("Origin (red), z-point/unit lengthp (blue), x-point (red): ")
             if theinput == "y":
                 break
             elif theinput.count(",") == 2:
@@ -701,16 +703,55 @@ def firstcalibration():
 
 
 def show_coords(coords3d):
+    coords3d = coords3d.transpose()
+    xmax = np.nanmax(np.abs(coords3d[0]))
+    ymax = np.nanmax(np.abs(coords3d[1]))
+    zmax = np.nanmax(np.abs(coords3d[2]))
     
-    xmax = np.max(np.abs(np.max(coords3d[0])),np.abs(np.min(coords3d[0])))
-    ymax = np.max(np.abs(np.max(coords3d[1])),np.abs(np.min(coords3d[1])))
-    zmax = np.max(np.abs(np.max(coords3d[2])),np.abs(np.min(coords3d[2])))
+    x,y,z = coords3d[0],coords3d[1],coords3d[2]
+    # print("max",xmax,ymax,zmax)
     
     with get_strip() as strip:
-        for i in range(len(coords3d[0])):
-            strip[i] = ( int(255*(xmax-abs(strip.x[i])/xmax)),int(255*(ymax-abs(strip.y[i])/xmax)),int(255*(zmax-abs(strip.z[i])/xmax) ) )
+        # for i in range(len(x)):
+            
+            # if not np.any(np.isnan([x[i],y[i],z[i]])):
+                # strip[i] = ( int(255*(xmax-abs(x[i]))/xmax),int(255*(ymax-abs(y[i]))/ymax),int(255*(zmax-abs(z[i]))/zmax) )
+            # else:
+                # strip[i] = (0,0,0)
+        # strip.show()
+        
+        # input("Showing coords.. Enter to continue")
+        
+        strip.fill( (0,0,0) )
+        
+        #  +++
+        ind = np.logical_and( np.logical_and( x >= 0,y >= 0 ) , z >= 0 )
+        strip[ind] = color.red
+        #  ---
+        ind = np.logical_and( np.logical_and( x < 0,y < 0 ) , z < 0 )
+        strip[ind] = color.red
+        #  -++
+        ind = np.logical_and( np.logical_and( x <= 0,y >= 0 ) , z >= 0 )
+        strip[ind] = color.blue
+        #  +--
+        ind = np.logical_and( np.logical_and( x > 0,y < 0 ) , z < 0 )
+        strip[ind] = color.blue
+        #  +-+
+        ind = np.logical_and( np.logical_and( x >= 0,y <= 0 ) , z >= 0 )
+        strip[ind] = color.green
+        #  -+-
+        ind = np.logical_and( np.logical_and( x < 0,y > 0 ) , z < 0 )
+        strip[ind] = color.green
+        #  ++-
+        ind = np.logical_and( np.logical_and( x >= 0,y >= 0 ) , z <= 0 )
+        strip[ind] = color.pink
+        #  --+
+        ind = np.logical_and( np.logical_and( x < 0,y < 0 ) , z > 0 )
+        strip[ind] = color.pink
+        
         strip.show()
         
+        print("red: +++, blue: -++, green: +-+, pink: ++-, and inverses")
         input("Showing coords.. Enter to continue")
 
 def main():
@@ -778,7 +819,7 @@ def main():
     show_coords(coords3d)
     
     # Find bad
-    coords3d_flag_bad_coords(coords3d)
+    # coords3d_flag_bad_coords(coords3d)
     
     # Fix missing
     
@@ -787,7 +828,7 @@ def main():
     # calibrate_updown(coords3d)
     
     # Done, save
-    # np.savetxt("coords.txt",coords3d,header="x\ty\tz")
+    np.savetxt("coords.txt",coords3d,header="x\ty\tz")
     
     
     

@@ -4,17 +4,24 @@ class Color(object):
         self.x = 0
 
 # maybe this should be a json file
-red = (200,16,46) # bad, more like pink
+red = (155,0,0) # bad, more like pink
+blue = (0,0,155)
+white = (155,155,155)
+green = (0,155,0)
+pink = (227,28,121)
 namedcolors = {
         'orange': (255,117,0),
-        'red': red,
-        'pink': (227,28,121),
-        'blue': (0,61,165),
-        'white': (155,155,155)
+        'red': red, 
+        'pink': pink,
+        'blue': blue,
+        'green': green,
+        'white': white
         }
-namedcolors['w'] = namedcolors['white']
-namedcolors['b'] = namedcolors['blue']
-namedcolors['r'] = namedcolors['red']
+namedcolors['w'] = white
+namedcolors['b'] = blue
+namedcolors['r'] = red
+namedcolors['g'] = green
+
 
 def hsv_to_rgb(h, s, v):
     """
