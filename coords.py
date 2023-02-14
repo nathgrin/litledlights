@@ -469,7 +469,6 @@ def combine_coords3d(coords3d_list: list):
     # ind1,ind2 = ind_nonans[0][0],ind_nonans[0][1]
     ind1,ind2,ind3 = 150,142,185
     print("no nans!:",ind_nonans)
-    print("Chosen inds:",ind1,ind2,ind3)
     
     
     # fig = plt.figure()
@@ -478,10 +477,31 @@ def combine_coords3d(coords3d_list: list):
     # ax.set_ylabel('$y$')
     # ax.set_zlabel('$z$')
     
-    out = []
     
+    with get_strip() as strip:
+        
+        while True:
+            
+            print("Chosen inds:",ind1,ind2,ind3)
+            strip.fill( (0,0,0) )
+            strip[ind1] = red
+            strip[ind2] = blue
+            strip[ind3] = white
+            strip.show()
+            
+            print('Give 3 , separated indices, or "y" if ok.' )
+            theinput = input("Origin (red), z-point/unit lengthp (blue), x-point (red)")
+            if theinput == "y":
+                break
+            elif theinput.count(",") == 2:
+                theinput = theinput.split(',')
+                ind1,ind2,ind3 = int(theinput[0]),int(theinput[1]),int(theinput[2])
+        
+        strip.fill( (0,0,0) )
+        strip.show()
+        
+    out = []
     for ind,coords3d in enumerate(coords3d_list): # SKIPPING FIRST BY HAND BAD!
-        print("...",ind)
         
         norm = np.sqrt( np.sum( np.square(coords3d[ind1]-coords3d[ind2])) )
         
@@ -521,7 +541,7 @@ def combine_coords3d(coords3d_list: list):
             
         
         
-        print("ind1",c2[0][ind1], c2[1][ind1], c2[2][ind1],"ind2",c2[0][ind2], c2[1][ind2], c2[2][ind2],"ind3",c2[0][ind3], c2[1][ind3], c2[2][ind3])
+        print(ind,"ind1",c2[0][ind1], c2[1][ind1], c2[2][ind1],"ind2",c2[0][ind2], c2[1][ind2], c2[2][ind2],"ind3",c2[0][ind3], c2[1][ind3], c2[2][ind3])
         
         # ax.scatter(coords3d[0], coords3d[1], coords3d[2], marker='o',c='c')
         ind = coords3d_spherical[0] < 5
@@ -537,7 +557,7 @@ def combine_coords3d(coords3d_list: list):
         # plt.plot(c2[0][ind3],c2[2][ind3],c='k',ls='',marker='o')
         # plt.plot(c2[0],c2[1],c='r',ls='',marker='o')
         # plt.plot(c2[2],c2[1],c='k',ls='',marker='o')
-        # plt.plot(c2[0],c2[2],c='c',ls='',marker='o')
+                # plt.plot(c2[0],c2[2],c='c',ls='',marker='o')
     # plt.show()
     
     
@@ -680,6 +700,19 @@ def firstcalibration():
     distortions = None#np.array([ 2.03990656e-01,-4.10106338e+01,3.88358091e-02,5.41687259e-02,3.86933501e+02 ]) # this didnt work, i suspect the calibration is imperfect
 
 
+def show_coords(coords3d):
+    
+    xmax = np.max(np.abs(np.max(coords3d[0])),np.abs(np.min(coords3d[0])))
+    ymax = np.max(np.abs(np.max(coords3d[1])),np.abs(np.min(coords3d[1])))
+    zmax = np.max(np.abs(np.max(coords3d[2])),np.abs(np.min(coords3d[2])))
+    
+    with get_strip() as strip:
+        for i in range(len(coords3d[0])):
+            strip[i] = ( int(255*(xmax-abs(strip.x[i])/xmax)),int(255*(ymax-abs(strip.y[i])/xmax)),int(255*(zmax-abs(strip.z[i])/xmax) ) )
+        strip.show()
+        
+        input("Showing coords.. Enter to continue")
+
 def main():
     
     # From calibatrion
@@ -741,6 +774,8 @@ def main():
     if coords3d is None:
         coords3d_ind = 1
         coords3d = coords3d_list[ coords3d_ind ]
+    
+    show_coords(coords3d)
     
     # Find bad
     coords3d_flag_bad_coords(coords3d)
