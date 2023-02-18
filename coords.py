@@ -1,3 +1,5 @@
+import config
+
 
 import cv2
 import time
@@ -479,29 +481,29 @@ def combine_coords3d(coords3d_list: list):
     # ax.set_ylabel('$y$')
     # ax.set_zlabel('$z$')
     
-    
-    with get_strip() as strip:
-        
-        while True:
+    if not config.dbg:
+        with get_strip() as strip:
             
-            print("Chosen inds:",ind1,ind2,ind3)
+            while True:
+                
+                print("Chosen inds:",ind1,ind2,ind3)
+                strip.fill( (0,0,0) )
+                strip[ind1] = color.red
+                strip[ind2] = color.blue
+                strip[ind3] = color.white
+                strip.show()
+                
+                print('Give 3 , separated indices, or "y" if ok.' )
+                theinput = input("Origin (red), z-point/unit lengthp (blue), x-point (red): ")
+                if theinput == "y":
+                    break
+                elif theinput.count(",") == 2:
+                    theinput = theinput.split(',')
+                    ind1,ind2,ind3 = int(theinput[0]),int(theinput[1]),int(theinput[2])
+            
             strip.fill( (0,0,0) )
-            strip[ind1] = color.red
-            strip[ind2] = color.blue
-            strip[ind3] = color.white
             strip.show()
             
-            print('Give 3 , separated indices, or "y" if ok.' )
-            theinput = input("Origin (red), z-point/unit lengthp (blue), x-point (red): ")
-            if theinput == "y":
-                break
-            elif theinput.count(",") == 2:
-                theinput = theinput.split(',')
-                ind1,ind2,ind3 = int(theinput[0]),int(theinput[1]),int(theinput[2])
-        
-        strip.fill( (0,0,0) )
-        strip.show()
-        
     out = []
     for ind,coords3d in enumerate(coords3d_list): # SKIPPING FIRST BY HAND BAD!
         
@@ -816,10 +818,10 @@ def main():
         coords3d_ind = 1
         coords3d = coords3d_list[ coords3d_ind ]
     
-    show_coords(coords3d)
+    # show_coords(coords3d)
     
     # Find bad
-    # coords3d_flag_bad_coords(coords3d)
+    flag_bad = coords3d_flag_bad_coords(coords3d)
     
     # Fix missing
     
