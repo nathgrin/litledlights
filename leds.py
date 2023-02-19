@@ -3,6 +3,7 @@ import time
 import numpy as np
 
 
+import utils
 
 def colormap_coords(
         direction: np.array, # direction vector
@@ -69,6 +70,57 @@ def moving_plane(
         while True:
             t += dt
             pos = speed*t+p0
+            
+            strip.fill(color_off)
+            
+            
+            ind1 = np.dot(strip.xyz , normal) < pos +thickness
+            ind2 = np.dot(strip.xyz , normal) > pos -thickness
+            ind = np.logical_and(ind1,ind2)
+            strip[ind] = color
+            
+            strip.show()
+            time.sleep(dt)
+            
+            if pos > pmax:
+                break
+            
+        strip.fill( color_off )
+        strip.show()
+        
+    else:
+        print("Plane warning: No xyz")
+        
+        
+        
+def rotating_plane(
+        normal: np.array, # normal vector of the plane (also defines direction!)
+        strip=None,
+        
+        speed: float = 1.,
+        p0: float = -3., # p0 and max in terms of normal veector where the plane starst
+        pmax: float = 3., # im pretty sure it travels in the normal direction ,but does it?
+        
+        color:tuple[int]=(255,255,255),
+        dt: float=0.1, loop: bool=False,
+        color_off:tuple[int]=(0,0,0),
+        thickness: float=0.1,
+        ):
+    
+    
+    strip = get_strip() if strip is None else strip
+    # print("in a plane:",strip)
+    # print(strip.x)
+    # print(strip.xyz)
+    # with strip:
+    if strip.xyz is not None:
+        
+        t = 0
+        while True:
+            t += dt
+            # pos = speed*t+p0
+            pos = 0
+            normal = utils.rotationmtx( utils.npunit(2), t %(2*np.pi) ) *normal
             
             strip.fill(color_off)
             
@@ -164,7 +216,37 @@ def huphollandhup(strip=None,
     strip.show()
     input()
             
+def piemel(strip=None,
+        color:tuple[int]=(155,0,10),
+        dt: float=1., loop: bool=False,
+        color_off:tuple[int]=(0,0,0)):
+        
+        strip = get_strip() if strip is None else strip
     
+        radius = 0.2
+        ball1 = (0,0,0)
+        ball2 = (-0.5,0,0)
+        
+        ind = np.square(strip.x-ball1[0])+np.square(strip.y-ball1[1])+np.square(strip.z-ball1[2]) <= radius*radius
+        strip[ind] = color
+        
+        ind = np.square(strip.x-ball2[0])+np.square(strip.y-ball2[1])+np.square(strip.z-ball2[2]) <= radius*radius
+        strip[ind] = color
+        
+        pillar = (-0.25,0,0)
+        ind1 = np.square(strip.x-pillar[0])+np.square(strip.y-pillar[1]) <= 0.75*0.75*radius*radius
+        ind2 = strip.z > 0
+        ind = np.logical_and( ind1, ind2 )
+        strip[ind] = color
+        
+        
+        strip.show()
+        
+                
+        
+        
+        
+        
 
 def cycle_sequential(strip=None,
         color:tuple[int]=(255,255,255),

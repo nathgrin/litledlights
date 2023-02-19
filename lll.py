@@ -50,6 +50,13 @@ def run_tst(args):
         nml = np.array([1,0,1])
         leds.moving_plane(nml,strip=strip, color=color)
         
+        print("Coords Nans:")
+        strip.fill( (0,0,0) )
+        ind = np.isnan(strip.x)
+        strip[ind] = color
+        strip.show()
+        input("enter to continue")
+        
         print("Coords cmap:")
         print("  z-direction")
         nml = np.array([0,0,1])
@@ -70,6 +77,13 @@ def run_huphollandhup(args):
     with strip:
         leds.huphollandhup(strip=strip)
 
+def run_piemel(args):
+    strip = get_strip()
+    with strip:
+        leds.piemel(strip=strip)
+        
+        input("Done looking at it?")
+
 def run_one(args):
     color_on = ( 125,125,125 )
     
@@ -84,6 +98,7 @@ def run_one(args):
 
 
 def main(argv):
+    # print(argv)
     parser = argparse.ArgumentParser(prog="lll")
     subparsers = parser.add_subparsers()
 
@@ -98,6 +113,9 @@ def main(argv):
     
     tst_parser = subparsers.add_parser('huphollandhup')
     tst_parser.set_defaults(func=run_huphollandhup)
+    
+    tst_parser = subparsers.add_parser('piemel')
+    tst_parser.set_defaults(func=run_piemel)
 
     one_parser = subparsers.add_parser('one')
     one_parser.set_defaults(func=run_one)

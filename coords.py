@@ -212,7 +212,7 @@ def find_light(img,
     
     blur = cv2.GaussianBlur(img, (blur_radius,blur_radius),cv2.BORDER_DEFAULT)
     
-    ind = blur > 80#100
+    ind = blur > config.findlight_threshold#80#100
     y,x = np.mean(np.where(ind),axis=1)
     
     
@@ -273,6 +273,7 @@ def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_imag
             # undistorted = cv2.undistortPoints(coords2d_list[i], camera_matrix, distortions,None,new_camera_matrix)
             if new_camera_matrix is None:
                 new_camera_matrix = camera_matrix
+            
             undistorted = cv2.undistortPoints(coords2d_list[i], camera_matrix, distortions, P=new_camera_matrix) 
             undistorted = np.squeeze(undistorted)
             # print(undistorted)
@@ -462,6 +463,7 @@ def npunit(index:int,size=3):
 
 def combine_coords3d(coords3d_list: list):
     
+    print("HELLO")
     
     # find common non-nans
     any_isnan = np.sum(np.isnan(coords3d_list[0]),axis=1)
@@ -584,7 +586,7 @@ def combine_coords3d(coords3d_list: list):
     # plt.legend()
     # plt.show()
     
-    which = 1
+    which = 0
     return out[which].transpose()
 
 def calibrate_updown(coords3d):
@@ -769,7 +771,7 @@ def main():
                                [  0,0,1.        ]]) # newcameramtx
     new_camera_matrix = None
 
-    n_images = 4 # how many images do we use
+    n_images = 2 # how many images do we use
     
     coords2d_list = None
     # coords2d_list = get_coords2d_from_multiple_angles(n_images)
@@ -810,18 +812,18 @@ def main():
     # Combine
     coords3d = None
     # this doesnt combine, just picks one and rotates it around
-    coords3d = combine_coords3d(coords3d_list) 
+    # coords3d = combine_coords3d(coords3d_list) 
     
     
     # for now, just pick one of them
     if coords3d is None:
-        coords3d_ind = 1
+        coords3d_ind = 0
         coords3d = coords3d_list[ coords3d_ind ]
     
     # show_coords(coords3d)
     
     # Find bad
-    flag_bad = coords3d_flag_bad_coords(coords3d)
+    # flag_bad = coords3d_flag_bad_coords(coords3d)
     
     # Fix missing
     
@@ -830,7 +832,7 @@ def main():
     # calibrate_updown(coords3d)
     
     # Done, save
-    np.savetxt("coords.txt",coords3d,header="x\ty\tz")
+    # np.savetxt("coords.txt",coords3d,header="x\ty\tz")
     
     
     
