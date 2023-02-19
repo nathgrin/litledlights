@@ -19,6 +19,7 @@ LitLedLights, they are Lit
 
 - [x] setup rpi
 - [x] link up stuff
+- [ ] timing
 - [ ] control leds
   - [x] get leds to light
   - [x] control leds
@@ -47,6 +48,9 @@ LitLedLights, they are Lit
     - [ ] conversions
   - [x] strip module
     - [ ] finish fancy indexing implementation
+      - [ ] multiple color assignment?
+      - [ ] multiple integers (tuple)
+      - [ ] np.where compliant?
     - [ ] integrate Color object
   - [ ] coord module
     - [ ] utils for plotting
@@ -61,6 +65,7 @@ LitLedLights, they are Lit
   - [ ] facilitate overlapping animations
   - [ ] examples
 - [ ] virtual env for testing/animating
+- [ ] 3d model to animation conversion
 - expansion
   - [ ] controller on rpi
   - [ ] manymany ledled
