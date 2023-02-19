@@ -15,6 +15,10 @@ LitLedLights, they are Lit
 - level converter "chip"
 - robust wiring
 
+## Shopping list
+
+- heatsinks
+
 ## Roadmap
 
 - [x] setup rpi
@@ -64,9 +68,10 @@ LitLedLights, they are Lit
   - [ ] simple animations
   - [ ] facilitate overlapping animations
   - [ ] examples
-- [ ] virtual env for testing/animating
-- [ ] 3d model to animation conversion
+  - [ ] 3d model to animation conversion
+  - [ ] virtual env for testing/animating
 - expansion
   - [ ] controller on rpi
   - [ ] manymany ledled
+  - [ ] mic
 - [x] have fun
