@@ -13,7 +13,8 @@ import os
 try:
     from utils import get_strip
 except:
-    print("import failed")
+    print("import failed, setting config.dbg=True")
+    config.dbg = True
 
 
     
@@ -242,12 +243,12 @@ def coords2d_read(fname: str) -> list[tuple[float,float]]:
 def coords3d_read(fname: str) -> list[tuple[float,float,float]]:
     return np.loadtxt(fname)
 
-def get_coords2d_from_multiple_angles(n_images: int,loc: str="_tmp") -> list:
+def get_coords2d_from_multiple_angles(n_viewpoints: int,loc: str="_tmp") -> list:
     
     
     coords2d_list = []
     
-    for i in range(n_images):
+    for i in range(n_viewpoints):
         
         coords2d = initiate_sequential_fotography()
         
@@ -259,7 +260,7 @@ def get_coords2d_from_multiple_angles(n_images: int,loc: str="_tmp") -> list:
     return coords2d_list
 
 
-def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_images: int=None,camera_matrix=None,distortions:np.ndarray=None,new_camera_matrix:np.ndarray=None) -> list[tuple[float,float,float]]:
+def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_viewpoints: int=None,camera_matrix=None,distortions:np.ndarray=None,new_camera_matrix:np.ndarray=None) -> list[tuple[float,float,float]]:
     
     
     # print(coords2d)
@@ -463,19 +464,17 @@ def npunit(index:int,size=3):
 
 def combine_coords3d(coords3d_list: list):
     
-    print("HELLO")
     
     # find common non-nans
     any_isnan = np.sum(np.isnan(coords3d_list[0]),axis=1)
     for coords3d in coords3d_list:
         any_isnan = np.logical_or(any_isnan, np.sum(np.isnan(coords3d),axis=1) )
     
-    ind_nonans = np.where(~any_isnan)
     
-    # ind1,ind2 = ind_nonans[0][0],ind_nonans[0][1]
-    ind1,ind2,ind3 = 150,142,185
+    ind_nonans = np.where(~any_isnan)
     print("no nans!:",ind_nonans)
     
+    ind1,ind2,ind3 = config.combinecoords3d_referenceinds_default
     
     # fig = plt.figure()
     # ax = fig.add_subplot(projection='3d')
@@ -496,7 +495,7 @@ def combine_coords3d(coords3d_list: list):
                 strip.show()
                 
                 print('Give 3 , separated indices, or "y" if ok.' )
-                theinput = input("Origin (red), z-point/unit lengthp (blue), x-point (red): ")
+                theinput = input("Origin (red), z-point/unit length (blue), x-point (red): ")
                 if theinput == "y":
                     break
                 elif theinput.count(",") == 2:
@@ -586,7 +585,7 @@ def combine_coords3d(coords3d_list: list):
     # plt.legend()
     # plt.show()
     
-    which = 0
+    which = config.ind_coords3d
     return out[which].transpose()
 
 def calibrate_updown(coords3d):
@@ -648,6 +647,9 @@ def get_coords(fname:str="coords.txt"):
 
 def coords3d_flag_bad_coords(coords3d:np.ndarray):
     
+    flags = np.zeros(len(coords3d))
+    print(flags)
+    
     
     # Calc all distances forwardly
     thecopy = coords3d.copy()
@@ -671,11 +673,26 @@ def coords3d_flag_bad_coords(coords3d:np.ndarray):
     coords3d = coords3d.transpose()
     eps = np.nanmean(dists)*0.01 # allow a bit of slack
     ind = dists <= cutoff + eps
-    ind_nan = np.isnan(dists)
+    ind_nandist = np.isnan(dists)
+    
+    flags[np.any(np.isnan(coords3d),axis=0)] = 1
+    
+    ind_toofar = np.logical_and(~ind,~ind_nandist)
+    flags[ind_toofar] = 2
     
     print("ind dist",np.sum(ind))
-    print("nan",np.sum(np.isnan(coords3d)),"nandist",np.sum(ind_nan))
+    print("nan",np.sum(np.any(np.isnan(coords3d),axis=0)),"nandist",np.sum(ind_nandist))
     
+    
+    if not config.dbg:
+        print("Show flags on leds. Red = nan, Blue = toofar")
+        with get_strip() as strip:
+            strip.fill( (0,0,0) )
+            strip[flags == 1] = ( 115,0,0 )
+            strip[flags == 2] = ( 0,0,115 )
+            strip.show()
+    
+    print("Plot flags")
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
     ax.set_xlabel('$x$')
@@ -684,13 +701,14 @@ def coords3d_flag_bad_coords(coords3d:np.ndarray):
     
     ax.plot(coords3d[0],coords3d[1],coords3d[2],marker='',ls='-',c='k')
     ax.plot(coords3d[0][ind],coords3d[1][ind],coords3d[2][ind],marker='o',ls='',c='k')
-    ax.plot(coords3d[0][ind_nan],coords3d[1][ind_nan],coords3d[2][ind_nan],marker='o',ls='',c='r') # ...
+    ax.plot(coords3d[0][ind_nandist],coords3d[1][ind_nandist],coords3d[2][ind_nandist],marker='o',ls='',c='r') # ...
     
-    ind_other = np.logical_and(~ind,~ind_nan)
-    ax.plot(coords3d[0][ind_other],coords3d[1][ind_other],coords3d[2][ind_other],marker='o',ls='',c='c') # ...
+    ax.plot(coords3d[0][ind_toofar],coords3d[1][ind_toofar],coords3d[2][ind_toofar],marker='o',ls='',c='c') # ...
     
     # ax.invert_yaxis()
     plt.show()
+    
+    return flags
 
 def firstcalibration():
 
@@ -706,7 +724,9 @@ def firstcalibration():
     distortions = None#np.array([ 2.03990656e-01,-4.10106338e+01,3.88358091e-02,5.41687259e-02,3.86933501e+02 ]) # this didnt work, i suspect the calibration is imperfect
 
 
-def show_coords(coords3d):
+def show_coords_onlights(coords3d):
+    print("Showing coords on lights:")
+    
     coords3d = coords3d.transpose()
     xmax = np.nanmax(np.abs(coords3d[0]))
     ymax = np.nanmax(np.abs(coords3d[1]))
@@ -735,7 +755,7 @@ def show_coords(coords3d):
         ind = np.logical_and( np.logical_and( x < 0,y < 0 ) , z < 0 )
         strip[ind] = color.red
         #  -++
-        ind = np.logical_and( np.logical_and( x <= 0,y >= 0 ) , z >= 0 )
+        ind = np.logical_and( np.logical_and( x < 0,y >= 0 ) , z >= 0 )
         strip[ind] = color.blue
         #  +--
         ind = np.logical_and( np.logical_and( x > 0,y < 0 ) , z < 0 )
@@ -771,15 +791,16 @@ def main():
                                [  0,0,1.        ]]) # newcameramtx
     new_camera_matrix = None
 
-    n_images = 2 # how many images do we use
+    n_viewpoints = config.getcoords2d_nviewpoints # how many images do we use
     
     coords2d_list = None
-    # coords2d_list = get_coords2d_from_multiple_angles(n_images)
+    if config.getcoords2d_fromangles and not config.dbg:
+        coords2d_list = get_coords2d_from_multiple_angles(n_viewpoints)
     
     
     if coords2d_list is None:
         coords2d_list = []
-        for i in range(n_images):
+        for i in range(n_viewpoints):
             fname = "_tmp/"+"coords2d_{}.txt".format(i)
             coords2d_list.append( coords2d_read(fname) )
             # coords2d_list[-1] = coords2d_list[-1].transpose()
@@ -789,11 +810,13 @@ def main():
             # plt.show()
     
     coords3d_list = None
-    # coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_images=n_images,camera_matrix=camera_matrix,distortions=distortions,new_camera_matrix=new_camera_matrix)
+    print("> Combine coords2d to 3d (triangulate)")
+    if config.do_2d_to_3d:
+        coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_viewpoints=n_viewpoints,camera_matrix=camera_matrix,distortions=distortions,new_camera_matrix=new_camera_matrix)
     
     if coords3d_list is None:
         coords3d_list = []
-        for i in range(n_images*(n_images-1)//2):
+        for i in range(n_viewpoints*(n_viewpoints-1)//2):
             fname = os.path.join("_tmp","coords3d_{}.txt".format(i))
             coords3d_list.append( coords3d_read(fname) )
     
@@ -810,20 +833,24 @@ def main():
     
     
     # Combine
+    print("> Combine coords3d")
     coords3d = None
     # this doesnt combine, just picks one and rotates it around
-    # coords3d = combine_coords3d(coords3d_list) 
+    coords3d = combine_coords3d(coords3d_list) 
     
     
     # for now, just pick one of them
     if coords3d is None:
-        coords3d_ind = 0
+        coords3d_ind = config.ind_coords3d
         coords3d = coords3d_list[ coords3d_ind ]
     
-    # show_coords(coords3d)
+    if not config.dbg:
+        show_coords_onlights(coords3d)
     
     # Find bad
-    # flag_bad = coords3d_flag_bad_coords(coords3d)
+    print("> Find bad")
+    flags = coords3d_flag_bad_coords(coords3d)
+        
     
     # Fix missing
     
@@ -832,10 +859,12 @@ def main():
     # calibrate_updown(coords3d)
     
     # Done, save
-    # np.savetxt("coords.txt",coords3d,header="x\ty\tz")
+    print("Saving=",config.save_coords3d)
+    if config.save_coords3d:
+        np.savetxt(config.savecoords3d_fname,coords3d,header="x\ty\tz")
     
     
-    
+    print("> Plotting")
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
     ax.set_xlabel('$x$')
