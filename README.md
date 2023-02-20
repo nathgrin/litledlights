@@ -45,8 +45,6 @@ LitLedLights, they are Lit
   - [ ] fix index error `lll one 155`
   - [ ] setup/settings file with
     - nleds (or get automatically?)
-  - [ ] organise pkg
-    - [x] connect git
   - [ ] Color module
     - [ ] calibrate colors (orange = yellow ?!)
     - [ ] conversions
@@ -65,8 +63,11 @@ LitLedLights, they are Lit
   - [x] coords to pixel
     - [x] improve indexing
   - [ ] Pre-rendered animations
-  - [ ] simple animations
   - [ ] facilitate overlapping animations
+- [ ] pkg
+  - [ ] organise pkg
+    - [x] connect git
+  - [ ] simple animations
   - [ ] examples
   - [ ] 3d model to animation conversion
   - [ ] virtual env for testing/animating
