@@ -9,6 +9,7 @@ import numpy as np
 import time
 
 from utils import get_strip,clear
+import color
 
 import leds
 
@@ -94,6 +95,17 @@ def run_one(args):
     
     strip[ind] = color_on
     strip.show()
+    
+    
+def run_fill(args):
+    color_on = color.orange#( 125,125,125 ) # args!
+    
+    # print(color_on)
+    strip = get_strip()
+    
+    
+    strip.fill( color_on )
+    strip.show()
 
 
 
@@ -120,6 +132,10 @@ def main(argv):
     one_parser = subparsers.add_parser('one')
     one_parser.set_defaults(func=run_one)
     one_parser.add_argument('ind',type=int,nargs=1,help="index of the led")
+    
+    one_parser = subparsers.add_parser('fill')
+    one_parser.set_defaults(func=run_fill)
+    one_parser.add_argument('color',type=str,nargs=1,help="fillcolor")
 
     args = parser.parse_args(argv)
     if not hasattr(args, 'func'):

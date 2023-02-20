@@ -9,8 +9,9 @@ blue = (0,0,155)
 white = (155,155,155)
 green = (0,155,0)
 pink = (227,28,121)
+orange = (255,117,0)
 namedcolors = {
-        'orange': (255,117,0),
+        'orange': orange,
         'red': red, 
         'pink': pink,
         'blue': blue,
