@@ -45,14 +45,14 @@ def colormap_coords(
 
 
 def moving_plane(
-        normal: np.array, # normal vector of the plane (also defines direction!)
+        normal: np.ndarray, # normal vector of the plane (also defines direction!)
         strip=None,
         
         speed: float = 1.,
         p0: float = -3., # p0 and max in terms of normal veector where the plane starst
         pmax: float = 3., # im pretty sure it travels in the normal direction ,but does it?
         
-        color:tuple[int]=(255,255,255),
+        color:tuple[int]=(115,115,115),
         dt: float=0.1, loop: bool=False,
         color_off:tuple[int]=(0,0,0),
         thickness: float=0.1,
@@ -94,17 +94,23 @@ def moving_plane(
         
         
 def rotating_plane(
-        normal: np.array, # normal vector of the plane (also defines direction!)
+        normal: np.ndarray, # normal vector of the plane (also defines direction!)
+        rotation_axis: np.ndarray, # nml vector rotates around this
         strip=None,
         
-        speed: float = 1.,
-        p0: float = -3., # p0 and max in terms of normal veector where the plane starst
-        pmax: float = 3., # im pretty sure it travels in the normal direction ,but does it?
+        pos: np.ndarray = np.array([0,0,1]),
         
-        color:tuple[int]=(255,255,255),
-        dt: float=0.1, loop: bool=False,
-        color_off:tuple[int]=(0,0,0),
+        period: float = 5.,
         thickness: float=0.1,
+        
+        color:tuple[int]=(115,115,115),
+        color_off:tuple[int]=(0,0,0),
+        
+        mode: str="fill", # bar for bad with thickness, fill for 2sided fill
+        
+        dt: float=0.1,
+        loop: bool=False,
+        tmax: float= 100.,
         ):
     
     
@@ -117,24 +123,28 @@ def rotating_plane(
         
         t = 0
         while True:
-            t += dt
             # pos = speed*t+p0
-            pos = 0
-            normal = utils.rotationmtx( utils.npunit(2), t %(2*np.pi) ) *normal
+            normal = np.dot( utils.rotationmtx( rotation_axis, 2*np.pi*dt/period ) , normal )
             
             strip.fill(color_off)
             
             
-            ind1 = np.dot(strip.xyz , normal) < pos +thickness
-            ind2 = np.dot(strip.xyz , normal) > pos -thickness
-            ind = np.logical_and(ind1,ind2)
+            if mode == "fill":
+                ind = np.dot(strip.xyz -pos , normal) <=  0
+            else: # bar
+                ind1 = np.dot(strip.xyz -pos , normal) <  thickness
+                ind2 = np.dot(strip.xyz -pos , normal) > -thickness
+                ind = np.logical_and(ind1,ind2)
+            
             strip[ind] = color
             
             strip.show()
             time.sleep(dt)
             
-            if pos > pmax:
+            if t > tmax and not loop:
                 break
+            t += dt
+            
             
         strip.fill( color_off )
         strip.show()
@@ -306,9 +316,11 @@ def blink_binary(inlist: list[int],nbits: int=None,
 
     
 def main():
-    strip = get_strip()
-    inlist = range(len(strip))
-    blink_binary(inlist,strip=strip)
+    
+    with get_strip() as strip:
+        # inlist = range(len(strip))
+        # blink_binary(inlist,strip=strip)
+        rotating_plane(utils.npunit(0),utils.npunit(1),strip=strip)
     
 
 if __name__ == "__main__":

@@ -3,21 +3,21 @@ dbg = False
 
 
 
-# Calibrate
+### Calibrate
 
 ## Get coords
-getcoords2d_nviewpoints = 2
+getcoords2d_nviewpoints = 4
 
-getcoords2d_fromangles = True
+getcoords2d_fromangles = False
 do_2d_to_3d = False
 
-### Find light in image
+# Find light in image
 findlight_threshold = 80
 
-### combine_coords3d: Combine multiple 3d to single set
-combinecoords3d_referenceinds_default = 150,142,185 # Origin (red), z-point/unit length (blue), x-point (red): 
-ind_coords3d = 0 # for now, simply pick one
+# combine_coords3d: Combine multiple 3d to single set
+combinecoords3d_referenceinds_default = 148,144,230 # Origin (red), z-point/unit length (blue), x-point (red): 
+ind_coords3d = 5 # for now, simply pick one
 
-### Saving
-save_coords3d = False
+# Saving
+save_coords3d = True
 savecoords3d_fname = "coords.txt"
