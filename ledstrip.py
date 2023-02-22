@@ -1,5 +1,14 @@
-import neopixel
+
 import numpy as np
+import config
+
+try:
+    import neopixel
+except:
+    print("ledstrip: imports failed..")
+    config.dbg = True
+
+
 
 class ledstrip(neopixel.NeoPixel):
     def __init__(self,*args,**kwargs):

@@ -16,7 +16,7 @@ except:
     print("import failed, setting config.dbg=True")
     config.dbg = True
 
-from utils import npunit,rotationmtx,xyz_to_rthetaphi
+from misc_func import npunit,rotationmtx,xyz_to_rthetaphi
 
     
 def tst():
@@ -746,6 +746,44 @@ def show_coords_onlights(coords3d):
         print("red: +++, blue: -++, green: +-+, pink: ++-, and inverses")
         input("Showing coords.. Enter to continue")
 
+
+def coords3d_fix_flagged_coords(coords3d: np.ndarray,flags: np.ndarray) -> np.ndarray:
+    
+    coords3d = coords3d.transpose()
+    
+    good = flags == 0
+    print("Number not flagged:",np.sum(good))
+    import scipy.interpolate as inter
+    ind = np.arange(len(flags))
+    for i,coord in enumerate(coords3d):
+        # print(coord)
+        spline = inter.InterpolatedUnivariateSpline (ind[good],coord[good],k=config.coords3d_fixbad_splineorder)
+        
+        coords3d[i][~good] = spline(ind[~good])
+        
+        
+        
+        # xarr = np.linspace(0,len(flags),30*len(flags))
+        # plt.plot(xarr,spline(xarr),c='r')
+        
+        # plt.plot(ind[good],coord[good],marker='o',c='k',ls='')
+        # plt.plot(ind[~good],coord[~good],marker='o',c='c',ls='')
+        # plt.show()
+        
+    
+    print("Plot fixed coords")
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    ax.set_xlabel('$x$')
+    ax.set_ylabel('$y$')
+    ax.set_zlabel('$z$')
+    ax.plot(coords3d[0][good],coords3d[1][good],coords3d[2][good],marker='o',ls='',c='k')
+    ax.plot(coords3d[0][~good],coords3d[1][~good],coords3d[2][~good],marker='o',ls='',c='c')
+    plt.show()
+    
+    
+    return coords3d.transpose()
+
 def main():
     
     # From calibatrion
@@ -764,6 +802,7 @@ def main():
     coords2d_list = None
     if config.getcoords2d_fromangles and not config.dbg:
         coords2d_list = get_coords2d_from_multiple_angles(n_viewpoints)
+        coords2d_list = [c2d.transpose() for c2d in coords2d_list]
     
     
     if coords2d_list is None:
@@ -821,7 +860,7 @@ def main():
         
     
     # Fix missing
-    
+    coords3d = coords3d_fix_flagged_coords(coords3d,flags)
     
     # Calibrate direction of axes
     # calibrate_updown(coords3d)
