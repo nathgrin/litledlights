@@ -4,6 +4,7 @@ import numpy as np
 
 
 import utils
+import misc_func
 
 def colormap_coords(
         direction: np.array, # direction vector
@@ -124,7 +125,7 @@ def rotating_plane(
         t = 0
         while True:
             # pos = speed*t+p0
-            normal = np.dot( utils.rotationmtx( rotation_axis, 2*np.pi*dt/period ) , normal )
+            normal = np.dot( misc_func.rotationmtx( rotation_axis, 2*np.pi*dt/period ) , normal )
             
             strip.fill(color_off)
             
@@ -320,7 +321,7 @@ def main():
     with get_strip() as strip:
         # inlist = range(len(strip))
         # blink_binary(inlist,strip=strip)
-        rotating_plane(utils.npunit(0),utils.npunit(1),strip=strip)
+        rotating_plane(misc_func.npunit(0),misc_func.npunit(1),strip=strip)
     
 
 if __name__ == "__main__":

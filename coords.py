@@ -619,30 +619,44 @@ def coords3d_flag_bad_coords(coords3d:np.ndarray):
     
     # Calc all distances forwardly
     thecopy = coords3d.copy()
-    thecopy = np.roll(thecopy,-1,axis=0)
-    thecopy[-1] = np.nan * thecopy[-1]
+    fwd = np.roll(thecopy,-1,axis=0)
+    fwd[-1] = np.nan * fwd[-1]
+    bwd = np.roll(thecopy,1,axis=0)
+    bwd[0] = np.nan * bwd[0]
     # ind1,ind2 = 103,104
     # print(coords3d[ind1],coords3d[ind2])
     # print(thecopy[ind1],thecopy[ind2])
     
-    dists = np.sum(np.square(coords3d-thecopy),axis=1) # SQUARED distances
+    dists_fwd = np.sqrt(np.sum(np.square(coords3d-fwd),axis=1))
+    dists_bwd = np.sqrt(np.sum(np.square(coords3d-bwd),axis=1))
     
-    cutoff = 5.*np.nanmean(dists)/3. # average r squared is 3/5 of radius
-    print("Cutoff",cutoff)
+    cutoff = 4.*np.nanmean(dists_fwd)/3. # average r is 3/4 of radius
+    print("Mean Distance, Cutoff",np.nanmean(dists_fwd),cutoff)
     
-    
+    print("Plotting distances, Black: forward, Red: backward")
+    plt.plot(range(len(dists_fwd)),dists_fwd,c='k')
+    plt.plot(range(len(dists_bwd)),dists_bwd,c='r')
+    plt.show()
     
     # print(dists)
-    # plt.plot(np.sort(dists),range(len(dists)))
-    # plt.show()
+    print("Plotting distance distribution, Black: forward, Red: backward")
+    plt.plot(np.sort(dists_fwd),range(len(dists_fwd)),c='k')
+    counts, bins = np.histogram(dists_fwd,range=(np.nanmin(dists_fwd),np.nanmax(dists_fwd)),bins='auto',density=True)
+    plt.stairs(len(dists_fwd)*counts/np.max(counts), bins,ec='k') # Density times lens to share same y-range
+    plt.plot(np.sort(dists_bwd),range(len(dists_bwd)),c='r')
+    counts, bins = np.histogram(dists_bwd,range=(np.nanmin(dists_bwd),np.nanmax(dists_bwd)),bins='auto',density=True)
+    plt.stairs(len(dists_bwd)*counts/np.max(counts), bins,ec='r') # Density times lens to share same y-range
+    plt.show()
     
     coords3d = coords3d.transpose()
-    eps = np.nanmean(dists)*0.01 # allow a bit of slack
-    ind = dists <= cutoff + eps
-    ind_nandist = np.isnan(dists)
+    eps = np.nanmean(dists_fwd)*0.01 # allow a bit of slack
+    ind = np.logical_and( dists_fwd <= cutoff + eps , dists_bwd <= cutoff + eps )
+    ind_nandist = np.isnan(dists_fwd)
     
+    # Flag nans
     flags[np.any(np.isnan(coords3d),axis=0)] = 1
     
+    # Flag too far
     ind_toofar = np.logical_and(~ind,~ind_nandist)
     flags[ind_toofar] = 2
     
@@ -660,7 +674,7 @@ def coords3d_flag_bad_coords(coords3d:np.ndarray):
             strip.show()
             input("Enter to continue")
     
-    print("Plot flags")
+    print("Plot flags, Red: No dist, Cyan: too far")
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
     ax.set_xlabel('$x$')
@@ -673,6 +687,8 @@ def coords3d_flag_bad_coords(coords3d:np.ndarray):
     
     ax.plot(coords3d[0][ind_toofar],coords3d[1][ind_toofar],coords3d[2][ind_toofar],marker='o',ls='',c='c') # ...
     
+    ax.set_xlim(xmax=4)
+    ax.set_ylim(ymin=-2,ymax=2)
     # ax.invert_yaxis()
     plt.show()
     
