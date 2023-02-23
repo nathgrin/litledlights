@@ -9,7 +9,7 @@ import numpy as np
 import time
 
 from utils import get_strip,clear
-import color
+import colors
 
 import leds
 

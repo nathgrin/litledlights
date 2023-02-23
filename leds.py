@@ -2,6 +2,8 @@ from utils import get_strip
 import time
 import numpy as np
 
+import colors
+
 
 import utils
 import misc_func
@@ -99,7 +101,7 @@ def rotating_plane(
         rotation_axis: np.ndarray, # nml vector rotates around this
         strip=None,
         
-        pos: np.ndarray = np.array([0,0,1]),
+        pos: np.ndarray = np.zeros(3),
         
         period: float = 5.,
         thickness: float=0.1,
@@ -116,49 +118,82 @@ def rotating_plane(
     
     
     strip = get_strip() if strip is None else strip
-    # print("in a plane:",strip)
-    # print(strip.x)
-    # print(strip.xyz)
-    # with strip:
-    if strip.xyz is not None:
-        
-        t = 0
-        while True:
-            # pos = speed*t+p0
-            normal = np.dot( misc_func.rotationmtx( rotation_axis, 2*np.pi*dt/period ) , normal )
-            
-            strip.fill(color_off)
-            
-            
-            if mode == "fill":
-                ind = np.dot(strip.xyz -pos , normal) <=  0
-            else: # bar
-                ind1 = np.dot(strip.xyz -pos , normal) <  thickness
-                ind2 = np.dot(strip.xyz -pos , normal) > -thickness
-                ind = np.logical_and(ind1,ind2)
-            
-            strip[ind] = color
-            
-            strip.show()
-            time.sleep(dt)
-            
-            if t > tmax and not loop:
-                break
-            t += dt
-            
-            
-        strip.fill( color_off )
-        strip.show()
-        
-    else:
+    if strip.xyz is None:
         print("Plane warning: No xyz")
+        return -1
+        
+    pos_period = 2.
+    pos_offset = 0.
+    pos_amplitude = 1.
+    
+    rotaxis_period = 2.
+        
+    t = 0
+    while True:
+        pos = np.array([0,0,pos_offset+pos_amplitude*np.sin(2*np.pi*t/pos_period)])
+        # rotation_axis = np.array([ np.cos(2*np.pi*t/rotaxis_period),np.sin(2*np.pi*t/rotaxis_period),1.])
+        
+        
+        normal = np.dot( misc_func.rotationmtx( rotation_axis, 2*np.pi*dt/period ) , normal )
+        
+        strip.fill(color_off)
+        
+        
+        if mode == "fill":
+            ind = np.dot(strip.xyz -pos , normal) <=  0
+        else: # bar
+            ind1 = np.dot(strip.xyz -pos , normal) <  thickness
+            ind2 = np.dot(strip.xyz -pos , normal) > -thickness
+            ind = np.logical_and(ind1,ind2)
+        
+        strip[ind] = color
+        
+        strip.show()
+        time.sleep(dt)
+        
+        if t > tmax and not loop:
+            break
+        t += dt
+        
+        
+    strip.fill( color_off )
+    strip.show()
+        
+        
+
+        
+def fireworks(
+        
+        period: float = 5.,
+        thickness: float=0.1,
+        
+        color:tuple[int]=(115,115,115),
+        color_off:tuple[int]=(0,0,0),
+        
+        dt: float=0.1,
+        loop: bool=False,
+        tmax: float= 100.,
+        ):
+    
+    
+    strip = get_strip() if strip is None else strip
+    if strip.xyz is None:
+        print("Plane warning: No xyz")
+        return -1
+      
+    while True:
+        t += dt
+        
+        if t % period == 0: # launch fireworks # make sure period is full multiple of dt xD
+            print("Not implemented yet")
+        
       
 def huphollandhup(strip=None,
         
         dt: float=0.1, loop: bool=False,
         color_off:tuple[int]=(0,0,0),
         ):
-    from color import namedcolors,hsv_to_rgb
+    from colors import namedcolors,hsv_to_rgb
     orange = namedcolors['orange']
     red = namedcolors['red']
     white = namedcolors['white']
@@ -321,7 +356,10 @@ def main():
     with get_strip() as strip:
         # inlist = range(len(strip))
         # blink_binary(inlist,strip=strip)
-        rotating_plane(misc_func.npunit(0),misc_func.npunit(1),strip=strip)
+        
+        color = colors.pink
+        color_off = colors.blue
+        rotating_plane(misc_func.npunit(0),misc_func.npunit(1),strip=strip,color=color,color_off=color_off)
     
 
 if __name__ == "__main__":
