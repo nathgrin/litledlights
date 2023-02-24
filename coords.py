@@ -456,9 +456,9 @@ def combine_coords3d(coords3d_list: list):
                 
                 print("Chosen inds:",ind1,ind2,ind3)
                 strip.fill( (0,0,0) )
-                strip[ind1] = color.red
-                strip[ind2] = color.blue
-                strip[ind3] = color.white
+                strip[ind1] = colors.red
+                strip[ind2] = colors.blue
+                strip[ind3] = colors.white
                 strip.show()
                 
                 print('Give 3 , separated indices, or "y" if ok.' )
@@ -803,15 +803,9 @@ def coords3d_fix_flagged_coords(coords3d: np.ndarray,flags: np.ndarray) -> np.nd
 def main():
     
     # From calibatrion
-    # Somehow things work better when new_camera_mtx=new_camera_mtx = new_camera_mtx
-    # camera_matrix = np.array( [[794.0779295,0.,334.41476339],
-    #                            [  0.,790.21709526,248.42875997],
-    #                            [  0.,0.,1.        ]] )  # first camera mtx
-    distortions = np.array( [[ 2.05088975e-01 ,-1.09124274e+00 , 4.90025360e-04 , 1.83144614e-02   ,    2.58532256e+00]] )
-    camera_matrix = np.array( [[802.89550781,0,340.40239924],
-                               [  0,793.20324707 ,247.94272481],
-                               [  0,0,1.        ]]) # newcameramtx
-    new_camera_matrix = None
+    distortions = config.distortions
+    camera_matrix = config.camera_matrix
+    new_camera_matrix = config.new_camera_matrix
 
     n_viewpoints = config.getcoords2d_nviewpoints # how many images do we use
     
