@@ -4,8 +4,8 @@ import colors
 
 class AnimationInstruction(dict):
     
-    def __init__(self):
-        pass
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 class AnimationStrip(list):
     
@@ -15,8 +15,6 @@ class AnimationStrip(list):
         for i in range(self.nleds):
             self.append(AnimationLed(state=initial_state))
 
-    def add_led(self):
-        self.append(led)
     
 
     def render(self,t: float):
@@ -50,8 +48,11 @@ def main():
     instr = AnimationInstruction(type="fade",mode="linear",color=colors.red,tstart=tstart,delta_t=delta_t)
     print(instr)
     
+    ind = 0
+    anistrip[ind].instruct(instr)
+    
     t = 0
-    dt = 0.01
+    dt = 1.
     
     while True:
         t += dt
@@ -59,8 +60,9 @@ def main():
         anistrip.render(t)
         
         
-        print(anistrip)
+        print(anistrip[ind])
         
+        input(t)
     
     
 if __name__ == "__main__":

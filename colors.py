@@ -1,6 +1,12 @@
-class Color(object):
-    def _init__(self):
-        self.x = 0
+class Color(dict):
+    def _init__(self,color,ctype: str="rgb"):
+        if ctype == "rgb":
+            self['rgb'] = color
+        elif ctype == "hsv":
+            self['rgb'] = hsv_to_rgb(color)
+            self['hsv'] = color
+    
+    
 
 # maybe this should be a json file
 red = (155,0,0) # bad, more like pink

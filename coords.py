@@ -734,28 +734,28 @@ def show_coords_onlights(coords3d):
         
         #  +++
         ind = np.logical_and( np.logical_and( x >= 0,y >= 0 ) , z >= 0 )
-        strip[ind] = color.red
+        strip[ind] = colors.red
         #  ---
         ind = np.logical_and( np.logical_and( x < 0,y < 0 ) , z < 0 )
-        strip[ind] = color.red
+        strip[ind] = colors.red
         #  -++
         ind = np.logical_and( np.logical_and( x < 0,y >= 0 ) , z >= 0 )
-        strip[ind] = color.blue
+        strip[ind] = colors.blue
         #  +--
         ind = np.logical_and( np.logical_and( x > 0,y < 0 ) , z < 0 )
-        strip[ind] = color.blue
+        strip[ind] = colors.blue
         #  +-+
         ind = np.logical_and( np.logical_and( x >= 0,y <= 0 ) , z >= 0 )
-        strip[ind] = color.green
+        strip[ind] = colors.green
         #  -+-
         ind = np.logical_and( np.logical_and( x < 0,y > 0 ) , z < 0 )
-        strip[ind] = color.green
+        strip[ind] = colors.green
         #  ++-
         ind = np.logical_and( np.logical_and( x >= 0,y >= 0 ) , z <= 0 )
-        strip[ind] = color.pink
+        strip[ind] = colors.pink
         #  --+
         ind = np.logical_and( np.logical_and( x < 0,y < 0 ) , z > 0 )
-        strip[ind] = color.pink
+        strip[ind] = colors.pink
         
         strip.show()
         
