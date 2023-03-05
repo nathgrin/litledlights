@@ -1,5 +1,5 @@
 import numpy as np
-import coords
+import coords.findLedPositions as findLedPositions
 print(".This.Is.Config.")
 
 ###
@@ -29,7 +29,7 @@ coords3d_fixbad_splineorder = 3
 # Saving
 save_coords3d = True
 savecoords3d_fname = "coords.txt"
-coords3d = coords.get_coords(savecoords3d_fname)
+coords3d = findLedPositions.get_coords(savecoords3d_fname)
 
 ## Camera calibration
 # Somehow things work better when new_camera_mtx=new_camera_mtx = new_camera_mtx

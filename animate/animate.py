@@ -132,22 +132,25 @@ class AnimationLed(list):
 class AnimationObject():
     type="object"
     id = ""
-    def __init__(self,x: np.ndarray(3),v: np.ndarray(3),a: np.ndarray(3),id=None):
+    def __init__(self,x: np.ndarray(3),v: np.ndarray(3),a: np.ndarray(3),m: float=1.,id: str=None):
         self.x = x
         self.v = v
         self.a = a
+        
+        self.m = m
         
         if id is None:
             self.id = str(time.time())
         
         
-    def update(self,dt):
+    def update(self,dt,force):
+        self.a = force/self.m
         dv = self.a*dt
         dx = (self.v+0.5*dv)*dt
         self.v = self.v + dv
         self.x = self.x + dx
         
-        if self.x[0] > 15:
+        if self.x[0] > 5:
             return 'KILL'
         return True
     
@@ -181,6 +184,7 @@ def main():
     # Settings
     t = 0
     dt = 1.
+    force = np.zeros(3)
     
     # Define objects
     objects = [ AnimationBall(np.zeros(3),misc_func.npunit(0),np.zeros(3)) ]
@@ -192,7 +196,7 @@ def main():
         
         # Update position
         for i,obj in enumerate(objects):
-            flag = obj.update(dt)
+            flag = obj.update(dt,force)
             print(flag)
             if flag == 'KILL':
                 objects.pop(i)

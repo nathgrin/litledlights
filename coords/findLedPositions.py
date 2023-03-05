@@ -608,8 +608,6 @@ def calibrate_updown(coords3d):
         strip.fill((0,0,0))
         strip.show()
 
-def get_coords(fname:str="coords.txt"):
-    return np.loadtxt(fname)
 
 
 def coords3d_flag_bad_coords(coords3d:np.ndarray):

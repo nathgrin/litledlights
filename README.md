@@ -12,6 +12,7 @@ LitLedLights, they are Lit
 - Colors
   - [rgb/hsv colorpicker tool](https://math.hws.edu/graphicsbook/demos/c2/rgb-hsv.html)
   - [stackoverflow python functions](https://stackoverflow.com/questions/24852345/hsv-to-rgb-color-conversion)
+
 ## To do
 
 - level converter "chip"
@@ -39,10 +40,13 @@ LitLedLights, they are Lit
   - [x] get pts from picture/video
     - [ ] improve get pts
     - [ ] combine pictures
-    - [ ] rotate coords
+    - [x] rotate coords
     - [ ] fix wrong coords
-    - [ ] fix missing coords
-  - [ ] save and share coords (gift?)
+    - [x] fix missing coords
+  - [ ] coords class
+  - [ ] coords module organisation
+  - [x] save
+  - [ ] share coords (gift?)
 - [ ] API
   - [ ] fix index error `lll one 155`
   - [ ] setup/settings file with

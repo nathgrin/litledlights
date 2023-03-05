@@ -1,32 +1,23 @@
-class Color(dict):
+import numpy as np
+
+class Color(object):
+    ctype = "rgb"
+    val   = (0,0,0)
+    
+    _types = ['rgb','hsv','hsl']
     
     def __init__(self,color=(0,0,0),ctype: str="rgb"):
-        # if ctype == "rgb":
-        #     rgb = color
-        #     self.update(rgb=rgb)
-        # elif ctype == "hsv":
-        #     hsv = color
-        #     rgb = hsv_to_rgb(hsv)
-        #     self.update(rgb=rgb,hsv=hsv)
-        
-        self.update({ctype:color})
+        self.__setitem__(ctype,color)
         
 
-    def __getitem__(self, key):
-        # print('GET', key)
-        try: # Find requested Key
-            val = dict.__getitem__(self, key)
-        except KeyError as err:
-            # Or look for another to convert
-            for ctype in [ 'rgb','hsv','hsl']:
-                if key == ctype:
-                    continue
-                val = self.get(ctype,None)
-                if val is not None:
-                    out = colorfromto[ctype][key](val) # This is probably bad syntax idea
-                    return out
-            raise err
-        return val
+    def __getitem__(self, ctype: str) -> tuple[int,int,int]:
+        if ctype not in self._types:
+            raise KeyError(self._KeyErrorMessage(ctype))
+        if ctype == self.ctype:
+            return self.val
+        else:
+            val = colorfromto[self.ctype][ctype](self.val) # This is probably bad syntax idea
+            return val
     
     def get(self,*args):
         if len(args) == 1:
@@ -37,24 +28,23 @@ class Color(dict):
             except:
                 return args[2]
         else:
-            raise ValueError(".get() only accepts 1 or 2 args..")
+            raise ValueError("{0}.get() only accepts 1 or 2 args..".format(type(self).__name__))
 
-    def __setitem__(self, key, val):
-        # print('SET', key, val)
-        dict.__setitem__(self, key, val)
+    def __setitem__(self, ctype: str, color: tuple[int,int,int]):
+        # Input validation
+        if ctype not in self._types:
+            raise ValueError(self._KeyErrorMessage(ctype))
+        self.ctype = ctype
+        self.val   = color
 
-    def __repr__(self):
-        dictrepr = dict.__repr__(self)
-        return '%s(%s)' % (type(self).__name__, dictrepr)
-        
-    def update(self, *args, **kwargs):
-        # print('update', args, kwargs)
-        for k, v in dict(*args, **kwargs).items():
-            self[k] = v
+    def __repr__(self) -> str:
+        return "{0}({1}:{2})".format(type(self).__name__, self.ctype,self.val)
     
-    def __str__(self):
-        return str(self['rgb'])
+    def __str__(self) -> str:
+        return self.__repr__()
     
+    def _KeyErrorMessage(self,ctype: str) -> str:
+        return "{1} not one of valid ctypes: {0}".format(self._types,ctype)
 
 # maybe this should be a json file
 red = (155,0,0) # bad, more like pink
@@ -76,6 +66,9 @@ namedcolors['b'] = blue
 namedcolors['r'] = red
 namedcolors['g'] = green
 
+
+def combine_hsl(*args):
+    xys = [ (a[1]*np.cos(np.pi*a[0]/180.),a[1]*np.sin(np.pi*a[0]/180.))  for a in args]
 
 def rgb_to_hsv(args):
     if len(args) == 1:
@@ -142,7 +135,15 @@ def clamp(value, min_value, max_value):
 def saturate(value):
     return clamp(value, 0.0, 1.0)
 
-def hue_to_rgb(h):
+def hue_to_rgb(h: float) -> tuple[float,float,float]:
+    """_summary_
+
+    Args:
+        h (float): _description_
+
+    Returns:
+        tuple[float,float,float]: rgb in (0,1)
+    """
     r = abs(h * 6.0 - 3.0) - 1.0
     g = 2.0 - abs(h * 6.0 - 2.0)
     b = 2.0 - abs(h * 6.0 - 4.0)
@@ -162,8 +163,65 @@ def hsl_to_rgb(*args):
     b = (b - 0.5) * c + l
     return int(r), int(g), int(b)
 
+def rgb_to_hsl(*args):
+    if len(args) == 1:
+        r, g, b = args[0]
+    elif len(args) == 3:
+        r, g, b = args
+    else:
+        raise ValueError("Input (r,b,g) as tuple or triple argument, not: %s"%(str(args)))
+    
+    rgb_p = ( r/255.,g/255.,b/255. )
+    
+    Cmax = max(rgb_p)
+    Cmin = min(rgb_p)
+    
+    delta = Cmax-Cmin
+    
+    if delta == 0.:
+        H = 0.
+    elif Cmax == rgb_p[0]:
+        H = 60.* ( ((rgb_p[1]-rgb_p[2])/delta) % 6 )
+    elif Cmax == rgb_p[1]:
+        H = 60.* ( ((rgb_p[2]-rgb_p[0])/delta) +2. )
+    elif Cmax == rgb_p[2]:
+        H = 60.* ( ((rgb_p[0]-rgb_p[1])/delta) +4. )
+    
+    L = (Cmax+Cmin)/2.
+    
+    if Cmax == 0.:
+        S = 0.
+    else:
+        S = delta/(1.-abs(2.*L-1.))
+    
+    
+    return (H,S,L)
 
-colorfromto = {'rgb':{'hsv':rgb_to_hsv,'hsl':None},
-               'hsv':{'rgb':hsv_to_rgb,'hsl':None},
-               'hsl':{'rgb':hsl_to_rgb,'hsv':None},
+def hsv_to_hsl(*args): # This will introduce rounding err
+    if len(args) == 1:
+        h, s, v = args[0]
+    elif len(args) == 3:
+        h, s, v = args
+    else:
+        raise ValueError("Input (h,s,v) as tuple or triple argument, not: %s"%(str(args)))
+    
+    r,g,b = hsv_to_rgb(h,s,v)
+    h,s,l = rgb_to_hsl(r,g,b)
+    return h,s,l
+    
+def hsl_to_hsv(*args): # This will introduce rounding err
+    if len(args) == 1:
+        h, s, l = args[0]
+    elif len(args) == 3:
+        h, s, l = args
+    else:
+        raise ValueError("Input (h,s,l) as tuple or triple argument, not: %s"%(str(args)))
+
+    r,g,b = hsl_to_rgb(h,s,l)
+    h,s,l = rgb_to_hsv(r,g,b)
+    return h,s,l
+
+colorfromto = {'rgb':{'hsv':rgb_to_hsv,'hsl':rgb_to_hsl},
+               'hsv':{'rgb':hsv_to_rgb,'hsl':hsv_to_hsl},
+               'hsl':{'rgb':hsl_to_rgb,'hsv':hsl_to_hsv},
                }

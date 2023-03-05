@@ -32,8 +32,8 @@ def get_strip(output_pin: board.pin=board.D18,
     
     if coords_fname is not None:
         if os.path.exists(coords_fname):
-            import coords
-            coords3d = coords.get_coords(coords_fname)
+            import coords.findLedPositions as findLedPositions
+            coords3d = findLedPositions.get_coords(coords_fname)
             strip.set_xyz(coords3d)
     
     
