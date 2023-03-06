@@ -1,16 +1,16 @@
 import os
 import config
 import numpy as np
+import ledstrip
 
 try:
     import neopixel
-    import ledstrip
     import board
 except:
     print("ultils: imports failed..")
     config.dbg = True
 
-def clear(strip: neopixel.NeoPixel=None):
+def clear(strip: ledstrip.ledstrip=None):
     if strip is None:
         with get_strip() as strip:
             pass
@@ -18,13 +18,13 @@ def clear(strip: neopixel.NeoPixel=None):
         strip.fill( (0,0,0) )
 
     
-def get_strip(output_pin: board.pin=board.D18,
+def get_strip(output_pin: 'board.pin'=board.D18,
         num_pixels: int=config.nleds,
         brightness: float=1.,
-        pixel_order: neopixel.RGB=neopixel.RGB,
+        pixel_order: 'neopixel.RGB'=neopixel.RGB,
         auto_write: bool=False,
         
-        coords_fname: str="coords.txt",
+        coords_fname: str=config.coords3d_fname,
         
         ) -> ledstrip.ledstrip:
     strip = ledstrip.ledstrip(output_pin, num_pixels,brightness=brightness,
@@ -32,9 +32,9 @@ def get_strip(output_pin: board.pin=board.D18,
     
     if coords_fname is not None:
         if os.path.exists(coords_fname):
-            import coords.findLedPositions as findLedPositions
-            coords3d = findLedPositions.get_coords(coords_fname)
-            strip.set_xyz(coords3d)
+            from coords import get_coords
+            coords3d = get_coords(coords_fname)
+            strip.set_coords3d(coords3d)
     
     
     return strip

@@ -38,7 +38,7 @@ class Color(object):
         self.val   = color
 
     def __repr__(self) -> str:
-        return "{0}({1}:{2})".format(type(self).__name__, self.ctype,self.val)
+        return "<{0} {1}:{2}>".format(type(self).__name__, self.ctype,self.val)
     
     def __str__(self) -> str:
         return self.__repr__()
@@ -66,9 +66,28 @@ namedcolors['b'] = blue
 namedcolors['r'] = red
 namedcolors['g'] = green
 
-
+def combine_colors(*args): # combine any number of color objects
+    return Color(combine_hsl( *[c['hsl'] for c in args] ),ctype='hsl')
+    
+    
+    
 def combine_hsl(*args):
-    xys = [ (a[1]*np.cos(np.pi*a[0]/180.),a[1]*np.sin(np.pi*a[0]/180.))  for a in args]
+    # print(args)
+    
+    # for l we take some weird sum that never quite reaches one.
+    ls = sorted([a[2] for a in args])[::-1]
+    l = ls[0]
+    for li in ls[1:]:
+        l += (1-l)*li
+    
+    # for hue, saturation we take the average of the vectors as if they are polar coordinates
+    xys = np.array([ (a[1]*np.cos(np.pi*a[0]),a[1]*np.sin(np.pi*a[0]))  for a in args])
+    avg = np.mean(xys,axis=0)
+    
+    s = np.sqrt(np.square(avg[0])+np.square(avg[1]))
+    h = np.arctan2(avg[1],avg[0])/(2.*np.pi)
+    
+    return h,s,l
 
 def rgb_to_hsv(args):
     if len(args) == 1:
@@ -95,7 +114,7 @@ def rgb_to_hsv(args):
         s = (df/mx)*100
     v = mx*100
     # normalize stupidly
-    h = h/360. 
+    h = h/360.
     v = v/100.
     s = s/100.
     return h, s, v
@@ -156,12 +175,13 @@ def hsl_to_rgb(*args):
         h, s, l = args
     else:
         raise ValueError("Input (h,s,l) as tuple or triple argument, not: %s"%(str(args)))
+    
     r, g, b = hue_to_rgb(h)
     c = (1.0 - abs(2.0 * l - 1.0)) * s
     r = (r - 0.5) * c + l
     g = (g - 0.5) * c + l
     b = (b - 0.5) * c + l
-    return int(r), int(g), int(b)
+    return int(r*255), int(g*255), int(b*255)
 
 def rgb_to_hsl(*args):
     if len(args) == 1:
@@ -195,7 +215,7 @@ def rgb_to_hsl(*args):
         S = delta/(1.-abs(2.*L-1.))
     
     
-    return (H,S,L)
+    return (H/360.,S,L)
 
 def hsv_to_hsl(*args): # This will introduce rounding err
     if len(args) == 1:
@@ -205,9 +225,10 @@ def hsv_to_hsl(*args): # This will introduce rounding err
     else:
         raise ValueError("Input (h,s,v) as tuple or triple argument, not: %s"%(str(args)))
     
-    r,g,b = hsv_to_rgb(h,s,v)
-    h,s,l = rgb_to_hsl(r,g,b)
-    return h,s,l
+    l = v * (1 - s/2)
+    s = 0 if l in (0, 1) else (v - l)/min(l, 1-l)
+    return h, s, l
+
     
 def hsl_to_hsv(*args): # This will introduce rounding err
     if len(args) == 1:
@@ -217,11 +238,22 @@ def hsl_to_hsv(*args): # This will introduce rounding err
     else:
         raise ValueError("Input (h,s,l) as tuple or triple argument, not: %s"%(str(args)))
 
-    r,g,b = hsl_to_rgb(h,s,l)
-    h,s,l = rgb_to_hsv(r,g,b)
-    return h,s,l
+    v = l + s * min(l, 1-l)
+    s = 0 if v == 0 else 2*(1 - l/v)
+    return h, s, v
 
 colorfromto = {'rgb':{'hsv':rgb_to_hsv,'hsl':rgb_to_hsl},
                'hsv':{'rgb':hsv_to_rgb,'hsl':hsv_to_hsl},
                'hsl':{'rgb':hsl_to_rgb,'hsv':hsl_to_hsv},
                }
+
+def main():
+    print(rgb_to_hsl(150,0,0))
+    print(rgb_to_hsl(150,150,0))
+    print(rgb_to_hsl(150,0,150))
+    print( hsl_to_rgb(rgb_to_hsl(150,0,0)))
+    print( hsl_to_rgb(rgb_to_hsl(150,150,0)))
+    print( hsl_to_rgb(rgb_to_hsl(150,0,150)))
+    
+if __name__ == "__main__":
+    main()

@@ -13,7 +13,14 @@ class Coords3d(object):
     
     def from_file(self, fname: str="coords.txt"):
         self.xyz = load_coords_file(fname)
+        transp = self.xyz.transpose()
+        self.x = transp[0]
+        self.y = transp[1]
+        self.z = transp[2]
 
+    def __getitem__(self, key: int):
+        return self.xyz[key]
+    
 def get_coords(fname: str="coords.txt"):
     coords3d = Coords3d()
     coords3d.from_file(fname)

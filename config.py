@@ -1,16 +1,17 @@
 import numpy as np
-import coords.findLedPositions as findLedPositions
+from coords import get_coords
 print(".This.Is.Config.")
 
 ###
 nleds = 700
 dbg = False
 
-
+coords3d_fname = "coords.txt"
+coords3d = get_coords(coords3d_fname)
 
 ### Calibrate
 
-## Get coords
+## findLedPositions
 getcoords2d_nviewpoints = 4
 
 getcoords2d_fromangles = False
@@ -28,8 +29,7 @@ coords3d_fixbad_splineorder = 3
 
 # Saving
 save_coords3d = True
-savecoords3d_fname = "coords.txt"
-coords3d = findLedPositions.get_coords(savecoords3d_fname)
+savecoords3d_fname = coords3d_fname
 
 ## Camera calibration
 # Somehow things work better when new_camera_mtx=new_camera_mtx = new_camera_mtx

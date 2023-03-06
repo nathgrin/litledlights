@@ -47,6 +47,11 @@ LitLedLights, they are Lit
   - [ ] coords module organisation
   - [x] save
   - [ ] share coords (gift?)
+  - [ ] coordinate systems (spherical, cilindrical)
+  - [ ] normalisation
+  - [x] get pixels
+  - [x] coords to pixel
+    - [x] improve indexing
 - [ ] API
   - [ ] fix index error `lll one 155`
   - [ ] setup/settings file with
@@ -54,29 +59,23 @@ LitLedLights, they are Lit
   - [ ] Color module
     - [ ] calibrate colors (orange = yellow ?!)
     - [ ] conversions
-    - [ ] documentation
+    - [ ] documentation & docstrings
     - [x] color object
-      - [ ] use .get method in stead of bs now
-
+      - [x] use .get method in stead of bs now
   - [x] strip module
     - [ ] finish fancy indexing implementation
       - [ ] multiple color assignment?
       - [ ] multiple integers (tuple)
       - [ ] np.where compliant?
     - [ ] integrate Color object
-  - [ ] coord module
     - [ ] utils for plotting
     - [ ] automate moar
-    - [ ] coordinate systems (spherical, cilindrical)
-    - [ ] normalisation
-  - [x] get pixels
-  - [x] coords to pixel
-    - [x] improve indexing
   - [ ] Pre-rendered animations
   - [ ] facilitate overlapping animations
 - [ ] pkg
   - [ ] organise pkg
     - [x] connect git
+  - [ ] documentation & docstrings
   - [ ] simple animations
   - [ ] examples
   - [ ] 3d model to animation conversion

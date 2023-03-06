@@ -1,6 +1,7 @@
 
 import numpy as np
 import config
+import coords
 
 try:
     import neopixel
@@ -34,12 +35,9 @@ class ledstrip(neopixel.NeoPixel):
                 super().__setitem__(i,value)
         
         
-    def set_xyz(self,xyz: np.array) -> None:
-        self.xyz = xyz
+    def set_coords3d(self,coords3d: coords.Coords3d) -> None:
+        self.coords3d = coords3d
         
-        self.x = xyz.transpose()[0]
-        self.y = xyz.transpose()[1]
-        self.z = xyz.transpose()[2]
         
     
         
