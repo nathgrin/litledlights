@@ -9,6 +9,7 @@ LitLedLights, they are Lit
   - <https://learn.adafruit.com/neopixels-on-raspberry-pi/raspberry-pi-wiring>
   - <https://learn.adafruit.com/neopixels-on-raspberry-pi/python-usage>
   - [adafruit neopixel uberguide](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&ved=2ahUKEwisw86m_uz8AhVFM-wKHQVvAJgQFnoECA8QAQ&url=https%3A%2F%2Fcdn-learn.adafruit.com%2Fdownloads%2Fpdf%2Fadafruit-neopixel-uberguide.pdf&usg=AOvVaw1-UNr6xUSFV5fscJPYqsFR)
+  - [adafruit circuitpython NeoPixel python source](https://github.com/adafruit/Adafruit_CircuitPython_NeoPixel/blob/main/neopixel.py)
 - Colors
   - [rgb/hsv colorpicker tool](https://math.hws.edu/graphicsbook/demos/c2/rgb-hsv.html)
   - [stackoverflow python functions](https://stackoverflow.com/questions/24852345/hsv-to-rgb-color-conversion)

@@ -39,8 +39,8 @@ class AnimationStrip(list):
 
 class AnimationLed(list):
     
-    def __init__(self,state: tuple[int]=colors.Color((0,0,0)),xyz=None,
-                 off_state: colors.Color=colors.Color((0,0,0))):
+    def __init__(self,state: colors.Color=colors.Color((0,0,0)),xyz=None,
+                 off_state:  colors.Color=colors.Color((0,0,0))):
         self.state = state
         self.xyz = xyz
         self._off_state = off_state
@@ -87,7 +87,7 @@ class AnimationLed(list):
 
     def one_instr(self,instr: AnimationInstruction, t:float,):
         
-        state = None # return val
+        state = None # return val, if None, instr will be deleted
         which = instr.get('which',None)
         
         if which is None:
@@ -149,12 +149,13 @@ class AnimationLed(list):
 class AnimationObject():
     type="object"
     id = ""
-    def __init__(self,x: np.ndarray(3),v: np.ndarray(3),a: np.ndarray(3),m: float=1.,id: str=None, instr: AnimationInstruction=None):
+    def __init__(self,x: np.ndarray(3),v: np.ndarray(3),a: np.ndarray(3),force: np.ndarray(3)=np.zeros(3),m: float=1.,id: str=None, instr: AnimationInstruction=None):
         self.x = x
         self.v = v
         self.a = a
         
         self.m = m
+        self.force = force
         
         if id is None:
             id = str(time.time())
@@ -170,23 +171,29 @@ class AnimationObject():
         instr['id'] = self.id
         self.instruction = instr.copy()
         
-    def update(self,dt:float,force:np.ndarray(3)):
+    def update(self,dt:float,force:np.ndarray(3)) -> str:
+        self.force = force
         self.a = force/self.m
         dv = self.a*dt
         dx = (self.v+0.5*dv)*dt
         self.v = self.v + dv
         self.x = self.x + dx
         
-        if self.x[0] > 5 or self.x[0] < -5:
-            return 'KILL'
-        return True
+        return 'ok'
+    
+    def evaluate_termination(self,t: float):
+        if abs(self.x[0]) > 5:
+            return True
+        return False
+    
     
     def select_lights(self,coords3d: coords.Coords3d):
         ind = np.where(~np.isnan(coords3d.x))
         return ind
     
     def __repr__(self):
-        return "<{0} id:{1} x:{2} v:{3} a:{4}>".format(type(self).__name__, self.id,self.x,self.v,self.a)
+        # return "<{0} id:{1} x:{2} v:{3} a:{4}>".format(type(self).__name__, self.id,self.x,self.v,self.a)
+        return "<{0} id:{1} x:{2} v:{3}>".format(type(self).__name__, self.id,self.x,self.v)
     
 class AnimationBall(AnimationObject):
     type = "ball"
@@ -206,7 +213,49 @@ class AnimationBall(AnimationObject):
         ind = np.where( dists < self.rsqr )[0]
         return ind
     
-
+def animationloop(strip: 'ledstrip.ledstrip', anistrip: AnimationStrip, objects: list[type[AnimationObject]],
+                  t0: float=0., dt: float=1.):
+    
+    force = np.zeros(3)
+    
+    t = t0
+    
+    # Game Loop
+    while True:
+        
+        print(objects)
+        
+        # Instruct lights
+        for i,obj in enumerate(objects):
+            ind = obj.select_lights(anistrip.coords3d)
+            anistrip.instruct(ind,obj.instruction)
+        
+        
+        # Render
+        states = anistrip.render(t)
+        
+        strip.set_all(states)
+        strip.show()
+        
+        # print(ind)
+        # for i in ind:
+        #     print(anistrip[i])
+        
+        
+        input("wait "+str(t))
+        
+        # Update position
+        for i,obj in enumerate(objects):
+            flag = obj.update(dt,force)
+            
+            kill = obj.evaluate_termination(t)
+            if kill:
+                objects.pop(i)
+                i += -1
+                
+        t += dt
+        time.sleep(dt)
+    
 def main():
     print("animate")
     print("nleds",config.nleds)
@@ -225,13 +274,9 @@ def main():
     instr2['color'] = colors.Color((0,115,0))
     # print(instr)
     
-    ind = 0
-    anistrip[ind].instruct(instr)
     
     # Settings
-    t = 0
     dt = 0.5
-    force = np.zeros(3)
     
     # Define objects
     radius = 1.
@@ -241,41 +286,8 @@ def main():
                 AnimationBall(x02,-v0,a0,radius=radius,instr=instr2,id="B") ]
     
     
-    # Game Loop
-    while True:
-        
-        print(objects)
-        
-        # Instruct lights
-        for i,obj in enumerate(objects):
-            ind = obj.select_lights(anistrip.coords3d)
-            anistrip.instruct(ind,obj.instruction)
-        
-        
-        # Render
-        anistrip.render(t)
-        
-        print(ind)
-        # for i in ind:
-        #     print(anistrip[i])
-        
-        
-        
-        
-        
-        input("wait "+str(t))
-        
-        # Update position
-        for i,obj in enumerate(objects):
-            flag = obj.update(dt,force)
-            
-            if flag == 'KILL':
-                objects.pop(i)
-                i += -1
-                
-        t += dt
-        time.sleep(dt)
-    
+    with utils.get_strip() as strip:
+        animationloop(strip,anistrip,objects,t0=t0,dt=dt)
     
 if __name__ == "__main__":
     main()

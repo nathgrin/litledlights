@@ -1,5 +1,5 @@
 import numpy as np
-
+import os
 
 
 class Coords3d(object):
@@ -22,8 +22,13 @@ class Coords3d(object):
         return self.xyz[key]
     
 def get_coords(fname: str="coords.txt"):
-    coords3d = Coords3d()
-    coords3d.from_file(fname)
+    if os.path.isfile(fname):
+        coords3d = Coords3d()
+        coords3d.from_file(fname)
+    else:
+        print("Warning: Could not find file {1}, return None".format(fname))
+        coords3d = None
+    
     return coords3d
 
 def load_coords_file(fname:str="coords.txt"):
