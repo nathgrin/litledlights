@@ -67,6 +67,7 @@ namedcolors['r'] = red
 namedcolors['g'] = green
 
 def combine_colors(*args): # combine any number of color objects
+    # print(args)
     return Color(combine_hsl( *[c['hsl'] for c in args] ),ctype='hsl')
     
     
@@ -139,12 +140,18 @@ def hsv_to_rgb(*args):
     if s == 0.0: v*=255; return (v, v, v)
     i = int(h*6.) # XXX assume int() truncates!
     f = (h*6.)-i; p,q,t = int(255*(v*(1.-s))), int(255*(v*(1.-s*f))), int(255*(v*(1.-s*(1.-f)))); v*=255; i%=6
-    if i == 0: return (v, t, p)
-    if i == 1: return (q, v, p)
-    if i == 2: return (p, v, t)
-    if i == 3: return (p, q, v)
-    if i == 4: return (t, p, v)
-    if i == 5: return (v, p, q)
+    # if i == 0: return (v, t, p)
+    # if i == 1: return (q, v, p)
+    # if i == 2: return (p, v, t)
+    # if i == 3: return (p, q, v)
+    # if i == 4: return (t, p, v)
+    # if i == 5: return (v, p, q)
+    if i == 0: return (int(v), int(t), int(p))
+    if i == 1: return (int(q), int(v), int(p))
+    if i == 2: return (int(p), int(v), int(t))
+    if i == 3: return (int(p), int(q), int(v))
+    if i == 4: return (int(t), int(p), int(v))
+    if i == 5: return (int(v), int(p), int(q))
 
 
 # FOllowing are from Lywx at https://gist.github.com/mathebox/e0805f72e7db3269ec22

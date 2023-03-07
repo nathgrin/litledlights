@@ -28,8 +28,8 @@ class ledstrip(*parentclasses):
         
     def __enter__(self):
         if self.connect_ledlights:
-            super().__enter__(self)
-        else: # this is stupid, this is waht super() does
+            return super().__enter__()
+        else: # this is stupid, this is waht super().__enter does
             return self
     
     def __exit__(self,*args,**kwargs):
@@ -38,7 +38,13 @@ class ledstrip(*parentclasses):
             
 
         
-
+    def __setitem__one(self, key: int,value: 'colors.Color'):
+        if self.connect_ledlights:
+            if isinstance(value,colors.Color):
+                val = value['rgb']
+            else:
+                val = value
+            super().__setitem__(key,val)
         
     def __setitem__(self, key,value):
         if type(key) is np.ndarray:
@@ -61,14 +67,6 @@ class ledstrip(*parentclasses):
             self.__setitem__one(i,value)
         
     
-    def __setitem__one(self, key: int,value: 'colors.Color'):
-        if self.connect_ledlights:
-            if isinstance(value,colors.Color):
-                val = value['rgb']
-            else:
-                val = value
-            super().__setitem__(key,val)
-    
     def show(self):
         if self.connect_ledlights:
             super().show()
@@ -76,6 +74,8 @@ class ledstrip(*parentclasses):
     def set_coords3d(self,coords3d: coords.Coords3d) -> None:
         self.coords3d = coords3d
         
+    def __repr__(self):
+        return "<{0} nleds: {1} havecoords: {2}>".format(type(self).__name__,self.n,self.coords3d is not None)
         
     
         

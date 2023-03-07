@@ -19,7 +19,7 @@ def clear(strip: ledstrip.ledstrip=None):
 
     
 def get_strip(output_pin: str='D18', # getattr(board,str)
-        num_pixels: int=config.nleds,
+        nleds: int=config.nleds,
         brightness: float=1.,
         pixel_order: str='RGB', # getattr(neopixel,str)
         auto_write: bool=False,
@@ -35,7 +35,7 @@ def get_strip(output_pin: str='D18', # getattr(board,str)
         output_pin = None
         pixel_order = pixel_order # Now suddenly it is string = bad
     
-    strip = ledstrip.ledstrip(output_pin, num_pixels,brightness=brightness,
+    strip = ledstrip.ledstrip(output_pin, nleds,brightness=brightness,
             auto_write=auto_write,pixel_order=pixel_order)
     
     if coords_fname is not None:
@@ -43,6 +43,5 @@ def get_strip(output_pin: str='D18', # getattr(board,str)
             from coords import get_coords
             coords3d = get_coords(coords_fname)
             strip.set_coords3d(coords3d)
-    
     
     return strip

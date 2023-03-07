@@ -120,6 +120,14 @@ def main(argv):
     clear_parser = subparsers.add_parser('clear')
     clear_parser.set_defaults(func=run_clear)
 
+    one_parser = subparsers.add_parser('one')
+    one_parser.set_defaults(func=run_one)
+    one_parser.add_argument('ind',type=int,nargs=1,help="index of the led")
+    
+    fill_parser = subparsers.add_parser('fill')
+    fill_parser.set_defaults(func=run_fill)
+    fill_parser.add_argument('color',type=str,nargs=1,help="fillcolor")
+    
     tst_parser = subparsers.add_parser('tst')
     tst_parser.set_defaults(func=run_tst)
     
@@ -129,13 +137,10 @@ def main(argv):
     tst_parser = subparsers.add_parser('piemel')
     tst_parser.set_defaults(func=run_piemel)
 
-    one_parser = subparsers.add_parser('one')
-    one_parser.set_defaults(func=run_one)
-    one_parser.add_argument('ind',type=int,nargs=1,help="index of the led")
-    
-    one_parser = subparsers.add_parser('fill')
-    one_parser.set_defaults(func=run_fill)
-    one_parser.add_argument('color',type=str,nargs=1,help="fillcolor")
+    run_parser = subparsers.add_parser('run') # For running animations
+    run_parser.set_defaults(func=run_off) # CALLS OFF
+    run_parser.add_argument('which',type=str,nargs=1,help="which animation, PUT LIST OF POSSIBLE HERE?")
+    run_parser.add_argument('register',type=str,nargs=1,help="register an animation, PUT LIST OF POSSIBLE HERE?")
 
     args = parser.parse_args(argv)
     if not hasattr(args, 'func'):
