@@ -7,8 +7,8 @@ try:
     import neopixel
     import board
 except:
-    print("ultils: imports failed..")
-    config.dbg = True
+    print("utils: imports failed.. set connect_ledlights=False")
+    config.connect_ledlights = False
 
 def clear(strip: ledstrip.ledstrip=None):
     if strip is None:
@@ -18,15 +18,23 @@ def clear(strip: ledstrip.ledstrip=None):
         strip.fill( (0,0,0) )
 
     
-def get_strip(output_pin: 'board.pin'=board.D18,
+def get_strip(output_pin: str='D18', # getattr(board,str)
         num_pixels: int=config.nleds,
         brightness: float=1.,
-        pixel_order: 'neopixel.RGB'=neopixel.RGB,
+        pixel_order: str='RGB', # getattr(neopixel,str)
         auto_write: bool=False,
         
         coords_fname: str=config.coords3d_fname,
         
         ) -> ledstrip.ledstrip:
+    
+    if config.connect_ledlights:
+        output_pin = getattr(board,output_pin)
+        pixel_order = getattr(neopixel,pixel_order)
+    else:
+        output_pin = None
+        pixel_order = pixel_order # Now suddenly it is string = bad
+    
     strip = ledstrip.ledstrip(output_pin, num_pixels,brightness=brightness,
             auto_write=auto_write,pixel_order=pixel_order)
     

@@ -18,9 +18,9 @@ def colormap_coords(
     
     strip = get_strip() if strip is None else strip
     
-    if strip.xyz is not None:
+    if strip.coords3d.xyz is not None:
             
-        vals = np.dot(strip.xyz , direction)
+        vals = np.dot(strip.coords3d.xyz , direction)
         
         import matplotlib as mpl
         cmap_name = "viridis" if cmap_name is None else cmap_name
@@ -64,10 +64,10 @@ def moving_plane(
     
     strip = get_strip() if strip is None else strip
     # print("in a plane:",strip)
-    # print(strip.x)
-    # print(strip.xyz)
+    # print(strip.coords3d.x)
+    # print(strip.coords3d.xyz)
     # with strip:
-    if strip.xyz is not None:
+    if strip.coords3d is not None:
         
         t = 0
         while True:
@@ -77,8 +77,8 @@ def moving_plane(
             strip.fill(color_off)
             
             
-            ind1 = np.dot(strip.xyz , normal) < pos +thickness
-            ind2 = np.dot(strip.xyz , normal) > pos -thickness
+            ind1 = np.dot(strip.coords3d.xyz , normal) < pos +thickness
+            ind2 = np.dot(strip.coords3d.xyz , normal) > pos -thickness
             ind = np.logical_and(ind1,ind2)
             strip[ind] = color
             
@@ -92,7 +92,7 @@ def moving_plane(
         strip.show()
         
     else:
-        print("Plane warning: No xyz")
+        print("Plane warning: No coords3d")
         
         
         
@@ -118,8 +118,8 @@ def rotating_plane(
     
     
     strip = get_strip() if strip is None else strip
-    if strip.xyz is None:
-        print("Plane warning: No xyz")
+    if strip.coords3d is None:
+        print("Plane warning: No coords3d")
         return -1
         
     pos_period = 2.
@@ -131,7 +131,7 @@ def rotating_plane(
     t = 0
     while True:
         pos = np.array([0,0,pos_offset+pos_amplitude*np.sin(2*np.pi*t/pos_period)])
-        # rotation_axis = np.array([ np.cos(2*np.pi*t/rotaxis_period),np.sin(2*np.pi*t/rotaxis_period),1.])
+        rotation_axis = np.array([ np.cos(2*np.pi*t/rotaxis_period),np.sin(2*np.pi*t/rotaxis_period),1.])
         
         
         normal = np.dot( misc_func.rotationmtx( rotation_axis, 2*np.pi*dt/period ) , normal )
@@ -140,10 +140,10 @@ def rotating_plane(
         
         
         if mode == "fill":
-            ind = np.dot(strip.xyz -pos , normal) <=  0
+            ind = np.dot(strip.coords3d.xyz -pos , normal) <=  0
         else: # bar
-            ind1 = np.dot(strip.xyz -pos , normal) <  thickness
-            ind2 = np.dot(strip.xyz -pos , normal) > -thickness
+            ind1 = np.dot(strip.coords3d.xyz -pos , normal) <  thickness
+            ind2 = np.dot(strip.coords3d.xyz -pos , normal) > -thickness
             ind = np.logical_and(ind1,ind2)
         
         strip[ind] = color
@@ -177,7 +177,7 @@ def fireworks(
     
     
     strip = get_strip() if strip is None else strip
-    if strip.xyz is None:
+    if strip.coords3d.xyz is None:
         print("Plane warning: No xyz")
         return -1
       
@@ -201,7 +201,7 @@ def huphollandhup(strip=None,
     
     strip = get_strip() if strip is None else strip  
     
-    if strip.xyz is not None:
+    if strip.coords3d.xyz is not None:
         z = strip.z
         zmin,zmax = np.nanmin(z),np.nanmax(z)
         dz = zmax-zmin
@@ -227,8 +227,8 @@ def huphollandhup(strip=None,
             white_ind = z < np.inf # all
             
             # Red
-            ind = z >= zmin+sinfunc(strip.x,t,cnst_red)
-            val = sinfunc(strip.x,t,cnst_val_red)
+            ind = z >= zmin+sinfunc(strip.coords3d.x,t,cnst_red)
+            val = sinfunc(strip.coords3d.x,t,cnst_val_red)
             h,s = 0.,1.
             color = [ hsv_to_rgb( h,s,v ) if not np.isnan(v) else (0,0,0) for v in val ]
             strip.set_multiple(ind,color)
@@ -236,8 +236,8 @@ def huphollandhup(strip=None,
             white_ind = np.logical_and(white_ind,~ind) # filter redz
             
             # Blue
-            ind = z <= zmin+sinfunc(strip.x,t,cnst_blue)
-            val = sinfunc(strip.x,t,cnst_val_blue)
+            ind = z <= zmin+sinfunc(strip.coords3d.x,t,cnst_blue)
+            val = sinfunc(strip.coords3d.x,t,cnst_val_blue)
             h,s = 240./360.,1.
             color = [ hsv_to_rgb( h,s,v ) if not np.isnan(v) else (0,0,0) for v in val ]
             strip.set_multiple(ind,color)
@@ -246,7 +246,7 @@ def huphollandhup(strip=None,
             
             # White
             ind = white_ind # otherz
-            val = sinfunc(strip.x,t,cnst_val_white)
+            val = sinfunc(strip.coords3d.x,t,cnst_val_white)
             h,s = 0.,0.
             color = [ hsv_to_rgb( h,s,v ) if not np.isnan(v) else (0,0,0) for v in val ]
             strip.set_multiple(ind,color)
@@ -273,14 +273,14 @@ def piemel(strip=None,
         ball1 = (0,0,0)
         ball2 = (-0.5,0,0)
         
-        ind = np.square(strip.x-ball1[0])+np.square(strip.y-ball1[1])+np.square(strip.z-ball1[2]) <= radius*radius
+        ind = np.square(strip.coords3d.x-ball1[0])+np.square(strip.y-ball1[1])+np.square(strip.z-ball1[2]) <= radius*radius
         strip[ind] = color
         
-        ind = np.square(strip.x-ball2[0])+np.square(strip.y-ball2[1])+np.square(strip.z-ball2[2]) <= radius*radius
+        ind = np.square(strip.coords3d.x-ball2[0])+np.square(strip.y-ball2[1])+np.square(strip.z-ball2[2]) <= radius*radius
         strip[ind] = color
         
         pillar = (-0.25,0,0)
-        ind1 = np.square(strip.x-pillar[0])+np.square(strip.y-pillar[1]) <= 0.75*0.75*radius*radius
+        ind1 = np.square(strip.coords3d.x-pillar[0])+np.square(strip.y-pillar[1]) <= 0.75*0.75*radius*radius
         ind2 = strip.z > 0
         ind = np.logical_and( ind1, ind2 )
         strip[ind] = color

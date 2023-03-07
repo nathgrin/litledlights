@@ -6,7 +6,7 @@ print(".This.Is.Config.")
 nleds = 700
 dbg = False
 
-connect_ledlights = False
+connect_ledlights = True
 
 
 coords3d_fname = "coords.txt"

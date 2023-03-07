@@ -53,7 +53,7 @@ def run_tst(args):
         
         print("Coords Nans:")
         strip.fill( (0,0,0) )
-        ind = np.isnan(strip.x)
+        ind = np.isnan(strip.coords3d.x)
         strip[ind] = color
         strip.show()
         input("enter to continue")
