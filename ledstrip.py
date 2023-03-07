@@ -15,7 +15,7 @@ class ledstrip(neopixel.NeoPixel):
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
         
-        self.xyz = None
+        self.coords3d = None
         
     def __setitem__(self, key,value):
         if type(key) is np.ndarray:

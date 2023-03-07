@@ -170,7 +170,7 @@ class AnimationObject():
         instr['id'] = self.id
         self.instruction = instr.copy()
         
-    def update(self,dt:float,force:float):
+    def update(self,dt:float,force:np.ndarray(3)):
         self.a = force/self.m
         dv = self.a*dt
         dx = (self.v+0.5*dv)*dt
@@ -272,7 +272,9 @@ def main():
             if flag == 'KILL':
                 objects.pop(i)
                 i += -1
+                
         t += dt
+        time.sleep(dt)
     
     
 if __name__ == "__main__":
