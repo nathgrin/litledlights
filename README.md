@@ -78,6 +78,10 @@ LitLedLights, they are Lit
     - [x] connect git
   - [ ] documentation & docstrings
   - [ ] simple animations
+    - [ ] Fireworks on sound
+      - [ ] fireworks
+        - [x] first version fireworks
+      - [ ] sound
   - [ ] examples
   - [ ] 3d model to animation conversion
   - [ ] virtual env for testing/animating
