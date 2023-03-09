@@ -96,6 +96,12 @@ def run_one(args):
     strip[ind] = color_on
     strip.show()
     
+def run_animate(args):
+    if args.which[0] == "main":
+        import animate.animate
+        animate.animate.main()
+    else:
+        raise ValueError("Wrong key ({0}) for which in lll animate".format(args.which))
     
 def run_fill(args):
     color_on = color.orange#( 125,125,125 ) # args!
@@ -136,6 +142,11 @@ def main(argv):
     
     tst_parser = subparsers.add_parser('piemel')
     tst_parser.set_defaults(func=run_piemel)
+    
+    
+    animate_parser = subparsers.add_parser('animate') # submodule
+    animate_parser.set_defaults(func=run_animate)
+    animate_parser.add_argument('which',type=str,nargs=1,help="which animation, PUT LIST OF POSSIBLE HERE?")
 
     run_parser = subparsers.add_parser('run') # For running animations
     run_parser.set_defaults(func=run_off) # CALLS OFF

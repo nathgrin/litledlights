@@ -283,7 +283,7 @@ def animationloop(strip: 'ledstrip.ledstrip', anistrip: AnimationStrip, objects:
                 objects.pop(i)
                 i += -1
         
-        print("End loop, comp.time",time.time()-timetime)
+        print("End loop, comp.time: {0} (dt: {1})".format(time.time()-timetime,dt))
         anistrip.t += dt
         time.sleep(max(0,dt-time.time()+timetime))
         
