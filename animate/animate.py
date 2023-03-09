@@ -245,7 +245,7 @@ def animationloop(strip: 'ledstrip.ledstrip', anistrip: AnimationStrip, objects:
     
     # Game Loop
     while True:
-        
+        timetime = time.time()
         # print("objects",t,objects)
         if np.random.uniform() < 1*dt:
             # print("SPAWN")
@@ -282,9 +282,10 @@ def animationloop(strip: 'ledstrip.ledstrip', anistrip: AnimationStrip, objects:
                 # print("KILL")
                 objects.pop(i)
                 i += -1
-                
+        
+        print("End loop, comp.time",time.time()-timetime)
         anistrip.t += dt
-        time.sleep(dt)
+        time.sleep(max(0,dt-time.time()+timetime))
         
         if anistrip.t > tmax:
             print("Max t ({0}) reached".format(tmax))
@@ -329,7 +330,7 @@ def spawn_random_ray(id,
         
         
         radius = 0.15 if radius is None else radius
-        max_distance = np.random.uniform(1.,3.) if max_distance is None else max_distance
+        max_distance = np.random.uniform(2.,4.) if max_distance is None else max_distance
         
         ray = AnimationBall(x0,v0,a0,radius=radius,instr=instr,id=id)
         
@@ -358,7 +359,7 @@ def spawn_fireworks(id,
         x0 = np.zeros(3)
         x0 = np.random.uniform(-0.5,0.5,3)
     
-    nrays = np.random.randint(12,15)
+    nrays = np.random.randint(12,20)
     
     for i in range(nrays):
         objects.extend( spawn_random_ray(str(id)+str(i),x0=x0,color_on=color_on) )
