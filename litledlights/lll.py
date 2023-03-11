@@ -74,10 +74,6 @@ def run_tst(args):
         input("enter to continue")
     
     
-def run_huphollandhup(args):
-    strip = get_strip()
-    with strip:
-        leds.huphollandhup(strip=strip)
 
 def run_piemel(args):
     strip = get_strip()
@@ -103,6 +99,25 @@ def run_animate(args):
         animate.animate.main()
     else:
         raise ValueError("Wrong key ({0}) for which in lll animate".format(args.which))
+
+def run_play(args):
+    if   args.which[0] == "huphollandhup":
+        with get_strip() as strip:
+            leds.huphollandhup(strip=strip)
+    elif args.which[0] == "movingplane":
+        with get_strip() as strip:
+            color = (115,115,115)
+            nml = np.array([0,0,1])
+            leds.moving_plane(nml,strip=strip, color=color)
+    elif args.which[0] == "movingplane":
+        with get_strip() as strip:
+            color = (115,115,115)
+            nml = np.array([0,0,1])
+            color = colors.pink
+            color_off = colors.blue
+            rotating_plane(misc_func.npunit(0),misc_func.npunit(1),strip=strip,color=color,color_off=color_off)
+    else:
+        raise ValueError("Wrong key ({0}) for which in lll run".format(args.which))
     
 def run_calibrate(args):
     if   args.which[0] == "makecoords3d":
@@ -157,6 +172,11 @@ def main(argv):
     tst_parser = subparsers.add_parser('piemel')
     tst_parser.set_defaults(func=run_piemel)
     
+    play_parser = subparsers.add_parser('play') # submodule
+    play_parser.set_defaults(func=run_play)
+    play_parser.add_argument('which',type=str,nargs=1,help="which play, e.g., moving_plane PUT LIST OF POSSIBLE HERE?")
+    play_parser.add_argument('register',type=str,nargs=1,help="register an animation, PUT LIST OF POSSIBLE HERE?")
+    
     
     animate_parser = subparsers.add_parser('animate') # submodule
     animate_parser.set_defaults(func=run_animate)
@@ -167,10 +187,6 @@ def main(argv):
     calibrate_parser.set_defaults(func=run_calibrate)
     calibrate_parser.add_argument('which',type=str,nargs=1,help="which calibration, e.g., makecoords3d PUT LIST OF POSSIBLE HERE?")
 
-    run_parser = subparsers.add_parser('run') # For running animations
-    run_parser.set_defaults(func=run_off) # CALLS OFF
-    run_parser.add_argument('which',type=str,nargs=1,help="which animation, PUT LIST OF POSSIBLE HERE?")
-    run_parser.add_argument('register',type=str,nargs=1,help="register an animation, PUT LIST OF POSSIBLE HERE?")
 
     args = parser.parse_args(argv)
     if not hasattr(args, 'func'):
