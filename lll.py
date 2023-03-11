@@ -103,6 +103,19 @@ def run_animate(args):
     else:
         raise ValueError("Wrong key ({0}) for which in lll animate".format(args.which))
     
+def run_calibrate(args):
+    if   args.which[0] == "makecoords3d":
+        import calibrate.makecoords3d
+        calibrate.makecoords3d.main()
+    elif args.which[0] == "findlights":
+        import calibrate.findlights
+        calibrate.findlights.main()
+    elif args.which[0] == "calibratecamera":
+        import calibrate.calibratecamera
+        calibrate.calibratecamera.main()
+    else:
+        raise ValueError("Wrong key ({0}) for which in lll calibrate".format(args.which))
+    
 def run_fill(args):
     color_on = colors.orange#( 125,125,125 ) # args!
     
@@ -146,7 +159,12 @@ def main(argv):
     
     animate_parser = subparsers.add_parser('animate') # submodule
     animate_parser.set_defaults(func=run_animate)
-    animate_parser.add_argument('which',type=str,nargs=1,help="which animation, PUT LIST OF POSSIBLE HERE?")
+    animate_parser.add_argument('which',type=str,nargs=1,help="which animation, e.g., main PUT LIST OF POSSIBLE HERE?")
+    
+    
+    calibrate_parser = subparsers.add_parser('calibrate') # submodule
+    calibrate_parser.set_defaults(func=run_calibrate)
+    calibrate_parser.add_argument('which',type=str,nargs=1,help="which calibration, e.g., makecoords3d PUT LIST OF POSSIBLE HERE?")
 
     run_parser = subparsers.add_parser('run') # For running animations
     run_parser.set_defaults(func=run_off) # CALLS OFF
