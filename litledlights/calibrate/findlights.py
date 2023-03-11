@@ -26,7 +26,7 @@ def find_light(img,
     
     # x,y = np.mean(np.where(ind), axis=1)
         
-    
+    # cv2.imshow("Blur",blur)
     # print(x,y)
     
     return (x,y)
@@ -41,6 +41,7 @@ def main():
     
     cv2.namedWindow("Images")
     cv2.namedWindow("Zoomed")
+    # cv2.namedWindow("Blur")
     
     radius = 15
     
@@ -55,8 +56,10 @@ def main():
         res = find_light(img)
         print("  result",res)
         if not np.isnan(res[0]):
+            img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR) # Convert to c
+            
             x,y = int(res[0]),int(res[1])
-            img = cv2.circle(img,(x,y),radius,(115,0,0),0)
+            img = cv2.circle(img,(x,y),radius,(0,155,0),0)
             
             crop = img[y-radius:y+radius,x-radius:x+radius]
             crop = cv2.resize(crop,(400,400))

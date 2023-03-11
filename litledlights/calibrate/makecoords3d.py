@@ -6,7 +6,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-from findlights import find_light
+from calibrate.findlights import find_light
 
 import colors
 

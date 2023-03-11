@@ -15,22 +15,22 @@ coords3d = get_coords(coords3d_fname)
 ### Calibrate
 
 ## makecoords3d
-getcoords2d_nviewpoints = 4
+getcoords2d_nviewpoints = 3
 
-getcoords2d_fromangles = True
+getcoords2d_fromangles = False
 do_2d_to_3d = True
 
 # Sequential_photography
-sequentialfotography_coloron = (255,255,255) # tuple[int,int,int]
+sequentialfotography_coloron = (115,115,115) # tuple[int,int,int]
 sequentialfotography_deltat = 10 # int, how many cycles (frames) between images
 sequentialfotography_loc = "_tmp" # str, location for storing imgs
 
 # Find light in image
-findlight_threshold = 30
+findlight_threshold = 120
 
 # combine_coords3d: Combine multiple 3d to single set
 combinecoords3d_referenceinds_default = 148,144,230 # Origin (red), z-point/unit length (blue), x-point (red): 
-ind_coords3d = 5 # for now, simply pick one
+ind_coords3d = 0 # for now, simply pick one
 
 # Fix bad coords
 coords3d_fixbad_splineorder = 3
@@ -42,13 +42,13 @@ savecoords3d_fname = coords3d_fname
 ## Camera calibration
 # Somehow things work better when new_camera_mtx=new_camera_mtx = new_camera_mtx
 # Better camera
-distortion = [[-0.00745411  ,0.19816095 , 0.00370116 , 0.00352454 ,-0.44702301]]
+distortions = np.array([[-0.00745411  ,0.19816095 , 0.00370116 , 0.00352454 ,-0.44702301]])
 # camera_matrix = [[535.52442405   0.         336.52314375]
  # [  0.         539.77321451 289.86230064]
  # [  0.           0.           1.        ]] # first camera mtx
-camera_matrix = [[338.83865356 ,0.      ,   436.99901032],
+camera_matrix = np.array([[338.83865356 ,0.      ,   436.99901032],
  [  0.      ,   327.93417358 ,361.97895928],
- [  0.     ,      0.         ,  1.        ]] # new camera mtx
+ [  0.     ,      0.         ,  1.        ]]) # new camera mtx
 new_camera_matrix = None
 
 
