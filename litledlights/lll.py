@@ -10,6 +10,7 @@ import numpy as np
 import time
 
 from utils import get_strip,clear
+import misc_func
 import colors
 
 import leds
@@ -109,13 +110,13 @@ def run_play(args):
             color = (115,115,115)
             nml = np.array([0,0,1])
             leds.moving_plane(nml,strip=strip, color=color)
-    elif args.which[0] == "movingplane":
+    elif args.which[0] == "rotatingplane":
         with get_strip() as strip:
             color = (115,115,115)
             nml = np.array([0,0,1])
             color = colors.pink
             color_off = colors.blue
-            rotating_plane(misc_func.npunit(0),misc_func.npunit(1),strip=strip,color=color,color_off=color_off)
+            leds.rotating_plane(misc_func.npunit(0),misc_func.npunit(1),strip=strip,color=color,color_off=color_off)
     else:
         raise ValueError("Wrong key ({0}) for which in lll run".format(args.which))
     
@@ -166,16 +167,13 @@ def main(argv):
     tst_parser = subparsers.add_parser('tst')
     tst_parser.set_defaults(func=run_tst)
     
-    tst_parser = subparsers.add_parser('huphollandhup')
-    tst_parser.set_defaults(func=run_huphollandhup)
-    
     tst_parser = subparsers.add_parser('piemel')
     tst_parser.set_defaults(func=run_piemel)
     
     play_parser = subparsers.add_parser('play') # submodule
     play_parser.set_defaults(func=run_play)
     play_parser.add_argument('which',type=str,nargs=1,help="which play, e.g., moving_plane PUT LIST OF POSSIBLE HERE?")
-    play_parser.add_argument('register',type=str,nargs=1,help="register an animation, PUT LIST OF POSSIBLE HERE?")
+    # play_parser.add_argument('register',type=str,nargs=1,help="register an animation, PUT LIST OF POSSIBLE HERE?")
     
     
     animate_parser = subparsers.add_parser('animate') # submodule
