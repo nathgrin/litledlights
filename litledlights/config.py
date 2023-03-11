@@ -21,12 +21,12 @@ getcoords2d_fromangles = False
 do_2d_to_3d = True
 
 # Sequential_photography
-sequentialfotography_coloron = (255,255,255) # tuple[int,int,int]
+sequentialfotography_coloron = (115,115,115) # tuple[int,int,int]
 sequentialfotography_deltat = 10 # int, how many cycles (frames) between images
 sequentialfotography_loc = "_tmp" # str, location for storing imgs
 
 # Find light in image
-findlight_threshold = 30
+findlight_threshold = 120
 
 # combine_coords3d: Combine multiple 3d to single set
 combinecoords3d_referenceinds_default = 148,144,230 # Origin (red), z-point/unit length (blue), x-point (red): 
