@@ -1,8 +1,8 @@
 import config
-import animate.animate as animate
+import animate.animate
 
 
-animate.main()
+animate.animate.main()
 
 
 

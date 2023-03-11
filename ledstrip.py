@@ -34,7 +34,7 @@ class ledstrip(*parentclasses):
     
     def __exit__(self,*args,**kwargs):
         if self.connect_ledlights:
-            super().__exit__(*args,**kwargs) # Super does deinit, which turns all lights off (this makes with work)
+            super().__exit__(*args,**kwargs) # Super does deinit(), which turns all lights off (this makes with work)
             
 
         
