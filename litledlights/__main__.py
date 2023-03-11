@@ -2,11 +2,11 @@ import config
 import animate.animate
 
 
-# animate.animate.main()
+animate.animate.main()
 
 
-import calibrate.findlights
-calibrate.findlights.main()
+# import calibrate.findlights
+# calibrate.findlights.main()
 
 
 
