@@ -18,7 +18,7 @@ coords3d = get_coords(coords3d_fname)
 getcoords2d_nviewpoints = 3
 
 getcoords2d_fromangles = False
-do_2d_to_3d = True
+do_2d_to_3d = False
 
 # Sequential_photography
 sequentialfotography_coloron = (115,115,115) # tuple[int,int,int]
@@ -29,10 +29,11 @@ sequentialfotography_loc = "_tmp" # str, location for storing imgs
 findlight_threshold = 120
 
 # combine_coords3d: Combine multiple 3d to single set
-combinecoords3d_referenceinds_default = 148,144,230 # Origin (red), z-point/unit length (blue), x-point (red): 
-ind_coords3d = 0 # for now, simply pick one
+combinecoords3d_referenceinds_default = 152,156,150 # Origin (red), z-point/unit length (blue), x-point (red): 
+combinecoords3d_ind_coords3d = 0 # for now, simply pick one
 
 # Fix bad coords
+coords3dflagbadcoords_cutoff = 1.3#None
 coords3d_fixbad_splineorder = 3
 
 # Saving

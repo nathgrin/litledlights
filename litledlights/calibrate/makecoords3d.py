@@ -439,7 +439,7 @@ def combine_coords3d(coords3d_list: list):
     # ax.set_ylabel('$y$')
     # ax.set_zlabel('$z$')
     
-    if not config.dbg:
+    if config.connect_ledlights:
         with get_strip() as strip:
             
             while True:
@@ -461,6 +461,8 @@ def combine_coords3d(coords3d_list: list):
             
             strip.fill( (0,0,0) )
             strip.show()
+    else:
+        print("Chosen inds:",ind1,ind2,ind3)
             
     out = []
     for ind,coords3d in enumerate(coords3d_list): # SKIPPING FIRST BY HAND BAD!
@@ -542,7 +544,7 @@ def combine_coords3d(coords3d_list: list):
     # plt.legend()
     # plt.show()
     
-    which = config.ind_coords3d
+    which = config.combinecoords3d_ind_coords3d
     return out[which].transpose()
 
 def calibrate_updown(coords3d):
@@ -619,6 +621,8 @@ def coords3d_flag_bad_coords(coords3d:np.ndarray):
     dists_bwd = np.sqrt(np.sum(np.square(coords3d-bwd),axis=1))
     
     cutoff = 4.*np.nanmean(dists_fwd)/3. # average r is 3/4 of radius
+    print("Suggested cutoff {0}".format(cutoff))
+    cutoff = config.coords3dflagbadcoords_cutoff if config.coords3dflagbadcoords_cutoff is not None else cutoff
     print("Mean Distance, Cutoff",np.nanmean(dists_fwd),cutoff)
     
     print("Plotting distances, Black: forward, Red: backward")
@@ -653,7 +657,7 @@ def coords3d_flag_bad_coords(coords3d:np.ndarray):
     print("too far",np.sum(ind_toofar))
     
     
-    if not config.dbg:
+    if config.connect_ledlights:
         print("Show flags on leds. Red = nan, Blue = toofar")
         with get_strip() as strip:
             strip.fill( (0,0,0) )
@@ -849,7 +853,7 @@ def main():
         coords3d_ind = config.ind_coords3d
         coords3d = coords3d_list[ coords3d_ind ]
     
-    if not config.dbg:
+    if config.connect_ledlights:
         show_coords_onlights(coords3d)
     
     # Find bad

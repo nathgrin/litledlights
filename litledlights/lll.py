@@ -2,8 +2,9 @@
 import argparse
 import sys
 
-import board
-import neopixel
+
+# import board
+# import neopixel
 
 import numpy as np
 import time

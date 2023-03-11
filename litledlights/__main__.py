@@ -1,8 +1,10 @@
 import config
-import animate.animate
 
+import calibrate.makecoords3d
+calibrate.makecoords3d.main()
 
-animate.animate.main()
+# import animate.animate
+# animate.animate.main()
 
 
 # import calibrate.findlights
