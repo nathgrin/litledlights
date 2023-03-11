@@ -104,7 +104,7 @@ def run_animate(args):
         raise ValueError("Wrong key ({0}) for which in lll animate".format(args.which))
     
 def run_fill(args):
-    color_on = color.orange#( 125,125,125 ) # args!
+    color_on = colors.orange#( 125,125,125 ) # args!
     
     # print(color_on)
     strip = get_strip()
