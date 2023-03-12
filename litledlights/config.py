@@ -18,19 +18,19 @@ coords3d = get_coords(coords3d_fname)
 getcoords2d_nviewpoints = 3
 
 getcoords2d_fromangles = False
-do_2d_to_3d = False
+do_2d_to_3d = True
 
 # Sequential_photography
-sequentialfotography_coloron = (115,115,115) # tuple[int,int,int]
+sequentialfotography_coloron = (215,215,215) # tuple[int,int,int]
 sequentialfotography_deltat = 10 # int, how many cycles (frames) between images
 sequentialfotography_loc = "_tmp" # str, location for storing imgs
 
 # Find light in image
-findlight_threshold = 120
+findlight_threshold = 30
 
 # combine_coords3d: Combine multiple 3d to single set
 combinecoords3d_referenceinds_default = 152,156,150 # Origin (red), z-point/unit length (blue), x-point (red): 
-combinecoords3d_ind_coords3d = 0 # for now, simply pick one
+combinecoords3d_ind_coords3d = 2 # for now, simply pick one
 
 # Fix bad coords
 coords3dflagbadcoords_cutoff = 1.3#None
