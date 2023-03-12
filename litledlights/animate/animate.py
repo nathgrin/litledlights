@@ -6,7 +6,10 @@ try:
     import utils
 except:
     print("animate: import utils failed")
-    
+try:
+    import ledstrip
+except:
+    print("animate: import ledstrip failed")
 import misc_func
 import time
 
