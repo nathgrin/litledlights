@@ -77,7 +77,7 @@ def initiate_sequential_fotography():
             print("Not happy, try again")
         else:
             print(" > Happy!")
-    return coords2d
+    return np.array(coords2d)
     
 def sequential_fotography(strip=None,
                             color_off = (0,0,0),
