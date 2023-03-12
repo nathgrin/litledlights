@@ -6,7 +6,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-from calibrate.findlights import find_light
+from calibrate.findlights import find_light, postprocess
 
 import colors
 
@@ -52,10 +52,17 @@ def tst():
     cam.release()
     cv2.destroyAllWindows()
 
-def initiate_sequential_fotography():
+def initiate_sequential_fotography(loc: str=None,skip_to_postprocess: bool=None):
+    loc = config.sequentialfotography_loc if loc is None else loc
+    findlight_threshold = config.findlight_threshold# if findlight_threshold is None else findlight_threshold
+    
     ok = False
+    do_postprocess = config.sequentialfotography_skiptopostprocess if skip_to_postprocess is None else skip_to_postprocess
     while not ok:
-        coords2d = sequential_fotography()
+        if do_postprocess:
+            coords2d = postprocess(loc=loc,findlight_threshold=findlight_threshold)
+        else:
+            coords2d = sequential_fotography(loc=loc,findlight_threshold=findlight_threshold)
         # print(coords2d)
         if coords2d is not None:
             print("NaN/tot: {}/{}".format(np.sum(np.isnan(coords2d)),len(coords2d)))
@@ -65,27 +72,33 @@ def initiate_sequential_fotography():
                 # img_bg = cv2.putText(img_bg,str(i),coords2d[i],cv2.FONT_HERSHEY_SIMPLEX,1,(255,0,0),2,cv2.LINE_AA)
             # cv2.imshow("Background with found lights",img_bg)
             
-            print("You happy? Enter to accept, anything else to redo")
+            print("You happy? Enter to accept, p to postprocess, anything else to redo")
             theinput = input("")
             # k = cv2.waitKey(0)
             
             ok = theinput == ""#k%256 == 10
+            do_postprocess = theinput == "p"
             
         else:
             ok = False
-        if not ok:
+        if do_postprocess:
+            print("Lets postprocess..")
+        elif not ok:
             print("Not happy, try again")
         else:
             print(" > Happy!")
-    return np.array(coords2d)
+    return coords2d
     
 def sequential_fotography(strip=None,
                             color_off = (0,0,0),
                             color_on: tuple[int,int,int] = None,
                             
                             delta_t: int = None,# in arbitrary units
-                            loc: str=None
-                            ):
+                            loc: str=None,
+                            
+                            findlight_threshold: int=None
+                            
+                            ) -> np.ndarray:
     """example from stackoverflow, in turn stolen from the "docs" 
     
     like matt parker does it. 
@@ -107,6 +120,8 @@ def sequential_fotography(strip=None,
     strip.fill( color_off )
     strip.show()
     
+    # Findlight settings
+    findlight_threshold = config.findlight_threshold if findlight_threshold is None else findlight_threshold
     
     # setup
     cam = cv2.VideoCapture(0)
@@ -197,7 +212,7 @@ def sequential_fotography(strip=None,
                 cv2.imwrite(img_name, frame)
                 # print("{} written!".format(img_name))
                 
-                xy = find_light(frame)
+                xy = find_light(frame,threshold=findlight_threshold)
                 
                 coords2d[ind] = xy
                 
@@ -213,7 +228,7 @@ def sequential_fotography(strip=None,
         strip.fill( color_off )
         strip.show()
     
-    return coords2d
+    return np.array(coords2d)
 
 
     
@@ -547,7 +562,7 @@ def combine_coords3d(coords3d_list: list):
     which = config.combinecoords3d_ind_coords3d
     return out[which].transpose()
 
-def calibrate_updown(coords3d):
+def calibrate_updown(coords3d): # not used
     import keyboard
     white = (155,155,155)
     red = (155,0,0)
