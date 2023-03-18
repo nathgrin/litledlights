@@ -6,7 +6,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-from calibrate.findlights import find_light, postprocess
+from calibrate.findlights import find_light, reprocess
 
 import colors
 
@@ -52,15 +52,16 @@ def tst():
     cam.release()
     cv2.destroyAllWindows()
 
-def initiate_sequential_fotography(loc: str=None,skip_to_postprocess: bool=None):
+def initiate_sequential_fotography(loc: str=None,skip_to_reprocess: bool=None):
     loc = config.sequentialfotography_loc if loc is None else loc
     findlight_threshold = config.findlight_threshold# if findlight_threshold is None else findlight_threshold
     
     ok = False
-    do_postprocess = config.sequentialfotography_skiptopostprocess if skip_to_postprocess is None else skip_to_postprocess
+    do_reprocess = config.sequentialfotography_skiptoreprocess if skip_to_reprocess is None else skip_to_reprocess
     while not ok:
-        if do_postprocess:
-            coords2d = postprocess(loc=loc,findlight_threshold=findlight_threshold)
+        if do_reprocess:
+            coords2d = reprocess(loc=loc,findlight_threshold=findlight_threshold)
+            do_reprocess = False
         else:
             coords2d = sequential_fotography(loc=loc,findlight_threshold=findlight_threshold)
         # print(coords2d)
@@ -72,17 +73,17 @@ def initiate_sequential_fotography(loc: str=None,skip_to_postprocess: bool=None)
                 # img_bg = cv2.putText(img_bg,str(i),coords2d[i],cv2.FONT_HERSHEY_SIMPLEX,1,(255,0,0),2,cv2.LINE_AA)
             # cv2.imshow("Background with found lights",img_bg)
             
-            print("You happy? Enter to accept, p to postprocess, anything else to redo")
+            print("You happy? Enter to accept, p to reprocess, anything else to redo")
             theinput = input("")
             # k = cv2.waitKey(0)
             
             ok = theinput == ""#k%256 == 10
-            do_postprocess = theinput == "p"
+            do_reprocess = theinput == "p"
             
         else:
             ok = False
-        if do_postprocess:
-            print("Lets postprocess..")
+        if do_reprocess:
+            print("Lets reprocess..")
         elif not ok:
             print("Not happy, try again")
         else:
@@ -227,24 +228,21 @@ def sequential_fotography(strip=None,
         cv2.destroyAllWindows()
         strip.fill( color_off )
         strip.show()
-    
+    if coords2d is None:
+        return None
     return np.array(coords2d)
 
 
     
 
 def coords2d_write(fname: str, coords2d: list[tuple[float,float]])->None:
-    import json
     
-    
-    with open(fname,'w') as thefile:
-        thefile.write(json.dumps(coords2d))
+    np.savetxt(fname,coords2d)
 
 def coords2d_read(fname: str) -> list[tuple[float,float]]: 
-    import json
-    with open(fname,'r') as thefile:
-        out = json.loads(thefile.readline())
-    return np.array(out)
+    
+    out = np.loadtxt(fname)
+    return out
     
 def coords3d_read(fname: str) -> list[tuple[float,float,float]]:
     return np.loadtxt(fname)
@@ -267,7 +265,7 @@ def get_coords2d_from_multiple_angles(n_viewpoints: int,loc: str="_tmp") -> list
 
 
 def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_viewpoints: int=None,camera_matrix=None,distortions:np.ndarray=None,new_camera_matrix:np.ndarray=None) -> list[tuple[float,float,float]]:
-    
+    # this needs to be reorganised to a do_one_ type functions
     
     # print(coords2d)
     
@@ -445,6 +443,7 @@ def combine_coords3d(coords3d_list: list):
     
     ind_nonans = np.where(~any_isnan)
     print("no nans!:",ind_nonans)
+    print("check above /\ for which are no nans")
     
     ind1,ind2,ind3 = config.combinecoords3d_referenceinds_default
     
@@ -460,6 +459,7 @@ def combine_coords3d(coords3d_list: list):
             while True:
                 
                 print("Chosen inds:",ind1,ind2,ind3)
+                print("xyz:",coords3d_list[0][ind1],coords3d_list[0][ind1],coords3d_list[0][ind1])
                 strip.fill( (0,0,0) )
                 strip[ind1] = colors.red
                 strip[ind2] = colors.blue

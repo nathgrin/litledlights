@@ -1,7 +1,8 @@
-import cv2 as cv # ...stupid example
+# import cv2 as cv # ...stupid example
 import cv2
 import numpy as np
 import os
+import config
 
 def getpictures():
     """example from stackoverflow, in turn stolen from the "docs" """
@@ -43,7 +44,7 @@ def getpictures():
 def get_objpoints(img_list,ncorners_xy):
     n,m = ncorners_xy#7,7#4,3
     # termination criteria
-    criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
     # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
     objp = np.zeros((n*m,3), np.float32)
     objp[:,:2] = np.mgrid[0:m,0:n].T.reshape(-1,2)
@@ -54,28 +55,28 @@ def get_objpoints(img_list,ncorners_xy):
     nfound = 0
     for i,img in enumerate(img_list):
         print("image {0}, space to continue".format(i))
-        gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         # Find the chess board corners
-        ret, corners = cv.findChessboardCorners(gray, (m,n),  flags=None)
-        # cv.imshow('img', img)
-        # cv.waitKey(0)
+        ret, corners = cv2.findChessboardCorners(gray, (m,n),  flags=None)
+        # cv2.imshow('img', img)
+        # cv2.waitKey(0)
         # If found, add object points, image points (after refining them)
         if ret == True:
             print("  found corners")
             nfound += 1
             objpoints.append(objp)
-            corners2 = cv.cornerSubPix(gray,corners, (11,11), (-1,-1), criteria) # refine corners
+            corners2 = cv2.cornerSubPix(gray,corners, (11,11), (-1,-1), criteria) # refine corners
             imgpoints.append(corners2)
             # Draw and display the corners
-            cv.drawChessboardCorners(img, (m,n), corners2, ret)
-            cv.imshow('img', img)
-            cv.waitKey(0)
+            cv2.drawChessboardCorners(img, (m,n), corners2, ret)
+            cv2.imshow('img', img)
+            cv2.waitKey(0)
         else:
             print("  failed corners")
             
         # input()
     
-    cv.destroyAllWindows()
+    cv2.destroyAllWindows()
     
     print("found",nfound)
     
@@ -83,10 +84,13 @@ def get_objpoints(img_list,ncorners_xy):
 
 def main():
     """
-    https://docs.opencv.org/4.x/dc/dbb/tutorial_py_calibration.html
+    https://docs.opencv2.org/4.x/dc/dbb/tutorial_py_calibration.html
     """
     print("Calibratecamera")
     
+    
+    loc = "_tmp"
+        
     img_list = None
     theinput = input("Get new pictures? (y to do so, otherwise no): ")
     if theinput == "y":
@@ -94,8 +98,8 @@ def main():
     
     if img_list is None:
         img_list = []
-        for img_counter in range(12):
-            img_name = os.path.join("_tmp","calibrateframe_{}.png".format(img_counter))
+        for img_counter in range(config.calibratecamera_nimg):
+            img_name = os.path.join(loc,"calibrateframe_{}.png".format(img_counter))
             print(img_name,os.path.exists(img_name))
             img = cv2.imread(img_name)
             img_list.append(img)
@@ -118,26 +122,29 @@ def main():
     imgpoints,objpoints,resolution = get_objpoints(img_list,ncorners_xy)
     input("done get_objpoints, enter to continue")
     
-    ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, resolution, None, None)
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, resolution, None, None)
     
     
-    fname = os.path.join("_tmp","cameramtx.txt")
+    fname = os.path.join(loc,"cameramtx.txt")
     print("fname",fname)
+    distortion_str = "distortions = np.array({0})".format(dist )
+    print(distortion_str)
     
-    print("first matrix",mtx)
-    print("distortion", dist )
-    np.savetxt(fname, mtx, header="first camera mtx")
+    camera_matrix_str = "camera_matrix = np.array({0})".format(mtx)
+    print(camera_matrix_str)
     
     
-    # img = cv.imread('left12.jpg')
+    # img = cv2.imread('left12.jpg')
     h,  w = img.shape[:2]
-    newcameramtx, roi = cv.getOptimalNewCameraMatrix(mtx, dist, (w,h), 1, (w,h))
+    newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w,h), 1, (w,h))
     
-    print("secondmatrix", newcameramtx)
+    new_camera_matrix_str = "new_camera_matrix = np.array({0})".format(newcameramtx)
+    print(new_camera_matrix_str)
     
     with open(fname,'a') as thefile:
-        np.savetxt(thefile,dist, header="distortions")
-        np.savetxt(thefile,newcameramtx, header="optimal new camera mtx")
+        thefile.write(distortion_str)
+        thefile.write(camera_matrix_str)
+        thefile.write(new_camera_matrix_str)
     
 if __name__ == "__main__":
     main()
