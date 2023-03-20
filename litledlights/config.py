@@ -22,12 +22,12 @@ do_2d_to_3d = True
 
 # Sequential_photography
 sequentialfotography_skiptoreprocess = False # For the first viewpoint, skip to ?
-sequentialfotography_coloron = (215,215,215) # tuple[int,int,int]
+sequentialfotography_coloron = (115,115,115) # tuple[int,int,int]
 sequentialfotography_deltat = 6 # int, how many cycles (frames) between images
 sequentialfotography_loc = "_tmp" # str, location for storing imgs
 
 # Find light in image
-findlight_threshold = 100
+findlight_threshold = 80
 # reprocessing find lights
 reprocess_drawradius = 15
 
@@ -36,8 +36,8 @@ combinecoords3d_referenceinds_default = 306,300,148 # Origin (red), z-point/unit
 combinecoords3d_ind_coords3d = 0 # for now, simply pick one
 
 # Fix bad coords
-coords3dflagbadcoords_cutoff = None# 1.3#None# Nones calculates this on fly
-coords3d_fixbad_splineorder = 3
+coords3dflagbadcoords_cutoff = 0.6#None# 1.3#None# Nones calculates this on fly
+coords3d_fixbad_splineorder = 2
 
 # Saving
 save_coords3d = True
