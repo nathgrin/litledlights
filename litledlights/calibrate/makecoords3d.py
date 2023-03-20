@@ -447,44 +447,6 @@ def triangulate(pts1,pts2, camera_matrix=None):
     M_l = np.concatenate((np.eye(3,3),np.zeros((3,1))),axis=1)
     proj_r = np.dot(cameraMatrix,M_r)
     proj_l = np.dot(cameraMatrix,M_l)
-    
-    import calibrate.triangulation
-    points_3d,flags = calibrate.triangulation.iterative_LS_triangulation( pts1,proj_l,pts2,proj_r)
-    # points_3d,flags = calibrate.triangulation.linear_LS_triangulation( pts1,proj_r,pts2,proj_l)
-        
-    
-    return points_3d
-def OLD_triangulate(pts1,pts2, camera_matrix=None):
-    """
-    from https://stackoverflow.com/questions/58543362/determining-3d-locations-from-two-images-using-opencv-traingulatepoints-units
-    """
-    pts1,pts2 = np.array(pts1),np.array(pts2)
-    # print(pts1,pts2)
-    # ind = np.logical_or( np.isnan(pts1) , np.isnan(pts2) )
-    # print(ind)
-    # pts1,pts2 = pts1[ind],pts2[ind]
-    
-    if camera_matrix is None:
-        cameraMatrix = np.array([[1, 0,0],[0,1,0],[0,0,1]])        
-    else:
-        cameraMatrix = camera_matrix
-    F,m1 = cv2.findFundamentalMat(pts1, pts2) # apparently not necessary
-
-    # using the essential matrix can get you the rotation/translation bet. cameras, although there are two possible rotations: 
-    E,m2 = cv2.findEssentialMat(pts1, pts2, cameraMatrix, cv2.RANSAC, 0.999, 1.0)
-    # Re1, Re2, t_E = cv2.decomposeEssentialMat(E)
-
-    # recoverPose gets you an unambiguous R and t. One of the R's above does agree with the R determined here. RecoverPose can already triangulate, I check by hand below to compare results. 
-    # K_l = cameraMatrix
-    # K_r = cameraMatrix
-    retval, R, t, mask2, triangulatedPoints = cv2.recoverPose(E,pts1, pts2, cameraMatrix,distanceThresh=0.5)
-    # retval, R, t, mask2, triangulatedPoints = cv2.recoverPose(E,pts_l_norm, pts_r_norm, cameraMatrix,distanceThresh=0.5)
-
-    # given R,t you can  explicitly find 3d locations using projection 
-    M_r = np.concatenate((R,t),axis=1)
-    M_l = np.concatenate((np.eye(3,3),np.zeros((3,1))),axis=1)
-    proj_r = np.dot(cameraMatrix,M_r)
-    proj_l = np.dot(cameraMatrix,M_l)
     points_4d_hom = cv2.triangulatePoints(proj_l, proj_r, np.expand_dims(pts1, axis=1), np.expand_dims(pts2, axis=1))
     points_4d = points_4d_hom / np.tile(points_4d_hom[-1, :], (4, 1))
     points_3d = points_4d[:3, :].T
