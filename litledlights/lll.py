@@ -89,7 +89,7 @@ def run_one(args):
     # print(color_on)
     strip = get_strip()
     
-    ind = args.ind[0]
+    ind = args.ind
     
     strip[ind] = color_on
     strip.show()
@@ -147,7 +147,9 @@ def run_fill(args):
 
 def main(argv):
     # print(argv)
-    parser = argparse.ArgumentParser(prog="lll")
+    parser = argparse.ArgumentParser(prog="lll",
+                    description='LitLedLights, they are lit!',
+                    epilog='Hoe dan?')
     subparsers = parser.add_subparsers()
 
     off_parser = subparsers.add_parser('off')
@@ -158,7 +160,7 @@ def main(argv):
 
     one_parser = subparsers.add_parser('one')
     one_parser.set_defaults(func=run_one)
-    one_parser.add_argument('ind',type=int,nargs=1,help="index of the led")
+    one_parser.add_argument('ind',type=int,nargs='+',help="index of the led")
     
     fill_parser = subparsers.add_parser('fill')
     fill_parser.set_defaults(func=run_fill)
@@ -172,18 +174,18 @@ def main(argv):
     
     play_parser = subparsers.add_parser('play') # submodule
     play_parser.set_defaults(func=run_play)
-    play_parser.add_argument('which',type=str,nargs=1,help="which play, e.g., moving_plane PUT LIST OF POSSIBLE HERE?")
+    play_parser.add_argument('which',type=str,nargs=1,choices=['main','huphollandhup','movingplane','rotatingplane'])#),help="which play, e.g., moving_plane PUT LIST OF POSSIBLE HERE?")
     # play_parser.add_argument('register',type=str,nargs=1,help="register an animation, PUT LIST OF POSSIBLE HERE?")
     
     
     animate_parser = subparsers.add_parser('animate') # submodule
     animate_parser.set_defaults(func=run_animate)
-    animate_parser.add_argument('which',type=str,nargs=1,help="which animation, e.g., main PUT LIST OF POSSIBLE HERE?")
+    animate_parser.add_argument('which',type=str,nargs=1,choices=['main','fireworks'])#,help="which animation, e.g., main PUT LIST OF POSSIBLE HERE?")
     
     
     calibrate_parser = subparsers.add_parser('calibrate') # submodule
     calibrate_parser.set_defaults(func=run_calibrate)
-    calibrate_parser.add_argument('which',type=str,nargs=1,help="which calibration, e.g., makecoords3d PUT LIST OF POSSIBLE HERE?")
+    calibrate_parser.add_argument('which',type=str,nargs=1,choices=['main','makecoords3d','calibratecamera'])#,help="which calibration, e.g., makecoords3d PUT LIST OF POSSIBLE HERE?")
 
 
     args = parser.parse_args(argv)
