@@ -264,7 +264,7 @@ def get_coords2d_from_multiple_angles(n_viewpoints: int,loc: str="_tmp") -> list
     return coords2d_list
 
 
-def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_viewpoints: int=None,camera_matrix=None,distortions:np.ndarray=None,new_camera_matrix:np.ndarray=None) -> list[tuple[float,float,float]]:
+def OLD_combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_viewpoints: int=None,camera_matrix=None,distortions:np.ndarray=None,new_camera_matrix:np.ndarray=None) -> list[tuple[float,float,float]]:
     # this needs to be reorganised to a do_one_ type functions
     
     # print(coords2d)
@@ -321,6 +321,65 @@ def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_view
     
     return coords3d_list
     
+
+def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_viewpoints: int=None,camera_matrix=None,distortions:np.ndarray=None,new_camera_matrix:np.ndarray=None) -> list[tuple[float,float,float]]:
+    # this needs to be reorganised to a do_one_ type functions
+    
+    # print(coords2d)
+    
+    # Undistort
+    
+    if distortions is not None:# and new_camera_matrix is not None: # This doesnt work!
+        print("Undistorting!")
+        for i in range(len( coords2d_list )):
+            # print(distortions)
+            # undistorted = cv2.undistortPoints(coords2d_list[i], camera_matrix, distortions,None,new_camera_matrix)
+            if new_camera_matrix is None:
+                new_camera_matrix = camera_matrix
+            
+            undistorted = cv2.undistortPoints(coords2d_list[i], camera_matrix, distortions, P=new_camera_matrix) 
+            undistorted = np.squeeze(undistorted)
+            # print(undistorted)
+            coords2d_list[i] = undistorted
+    
+    import itertools
+    
+    coords3d_list = []
+    cnt = 0
+    
+    # For each pair of coord lists (image)
+    # for coords2d1,coords2d2 in itertools.combinations(coords2d_list,2):
+    for ind1, ind2 in itertools.combinations(range(len(coords2d_list)),2):
+        print("cnt",cnt,"ind1 ind2",ind1,ind2)
+        coords2d1,coords2d2 = coords2d_list[ind1],coords2d_list[ind2]
+        
+        
+        # plt.plot(coords2d1[0],coords2d1[1],marker='o',ls='')
+        plt.plot(coords2d1.transpose()[0],coords2d1.transpose()[1],marker='o',ls='',c='k')
+        plt.plot(coords2d2.transpose()[0],coords2d2.transpose()[1],marker='o',ls='',c='r')
+        plt.gca().invert_yaxis()
+        plt.show()
+        
+        # coords3d = triangulate( coords2d1,coords2d2 ,camera_matrix=camera_matrix)
+        import triangulation
+        coords3d,flags = triangulation.linear_LS_triangulation( coords2d1,camera_matrix,coords2d2,camera_matrix)
+        
+        
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        ax.plot(coords3d.transpose()[0],coords3d.transpose()[1],coords3d.transpose()[2],marker='o',ls='',c='k')
+        
+        plt.show()
+        
+        # print(coords3d)
+        coords3d_list.append(coords3d)
+        
+        np.savetxt( "_tmp/"+"coords3d_{}.txt".format(cnt) ,coords3d)
+        
+        cnt += 1
+        # coords3d = coords3d.transpose()
+    
+    return coords3d_list
     
     
 def filter_nans(pts1,pts2):

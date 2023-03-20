@@ -47,10 +47,19 @@ savecoords3d_fname = coords3d_fname
 calibratecamera_nimg = 13
 # Somehow things work better when new_camera_mtx=new_camera_mtx = new_camera_mtx
 # Better camera
-distortions = np.array([[-0.03816212,0.44906195,0.01597279,0.00651138,-0.66210417]])
-camera_matrix = np.array([[627.83081055,0,330.48518022],
- [  0,621.51800537, 277.32219422],
- [  0,0,1.        ]])
+distortions = np.array([[ 0.0432809  ,-0.17178702 , 0.00300214 ,-0.00268438 , 0.10663246]])
+camera_matrix = np.array([[638.72088052  , 0.      ,   309.964957  ],
+ [  0.   ,      634.23924183 ,248.54710424],
+ [  0.    ,       0.        ,   1.        ]])
+new_camera_matrix = np.array([[633.53369141  , 0.  ,       307.62247084],
+ [  0.        , 628.33099365, 249.52211068],
+ [  0.      ,     0.   ,        1.        ]])
+
+
+# distortions = np.array([[-0.03816212,0.44906195,0.01597279,0.00651138,-0.66210417]])
+# camera_matrix = np.array([[627.83081055,0,330.48518022],
+ # [  0,621.51800537, 277.32219422],
+ # [  0,0,1.        ]])
 new_camera_matrix= None
 # new_camera_matrix = np.array([[627.83081055,0,330.48518022],
  # [  0,621.51800537, 277.32219422],
