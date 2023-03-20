@@ -18,6 +18,10 @@ LitLedLights, they are Lit
 
 - level converter "chip"
 - robust wiring
+  - Cables with more power throughput
+- calibrate makecoords3d
+  - clean up new_camera_mess in combine_2d_to_3d
+  - build sampler for triangulation
 
 ## Shopping list
 
