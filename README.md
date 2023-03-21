@@ -22,6 +22,7 @@ LitLedLights, they are Lit
 - calibrate makecoords3d
   - clean up new_camera_mess in combine_2d_to_3d
   - build sampler for triangulation
+- fix error after 'lll play blink_binary' exit with gives gpio.pin is Nonetype?
 
 ## Shopping list
 
