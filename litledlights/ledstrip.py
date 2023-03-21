@@ -1,4 +1,4 @@
-
+from typing import Union
 import numpy as np
 import config
 import colors
@@ -24,6 +24,7 @@ class ledstrip(*parentclasses):
             super().__init__(*args,**kwargs)
         
         self.coords3d = None
+        self.nleds = self.n
         
         
     def __enter__(self):
@@ -34,11 +35,11 @@ class ledstrip(*parentclasses):
     
     def __exit__(self,*args,**kwargs):
         if self.connect_ledlights:
-            super().__exit__(*args,**kwargs) # Super does deinit(), which turns all lights off (this makes with work)
+            super().__exit__(*args,**kwargs) # Super does deinit(), which turns all lights off (this makes with-statements work)
             
 
         
-    def __setitem__one(self, key: int,value: 'colors.Color'):
+    def __setitem__one(self, key: int,value: Union['colors.Color',tuple[int,int,int]]):
         if self.connect_ledlights:
             if isinstance(value,colors.Color):
                 val = value['rgb']
@@ -47,11 +48,24 @@ class ledstrip(*parentclasses):
             super().__setitem__(key,val)
         
     def __setitem__(self, key,value):
-        if type(key) is np.ndarray:
+        if   type(key) is np.ndarray:
             if key.dtype == bool: # np array bools, single value
                 for i,k in enumerate(key):
                     if k:
                         self.__setitem__one(i,value)
+            if key.dtype == int: # np array bools, single value
+                for i in key:
+                    self.__setitem__one(i,value)
+        elif type(key) is list:
+            if   all(isinstance(x, bool) for x in key): # list bools, single value
+                for i,k in enumerate(key):
+                    if k:
+                        self.__setitem__one(i,value)
+            elif all(isinstance(x, int) for x in key): # list ints, single value
+                for i in key:
+                    self.__setitem__one(i,value)
+            else:
+                raise KeyError("{0} has wrong type".format(key))
         else:
             self.__setitem__one(key,value)
         

@@ -60,7 +60,7 @@ new_camera_matrix = np.array([[633.53369141  , 0.  ,       307.62247084],
 # camera_matrix = np.array([[627.83081055,0,330.48518022],
  # [  0,621.51800537, 277.32219422],
  # [  0,0,1.        ]])
-new_camera_matrix= None
+# new_camera_matrix= None
 # new_camera_matrix = np.array([[627.83081055,0,330.48518022],
  # [  0,621.51800537, 277.32219422],
  # [  0,0,1.        ]])

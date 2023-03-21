@@ -315,11 +315,13 @@ def cycle_sequential(strip=None,
                 break
 
 
-def blink_binary(inlist: list[int],nbits: int=None,
+def blink_binary(inlist: list[int,...],nbits: int=None,
         strip=None,
-        color:tuple[int]=(255,255,255),
-        dt: float=1., loop: int=False,
-        color_off:tuple[int]=(0,0,0)):
+        color:tuple[int,int,int]=(155,155,155),
+        dt: float=1., wait:bool=True, loop: int=False,
+        color_off:tuple[int,int,int]=(0,0,0),
+        verbose: bool=True
+        ):
     
     strip = get_strip() if strip is None else strip
     
@@ -335,13 +337,17 @@ def blink_binary(inlist: list[int],nbits: int=None,
         while True:
             strip.fill( color_off )
             strip.show()
-            
+            if verbose:
+                print("Show binary LSb 0 (unit bit first). number of bits: {0}".format(nbits))
             for i in range(nbits):
                 for l in range(len(strip)):
-                    strip[l] = color if int(bins[l][i]) else color_off
+                    strip[l] = color if int(bins[l][nbits-i-1]) else color_off
                 
                 strip.show()
-                time.sleep(dt)
+                if wait:
+                    input("Bit {0}: Enter to continue".format(i))
+                else:
+                    time.sleep(dt)
                 
             if not loop:
                 break

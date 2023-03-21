@@ -14,6 +14,7 @@ import misc_func
 import colors
 
 import leds
+# print(dir(leds))
 
 
 def run_off(args):
@@ -33,7 +34,7 @@ def run_tst(args):
     
     strip = get_strip()
         
-    with strip:
+    with get_strip() as strip:
         strip.fill( (0,0,0) )
         
         print("Planes:")
@@ -90,6 +91,7 @@ def run_one(args):
     strip = get_strip()
     
     ind = args.ind
+    print(ind)
     
     strip[ind] = color_on
     strip.show()
@@ -105,6 +107,9 @@ def run_play(args):
     if   args.which[0] == "huphollandhup":
         with get_strip() as strip:
             leds.huphollandhup(strip=strip)
+    elif args.which[0] == "blink_binary":
+        with get_strip() as strip:
+            leds.blink_binary(range(strip.nleds),strip=strip)
     elif args.which[0] == "movingplane":
         with get_strip() as strip:
             color = (115,115,115)
@@ -174,7 +179,7 @@ def main(argv):
     
     play_parser = subparsers.add_parser('play') # submodule
     play_parser.set_defaults(func=run_play)
-    play_parser.add_argument('which',type=str,nargs=1,choices=['main','huphollandhup','movingplane','rotatingplane'])#),help="which play, e.g., moving_plane PUT LIST OF POSSIBLE HERE?")
+    play_parser.add_argument('which',type=str,nargs=1,choices=['main','blink_binary','huphollandhup','movingplane','rotatingplane'])#),help="which play, e.g., moving_plane PUT LIST OF POSSIBLE HERE?")
     # play_parser.add_argument('register',type=str,nargs=1,help="register an animation, PUT LIST OF POSSIBLE HERE?")
     
     
@@ -185,7 +190,7 @@ def main(argv):
     
     calibrate_parser = subparsers.add_parser('calibrate') # submodule
     calibrate_parser.set_defaults(func=run_calibrate)
-    calibrate_parser.add_argument('which',type=str,nargs=1,choices=['main','makecoords3d','calibratecamera'])#,help="which calibration, e.g., makecoords3d PUT LIST OF POSSIBLE HERE?")
+    calibrate_parser.add_argument('which',type=str,nargs=1,choices=['main','makecoords3d','calibratecamera','findlights'])#,help="which calibration, e.g., makecoords3d PUT LIST OF POSSIBLE HERE?")
 
 
     args = parser.parse_args(argv)
