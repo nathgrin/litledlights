@@ -60,7 +60,7 @@ LitLedLights, they are Lit
     - [x] improve indexing
 - [ ] API
   - [ ] fix index error `lll one 155`
-  - [ ] setup/settings file with
+  - [x] config/setup/settings file with
     - nleds (or get automatically?)
   - [ ] Color module
     - [ ] calibrate colors (orange = yellow ?!)
@@ -73,7 +73,7 @@ LitLedLights, they are Lit
       - [ ] multiple color assignment?
       - [ ] multiple integers (tuple)
       - [ ] np.where compliant?
-    - [ ] integrate Color object
+    - [x] integrate Color object
     - [ ] utils for plotting
     - [ ] automate moar
   - [ ] Pre-rendered animations
