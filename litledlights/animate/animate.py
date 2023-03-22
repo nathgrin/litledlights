@@ -188,6 +188,11 @@ class AnimationObject():
         instr['id'] = self.id
         self.instruction = instr.copy()
         
+    def calculate_force(dt:float) -> np.ndarray[3]:
+        
+        force = np.zeros(3)
+        return force
+    
     def update(self,dt:float,force:np.ndarray(3)) -> str:
         self.force = force
         self.a = force/self.m
@@ -242,7 +247,6 @@ def animationloop(strip: 'ledstrip.ledstrip', anistrip: AnimationStrip, objects:
                   tmax: float=100,
                   idcnt: int=0):
     
-    force = np.zeros(3)
     
     anistrip.t = t0
     
@@ -278,6 +282,7 @@ def animationloop(strip: 'ledstrip.ledstrip', anistrip: AnimationStrip, objects:
         
         # Update position
         for i,obj in enumerate(objects):
+            force = obj.calculate_forec(dt)
             flag = obj.update(dt,force)
             
             kill = obj.evaluate_termination(anistrip.t)

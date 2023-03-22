@@ -10,8 +10,8 @@ calibrate.makecoords3d.main()
 # animate.animate.main()
 
 
-# import calibrate.findlights
-# calibrate.findlights.main()
+import calibrate.findlights
+calibrate.findlights.main()
 
 
 
