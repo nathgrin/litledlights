@@ -22,6 +22,8 @@ class ledstrip(*parentclasses):
         self.connect_ledlights = config.connect_ledlights
         if self.connect_ledlights:
             super().__init__(*args,**kwargs)
+        else:
+            self.n = args[1] # number of leds
         
         self.coords3d = None
         self.nleds = self.n

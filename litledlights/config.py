@@ -17,8 +17,8 @@ coords3d = get_coords(coords3d_fname)
 ## makecoords3d
 getcoords2d_nviewpoints = 2
 
-getcoords2d_fromangles = True
-do_2d_to_3d = True
+getcoords2d_fromangles = False
+do_2d_to_3d = False
 
 # Sequential_photography
 sequentialfotography_skiptoreprocess = False # For the first viewpoint, skip to ?
@@ -37,7 +37,7 @@ combinecoords3d_ind_coords3d = 0 # for now, simply pick one
 
 # Fix bad coords
 coords3dflagbadcoords_cutoff = 0.6#None# 1.3#None# Nones calculates this on fly
-coords3d_fixbad_splineorder = 2
+coords3d_fixbad_splinekind = 'quadratic' #one of .interp1d # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
 
 # Saving
 save_coords3d = True

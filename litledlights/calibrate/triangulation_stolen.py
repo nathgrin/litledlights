@@ -120,6 +120,12 @@ def iterative_LS_triangulation(u1, P1, u2, P2, tolerance=3.e-5):
     Outliers are selected based on non-convergence of depth, and on negativity of depths (=> behind camera(s)).
     
     u1 and u2 are matrices: amount of points equals #rows and should be equal for u1 and u2.
+    
+    camera matrices include rotation, translation
+    """
+    """
+    Very much stolen from 
+    https://github.com/Eliasvan/Multiple-Quadrotor-SLAM/blob/master/Work/python_libs/triangulation.py
     """
     A = np.zeros((4, 3))
     b = np.zeros((4, 1))

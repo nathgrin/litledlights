@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from calibrate.findlights import find_light, reprocess
+from calibrate.triangulate import combine_coords_2d_to_3d
 
 import colors
 
@@ -301,7 +302,7 @@ def OLD_combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_
         plt.plot(coords2d2.transpose()[0],coords2d2.transpose()[1],marker='o',ls='',c='r')
         plt.gca().invert_yaxis()
         plt.show()
-        
+        from calibrate.triangulate import triangulate
         coords3d = triangulate( coords2d1,coords2d2 ,camera_matrix=camera_matrix)
         
         
@@ -322,62 +323,6 @@ def OLD_combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_
     return coords3d_list
     
 
-def combine_coords_2d_to_3d(coords2d_list: list[list[tuple[float,float]]],n_viewpoints: int=None,camera_matrix=None,distortions:np.ndarray=None,new_camera_matrix:np.ndarray=None) -> list[tuple[float,float,float]]:
-    # this needs to be reorganised to a do_one_ type functions
-    
-    # print(coords2d)
-    
-    # Undistort
-    
-    if distortions is not None:# and new_camera_matrix is not None: # This doesnt work!
-        print("Undistorting!")
-        for i in range(len( coords2d_list )):
-            # print(distortions)
-            # undistorted = cv2.undistortPoints(coords2d_list[i], camera_matrix, distortions,None,new_camera_matrix)
-            if new_camera_matrix is None:
-                new_camera_matrix = camera_matrix
-            
-            undistorted = cv2.undistortPoints(coords2d_list[i], camera_matrix, distortions, P=new_camera_matrix) 
-            undistorted = np.squeeze(undistorted)
-            # print(undistorted)
-            coords2d_list[i] = undistorted
-    
-    import itertools
-    
-    coords3d_list = []
-    cnt = 0
-    
-    # For each pair of coord lists (image)
-    # for coords2d1,coords2d2 in itertools.combinations(coords2d_list,2):
-    for ind1, ind2 in itertools.combinations(range(len(coords2d_list)),2):
-        print("cnt",cnt,"ind1 ind2",ind1,ind2)
-        coords2d1,coords2d2 = coords2d_list[ind1],coords2d_list[ind2]
-        
-        
-        # plt.plot(coords2d1[0],coords2d1[1],marker='o',ls='')
-        plt.plot(coords2d1.transpose()[0],coords2d1.transpose()[1],marker='o',ls='',c='k')
-        plt.plot(coords2d2.transpose()[0],coords2d2.transpose()[1],marker='o',ls='',c='r')
-        plt.gca().invert_yaxis()
-        plt.show()
-        
-        coords3d = triangulate( coords2d1,coords2d2 ,camera_matrix=camera_matrix)
-        
-        
-        fig = plt.figure()
-        ax = fig.add_subplot(projection='3d')
-        ax.plot(coords3d.transpose()[0],coords3d.transpose()[1],coords3d.transpose()[2],marker='o',ls='',c='k')
-        
-        plt.show()
-        
-        # print(coords3d)
-        coords3d_list.append(coords3d)
-        
-        np.savetxt( "_tmp/"+"coords3d_{}.txt".format(cnt) ,coords3d)
-        
-        cnt += 1
-        # coords3d = coords3d.transpose()
-    
-    return coords3d_list
     
     
 def filter_nans(pts1,pts2):
@@ -416,78 +361,6 @@ def opencvexample(pts1,pts2):
     pts1 = pts1[mask.ravel()==1]
     pts2 = pts2[mask.ravel()==1]
     
-def triangulate(pts1,pts2, camera_matrix=None):
-    """
-    from https://stackoverflow.com/questions/58543362/determining-3d-locations-from-two-images-using-opencv-traingulatepoints-units
-    """
-    pts1,pts2 = np.array(pts1),np.array(pts2)
-    # print(pts1,pts2)
-    # ind = np.logical_or( np.isnan(pts1) , np.isnan(pts2) )
-    # print(ind)
-    # pts1,pts2 = pts1[ind],pts2[ind]
-    
-    if camera_matrix is None:
-        cameraMatrix = np.array([[1, 0,0],[0,1,0],[0,0,1]])        
-    else:
-        cameraMatrix = camera_matrix
-    F,m1 = cv2.findFundamentalMat(pts1, pts2) # apparently not necessary
-
-    # using the essential matrix can get you the rotation/translation bet. cameras, although there are two possible rotations: 
-    E,m2 = cv2.findEssentialMat(pts1, pts2, cameraMatrix, cv2.RANSAC, 0.999, 1.0)
-    # Re1, Re2, t_E = cv2.decomposeEssentialMat(E)
-
-    # recoverPose gets you an unambiguous R and t. One of the R's above does agree with the R determined here. RecoverPose can already triangulate, I check by hand below to compare results. 
-    # K_l = cameraMatrix
-    # K_r = cameraMatrix
-    retval, R, t, mask2, triangulatedPoints = cv2.recoverPose(E,pts1, pts2, cameraMatrix,distanceThresh=0.5)
-    # retval, R, t, mask2, triangulatedPoints = cv2.recoverPose(E,pts_l_norm, pts_r_norm, cameraMatrix,distanceThresh=0.5)
-
-    # given R,t you can  explicitly find 3d locations using projection 
-    M_r = np.concatenate((R,t),axis=1)
-    M_l = np.concatenate((np.eye(3,3),np.zeros((3,1))),axis=1)
-    proj_r = np.dot(cameraMatrix,M_r)
-    proj_l = np.dot(cameraMatrix,M_l)
-    points_4d_hom = cv2.triangulatePoints(proj_l, proj_r, np.expand_dims(pts1, axis=1), np.expand_dims(pts2, axis=1))
-    points_4d = points_4d_hom / np.tile(points_4d_hom[-1, :], (4, 1))
-    points_3d = points_4d[:3, :].T
-    return points_3d
-    
-def triangulate_full(pts1,pts2, camera_matrix=None):
-    """
-    from https://stackoverflow.com/questions/58543362/determining-3d-locations-from-two-images-using-opencv-traingulatepoints-units
-    """
-    pts1,pts2 = np.array(pts1),np.array(pts2)
-    # print(pts1,pts2)
-    # ind = np.logical_or( np.isnan(pts1) , np.isnan(pts2) )
-    # print(ind)
-    # pts1,pts2 = pts1[ind],pts2[ind]
-    
-    if camera_matrix is None:
-        cameraMatrix = np.array([[1, 0,0],[0,1,0],[0,0,1]])        
-    else:
-        cameraMatrix = camera_matrix
-    F,m1 = cv2.findFundamentalMat(pts1, pts2) # apparently not necessary
-
-    # using the essential matrix can get you the rotation/translation bet. cameras, although there are two possible rotations: 
-    E,m2 = cv2.findEssentialMat(pts1, pts2, cameraMatrix, cv2.RANSAC, 0.999, 1.0)
-    Re1, Re2, t_E = cv2.decomposeEssentialMat(E)
-
-    # recoverPose gets you an unambiguous R and t. One of the R's above does agree with the R determined here. RecoverPose can already triangulate, I check by hand below to compare results. 
-    K_l = cameraMatrix
-    K_r = cameraMatrix
-    retval, R, t, mask2, triangulatedPoints = cv2.recoverPose(E,pts1, pts2, cameraMatrix,distanceThresh=0.5)
-    # retval, R, t, mask2, triangulatedPoints = cv2.recoverPose(E,pts_l_norm, pts_r_norm, cameraMatrix,distanceThresh=0.5)
-
-    # given R,t you can  explicitly find 3d locations using projection 
-    M_r = np.concatenate((R,t),axis=1)
-    M_l = np.concatenate((np.eye(3,3),np.zeros((3,1))),axis=1)
-    proj_r = np.dot(cameraMatrix,M_r)
-    proj_l = np.dot(cameraMatrix,M_l)
-    points_4d_hom = cv2.triangulatePoints(proj_l, proj_r, np.expand_dims(pts1, axis=1), np.expand_dims(pts2, axis=1))
-    points_4d = points_4d_hom / np.tile(points_4d_hom[-1, :], (4, 1))
-    points_3d = points_4d[:3, :].T
-    return points_3d
-  
 
 def combine_coords3d(coords3d_list: list):
     
@@ -692,43 +565,40 @@ def coords3d_flag_bad_coords(coords3d:np.ndarray):
     dists_fwd = np.sqrt(np.sum(np.square(coords3d-fwd),axis=1))
     dists_bwd = np.sqrt(np.sum(np.square(coords3d-bwd),axis=1))
     
+    global cutoff
     cutoff = 4.*np.nanmean(dists_fwd)/3. # average r is 3/4 of radius
     print("Suggested cutoff {0}".format(cutoff))
     cutoff = config.coords3dflagbadcoords_cutoff if config.coords3dflagbadcoords_cutoff is not None else cutoff
     print("Mean Distance, Cutoff",np.nanmean(dists_fwd),cutoff)
     
-    print("Plotting distances, Black: forward, Red: backward")
-    plt.plot(range(len(dists_fwd)),dists_fwd,c='k')
-    plt.plot(range(len(dists_bwd)),dists_bwd,c='r')
-    plt.show()
     
-    # print(dists)
-    print("Plotting distance distribution, Black: forward, Red: backward")
-    plt.plot(np.sort(dists_fwd),range(len(dists_fwd)),c='k')
-    counts, bins = np.histogram(dists_fwd,range=(np.nanmin(dists_fwd),np.nanmax(dists_fwd)),bins='auto',density=True)
-    plt.stairs(len(dists_fwd)*counts/np.max(counts), bins,ec='k') # Density times lens to share same y-range
-    plt.plot(np.sort(dists_bwd),range(len(dists_bwd)),c='r')
-    counts, bins = np.histogram(dists_bwd,range=(np.nanmin(dists_bwd),np.nanmax(dists_bwd)),bins='auto',density=True)
-    plt.stairs(len(dists_bwd)*counts/np.max(counts), bins,ec='r') # Density times lens to share same y-range
-    plt.show()
-    
+    ## Select leds
+    # Prep
     coords3d = coords3d.transpose()
     eps = np.nanmean(dists_fwd)*0.01 # allow a bit of slack
-    ind = np.logical_and( dists_fwd <= cutoff + eps , dists_bwd <= cutoff + eps )
     ind_nandist = np.isnan(dists_fwd)
     
     # Flag nans
     flags[np.any(np.isnan(coords3d),axis=0)] = 1
     
-    # Flag too far
+    # Prep
+    ind = np.logical_and( dists_fwd <= cutoff + eps , dists_bwd <= cutoff + eps )
     ind_toofar = np.logical_and(~ind,~ind_nandist)
-    flags[ind_toofar] = 2
+    def set_inds_for_cutoff(cutoff):
+        ind = np.logical_and( dists_fwd <= cutoff + eps , dists_bwd <= cutoff + eps )
+        ind_toofar = np.logical_and(~ind,~ind_nandist)
+        
+
+        # Results
+        print("> Cutoff: {0}".format(cutoff))
+        print("  ind dist",np.sum(ind))
+        print("  nan",np.sum(np.any(np.isnan(coords3d),axis=0)),"nandist",np.sum(ind_nandist))
+        print("  too far",np.sum(ind_toofar))
+        
+    set_inds_for_cutoff(cutoff)
     
-    print("ind dist",np.sum(ind))
-    print("nan",np.sum(np.any(np.isnan(coords3d),axis=0)),"nandist",np.sum(ind_nandist))
-    print("too far",np.sum(ind_toofar))
     
-    
+    # Show on leds
     if config.connect_ledlights:
         print("Show flags on leds. Red = nan, Blue = toofar")
         with get_strip() as strip:
@@ -738,9 +608,40 @@ def coords3d_flag_bad_coords(coords3d:np.ndarray):
             strip.show()
             input("Enter to continue")
     
+    
+    ### Initialize fig
+    fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+    fig.subplots_adjust(bottom=0.25)
+    
+    print("Plotting distances, Black: forward, Red: backward")
+    # plt.figure()
+    axs[0].plot(range(len(dists_fwd)),dists_fwd,c='k')
+    axs[0].plot(range(len(dists_bwd)),dists_bwd,c='r')
+    
+    cutoff_hline = axs[0].axhline(cutoff,c='k')
+    # plt.show()
+    
+    # print(dists)
+    print("Plotting distance distribution, Black: forward, Red: backward")
+    # plt.figure()
+    axs[1].plot(np.sort(dists_fwd),range(len(dists_fwd)),c='k')
+    counts, bins = np.histogram(dists_fwd,range=(np.nanmin(dists_fwd),np.nanmax(dists_fwd)),bins='auto',density=True)
+    axs[1].stairs(len(dists_fwd)*counts/np.max(counts), bins,ec='k') # Density times lens to share same y-range
+    axs[1].plot(np.sort(dists_bwd),range(len(dists_bwd)),c='r')
+    counts, bins = np.histogram(dists_bwd,range=(np.nanmin(dists_bwd),np.nanmax(dists_bwd)),bins='auto',density=True)
+    axs[1].stairs(len(dists_bwd)*counts/np.max(counts), bins,ec='r') # Density times lens to share same y-range
+    
+    cutoff_vline = axs[1].axvline(cutoff,c='k')
+    # plt.show()
+    
+
+    # Show in fig
     print("Plot flags, Red: No dist, Cyan: too far")
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
+    # fig = plt.figure()
+    # ax = fig.add_subplot(projection='3d')
+    axs[2].remove()
+    axs[2]=fig.add_subplot(1,3,3,projection='3d')
+    ax = axs[2]
     ax.set_xlabel('$x$')
     ax.set_ylabel('$y$')
     ax.set_zlabel('$z$')
@@ -751,25 +652,41 @@ def coords3d_flag_bad_coords(coords3d:np.ndarray):
     
     ax.plot(coords3d[0][ind_toofar],coords3d[1][ind_toofar],coords3d[2][ind_toofar],marker='o',ls='',c='c') # ...
     
-    ax.set_xlim(xmax=4)
-    ax.set_ylim(ymin=-2,ymax=2)
+    # ax.set_xlim(xmax=4)
+    # ax.set_ylim(ymin=-2,ymax=2)
     # ax.invert_yaxis()
+    # slider
+    
+    from matplotlib.widgets import RangeSlider,Slider
+    # Create the Slider
+    slider_ax = fig.add_axes([0.20, 0.1, 0.60, 0.03])
+    slider_cutoff = Slider(slider_ax, "cutoff", 0, 5,valinit=cutoff,valstep=0.01)
+    
+    def update_cutoff(val):
+        
+        global cutoff 
+        cutoff = slider_cutoff.val
+        
+        cutoff_hline.set_ydata([cutoff,cutoff])
+        cutoff_vline.set_xdata([cutoff,cutoff])
+        
+        set_inds_for_cutoff(cutoff)
+        
+        # Redraw the figure to ensure it updates
+        fig.canvas.draw_idle()
+        
+    slider_cutoff.on_changed(update_cutoff)
+    # cutoff = slider_cutoff.val
+    
+    # SHOW
     plt.show()
     
+    print("Using cutoff: {0}".format(cutoff))
+    # Apply flags
+    flags[ind_toofar] = 2
+    set_inds_for_cutoff(cutoff)
+    print(np.sum(ind))
     return flags
-
-def firstcalibration():
-
-    
-    # From calibatrion
-    camera_matrix = np.array([ [1.06996313e+03,0.00000000e+00,3.15927309e+02],
-                               [0.00000000e+00,7.98554626e+02,2.30317334e+02],
-                               [0.00000000e+00,0.00000000e+00,1.00000000e+00]]) # "new camera mtx"
-    new_camera_matrix = None
-    # camera_matrix = None#np.array([ [5.532296390058696716e+02,0.000000000000000000e+00,3.092664256633688638e+02],
-                            #    [0.000000000000000000e+00,5.004930172490122686e+02,2.534310435736532838e+02],
-                            #    [0.000000000000000000e+00,0.000000000000000000e+00,1.000000000000000000e+00] ]) # first camera mtx
-    distortions = None#np.array([ 2.03990656e-01,-4.10106338e+01,3.88358091e-02,5.41687259e-02,3.86933501e+02 ]) # this didnt work, i suspect the calibration is imperfect
 
 
 def show_coords_onlights(coords3d):
@@ -837,7 +754,7 @@ def coords3d_fix_flagged_coords(coords3d: np.ndarray,flags: np.ndarray) -> np.nd
     ind = np.arange(len(flags))
     for i,coord in enumerate(coords3d):
         # print(coord)
-        spline = inter.InterpolatedUnivariateSpline (ind[good],coord[good],k=config.coords3d_fixbad_splineorder)
+        spline = inter.interp1d(ind[good],coord[good],kind=config.coords3d_fixbad_splinekind,bounds_error=False,fill_value=np.nan)
         
         coords3d[i][~good] = spline(ind[~good])
         
@@ -894,8 +811,8 @@ def main():
     print("> Combine coords2d to 3d (triangulate)")
     if config.do_2d_to_3d:
         coords3d_list = combine_coords_2d_to_3d(coords2d_list,n_viewpoints=n_viewpoints,camera_matrix=camera_matrix,distortions=distortions,new_camera_matrix=new_camera_matrix)
-    
-    if coords3d_list is None:
+    else:
+        print("  Load coords3d files")
         coords3d_list = []
         for i in range(n_viewpoints*(n_viewpoints-1)//2):
             fname = os.path.join("_tmp","coords3d_{}.txt".format(i))
