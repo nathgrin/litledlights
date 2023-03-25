@@ -202,7 +202,7 @@ def huphollandhup(strip=None,
     strip = get_strip() if strip is None else strip  
     
     if strip.coords3d.xyz is not None:
-        z = strip.z
+        z = strip.coords3d.z
         zmin,zmax = np.nanmin(z),np.nanmax(z)
         dz = zmax-zmin
         

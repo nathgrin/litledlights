@@ -17,7 +17,7 @@ coords3d = get_coords(coords3d_fname)
 ## makecoords3d
 getcoords2d_nviewpoints = 2
 
-getcoords2d_fromangles = False
+getcoords2d_fromangles = True
 do_2d_to_3d = True
 
 # Sequential_photography
