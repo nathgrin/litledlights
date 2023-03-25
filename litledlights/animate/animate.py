@@ -188,7 +188,7 @@ class AnimationObject():
         instr['id'] = self.id
         self.instruction = instr.copy()
         
-    def calculate_force(dt:float) -> np.ndarray[3]:
+    def calculate_force(self,dt:float) -> np.ndarray:
         
         force = np.zeros(3)
         return force

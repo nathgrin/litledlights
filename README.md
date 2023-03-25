@@ -87,6 +87,7 @@ LitLedLights, they are Lit
       - [ ] fireworks
         - [x] first version fireworks
       - [ ] sound
+    - [ ] snow
   - [ ] examples
   - [ ] 3d model to animation conversion
   - [ ] virtual env for testing/animating
