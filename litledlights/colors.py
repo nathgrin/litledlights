@@ -53,6 +53,7 @@ white = (155,155,155)
 green = (0,155,0)
 pink = (227,28,121)
 orange = (255,117,0)
+gold = (255, 215, 0)
 namedcolors = {
         'orange': orange,
         'red': red, 

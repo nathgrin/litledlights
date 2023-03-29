@@ -243,30 +243,30 @@ def polynomial_triangulation(u1, P1, u2, P2):
 
 
 
-# Attempt to load the optimized triangulation functions
-try:
-    import triangulation_c
-    if triangulation_c.loaded:
-        from triangulation_c import linear_LS_triangulation as linear_LS_triangulation_c
-        def linear_LS_triangulation(*args):
-            x, x_status = linear_LS_triangulation_c(*args)
-            if np.finfo(x.dtype) != np.finfo(output_dtype):
-                x = x.astype(output_dtype)
-            return x, x_status
-        linear_LS_triangulation.__doc__ = linear_LS_triangulation_c.__doc__
+# # Attempt to load the optimized triangulation functions
+# try:
+#     import triangulation_c
+#     if triangulation_c.loaded:
+#         from triangulation_c import linear_LS_triangulation as linear_LS_triangulation_c
+#         def linear_LS_triangulation(*args):
+#             x, x_status = linear_LS_triangulation_c(*args)
+#             if np.finfo(x.dtype) != np.finfo(output_dtype):
+#                 x = x.astype(output_dtype)
+#             return x, x_status
+#         linear_LS_triangulation.__doc__ = linear_LS_triangulation_c.__doc__
         
-        from triangulation_c import iterative_LS_triangulation as iterative_LS_triangulation_c
-        def iterative_LS_triangulation(*args, **kwargs):
-            x, x_status = iterative_LS_triangulation_c(*args, **kwargs)
-            if np.finfo(x.dtype) != np.finfo(output_dtype):
-                x = x.astype(output_dtype)
-            return x, x_status
-        iterative_LS_triangulation.__doc__ = iterative_LS_triangulation_c.__doc__
-    else:
-        print('Warning: failed to load the optimized "triangulation_c" module')
-        print("=> falling back to Python-speed for triangulation.")
-except:
-    pass
+#         from triangulation_c import iterative_LS_triangulation as iterative_LS_triangulation_c
+#         def iterative_LS_triangulation(*args, **kwargs):
+#             x, x_status = iterative_LS_triangulation_c(*args, **kwargs)
+#             if np.finfo(x.dtype) != np.finfo(output_dtype):
+#                 x = x.astype(output_dtype)
+#             return x, x_status
+#         iterative_LS_triangulation.__doc__ = iterative_LS_triangulation_c.__doc__
+#     else:
+#         print('Warning: failed to load the optimized "triangulation_c" module')
+#         print("=> falling back to Python-speed for triangulation.")
+# except:
+#     pass
 
 output_dtype = float
 

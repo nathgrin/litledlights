@@ -183,40 +183,26 @@ def triangulate_full(pts1,pts2, camera_matrix=None):
   
   
   
-def combine_pair_coords2d(coords2d1: np.ndarray,coords2d2: np.ndarray, camera_matrix=None):
-    
-    # plt.plot(coords2d1[0],coords2d1[1],marker='o',ls='')
-    plt.plot(coords2d1.transpose()[0],coords2d1.transpose()[1],marker='o',ls='',c='k')
-    plt.plot(coords2d2.transpose()[0],coords2d2.transpose()[1],marker='o',ls='',c='r')
-    plt.gca().invert_yaxis()
-    plt.xlabel("pixel $x$")
-    plt.ylabel("pixel $y$")
-    plt.show()
-    
-    if False: # openCV way
-        coords3d = triangulate( coords2d1,coords2d2 ,camera_matrix=camera_matrix)
+def combine_pair_coords2d(coords2d1: np.ndarray,coords2d2: np.ndarray,
+                          camera_matrix=None,distortions:np.ndarray=None,new_camera_matrix:np.ndarray=None):
     
     
-        fig = plt.figure()
-        ax = fig.add_subplot(projection='3d')
-        ax.plot(coords3d.transpose()[0],coords3d.transpose()[1],coords3d.transpose()[2],marker='o',ls='',c='c')
-        ax.set_xlabel("$x$")
-        ax.set_ylabel("$y$")
-        ax.set_zlabel("$z$")
+    # First undistort
+    if distortions is not None:# and new_camera_matrix is not None: # This doesnt work!
+        print("Undistorting!")
+        if new_camera_matrix is None:
+            new_camera_matrix = camera_matrix
+            
+        undistorted = cv2.undistortPoints(coords2d1, camera_matrix, distortions, P=new_camera_matrix) 
+        undistorted = np.squeeze(undistorted)
+        coords2d1 = undistorted
+        undistorted = cv2.undistortPoints(coords2d2, camera_matrix, distortions, P=new_camera_matrix) 
+        undistorted = np.squeeze(undistorted)
+        coords2d2 = undistorted
     
+    # Then triangulate
     from calibrate.triangulate import coords3d_from_iterative_LS_triangulation
     coords3d = coords3d_from_iterative_LS_triangulation(coords2d1,coords2d2,camera_matrix)
-    
-        
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
-    ax.plot(coords3d.transpose()[0],coords3d.transpose()[1],coords3d.transpose()[2],marker='o',ls='',c='k')
-    ax.set_xlabel("$x$")
-    ax.set_ylabel("$y$")
-    ax.set_zlabel("$z$")
-    plt.show()
-    
-    
     
     return coords3d
     
@@ -227,20 +213,7 @@ def combine_coords_2d_to_3d(coords2d_list: list[np.ndarray],n_viewpoints: int=No
     # print(coords2d)
     
     # Undistort
-    
-    if distortions is not None:# and new_camera_matrix is not None: # This doesnt work!
-        print("Undistorting!")
-        for i in range(len( coords2d_list )):
-            # print(distortions)
-            # undistorted = cv2.undistortPoints(coords2d_list[i], camera_matrix, distortions,None,new_camera_matrix)
-            if new_camera_matrix is None:
-                new_camera_matrix = camera_matrix
-            
-            undistorted = cv2.undistortPoints(coords2d_list[i], camera_matrix, distortions, P=new_camera_matrix) 
-            undistorted = np.squeeze(undistorted)
-            # print(undistorted)
-            coords2d_list[i] = undistorted
-    
+    input("I BROKE THIS FUNC")
     import itertools
     
     coords3d_list = []
