@@ -569,7 +569,7 @@ def OLD_coords3d_flag_bad_coords(coords3d:np.ndarray,
     # slider
     
     if ax_3d is None:
-        from matplotlib.widgets import RangeSlider,Slider
+        from matplotlib.widgets import RangeSlider,Slider,Button
         # Create the Slider
         slider_ax = fig.add_axes([0.20, 0.1, 0.60, 0.03])
         slider_cutoff = Slider(slider_ax, "cutoff", 0, 5,valinit=cutoff,valstep=0.01)
@@ -784,7 +784,12 @@ def coords3d_flag_bad_coords(coords3d,cutoff,dists_fwd=None,dists_bwd=None):
 class coords2dto3dObject(object):
     
     def __init__(self,*args,**kwargs):
-        from matplotlib.widgets import Slider
+        
+        pass
+    
+    def initialize_fig(self,*args,**kwargs):
+        
+        from matplotlib.widgets import Slider,Button
         
         distcutoff = 1.#kwargs.get('distcutoff',1.)
         
@@ -802,12 +807,16 @@ class coords2dto3dObject(object):
         self.ax_distdistr  = self.fig.add_subplot(self.gs[2, 0])
         self.ax_distdistr_lines = [self.ax_distdistr.axvline(distcutoff,c='k')]
         
-        
+        # coords3d
         self.ax_3d = self.fig.add_subplot(self.gs[0:2, 1:3],projection='3d')
-        self.ax_3d_lines = [x[0] for x in [self.ax_3d.plot([],[],[],c='k',marker='o',ls=''),self.ax_3d.plot([],[],[],c='c',marker='o',ls='')]]
+        
+        self.ax_3d.set_xlabel('$x$')
+        self.ax_3d.set_ylabel('$y$')
+        self.ax_3d.set_zlabel('$z$')
         
         self.ax_3d2 = self.fig.add_subplot(self.gs[0:2, 3:5],projection='3d')
-        self.ax_3d2_lines = [x[0] for x in [self.ax_3d2.plot([],[],[],c='k',marker='o',ls='')] ]
+        
+        
         
         ### Sliders
         self.gs_sliders = self.gs[3,0].subgridspec(5, 1)
@@ -816,16 +825,14 @@ class coords2dto3dObject(object):
         self.slider_distcutoff = Slider(self.ax_slider_distcutoff, "Dist cutoff", 0., 3., valinit=distcutoff, valstep=0.01)
         self.slider_distcutoff.on_changed(self.slider_distcutoff_update)
         
+        self.ax_button_update = self.fig.add_subplot(self.gs_sliders[-1])
+        self.button_update = Button(self.ax_button_update, "Update")
+        self.button_update.on_clicked(self.button_update_update)
+        
     def slider_distcutoff_update(self,val):
     
         self.distcutoff = val
-        
-        self.update()
-    
-    def update(self):
-        
-        distcutoff = self.distcutoff
-        
+        distcutoff = val
         self.ax_distperind_lines[0].set_xdata([distcutoff,distcutoff])
         self.ax_distdistr_lines[0].set_xdata([distcutoff,distcutoff])
         
@@ -833,20 +840,91 @@ class coords2dto3dObject(object):
         # Redraw the figure to ensure it updates
         self.fig.canvas.draw_idle()
     
-    def initialize(self,coords2d1,coords2d2,
+        
+        # self.update()
+    
+    def button_update_update(self,event):
+        
+        self.update()
+    
+    def update(self):
+        print("Update")
+        distcutoff = self.distcutoff
+        ## Calculation nation
+        from calibrate.triangulate import combine_pair_coords2d
+        coords3d = combine_pair_coords2d(self.coords2d1,self.coords2d2,self.camera_matrix)
+        coords3d =  h cd x c                                              xc coords3d
+        self.coords3d = coords3d
+        
+        dists_fwd,dists_bwd = calc_neighbour_distances(self.coords3d)
+        
+        
+    
+        suggested_distcutoff = 4.*np.nanmean(dists_fwd)/3. # average r is 3/4 of radius
+        print("Suggested distcutoff {0}".format(suggested_distcutoff))
+        print("Mean Distance, Cutoff",np.nanmean(dists_fwd),distcutoff)
+        
+        
+    
+        # print(self.coords3d)
+        flags = coords3d_flag_bad_coords(coords3d,distcutoff)
+        
+        ind_toofar = flags == 2
+        ind_nan = flags == 1
+        
+        ## Plots
+        # Clear
+        self.ax_distperind.clear()
+        self.ax_distdistr.clear()
+        self.ax_3d.clear()
+        
+        # Distance plots
+        self.ax_distperind_lines[0] = self.ax_distperind.axvline(distcutoff,c='k')
+        self.ax_distdistr_lines[0] = self.ax_distdistr.axvline(distcutoff,c='k')
+        
+        print("Plotting distances, Black: forward, Red: backward")
+        # plt.figure()
+        self.ax_distperind.plot(dists_fwd,range(len(dists_fwd)),c='k')
+        self.ax_distperind.plot(dists_bwd,range(len(dists_bwd)),c='r')
+        
+        # plt.show()
+        
+        # print(dists)
+        print("Plotting distance distribution, Black: forward, Red: backward")
+        # plt.figure()
+        self.ax_distdistr.plot(np.sort(dists_fwd),range(len(dists_fwd)),c='k')
+        counts, bins = np.histogram(dists_fwd,range=(np.nanmin(dists_fwd),np.nanmax(dists_fwd)),bins='auto',density=True)
+        self.ax_distdistr.stairs(len(dists_fwd)*counts/np.max(counts), bins,ec='k') # Density times lens to share same y-range
+        self.ax_distdistr.plot(np.sort(dists_bwd),range(len(dists_bwd)),c='r')
+        counts, bins = np.histogram(dists_bwd,range=(np.nanmin(dists_bwd),np.nanmax(dists_bwd)),bins='auto',density=True)
+        self.ax_distdistr.stairs(len(dists_bwd)*counts/np.max(counts), bins,ec='r') # Density times lens to share same y-range
+        
+        # 3d
+        self.ax_3d.plot(*self.coords3d.transpose(),c='k',marker='o',ls='')
+        
+        # Redraw the figure to ensure it updates
+        self.fig.canvas.draw_idle()
+    
+    def initialize_data(self,coords2d1,coords2d2,
             distcutoff: float = None,
             camera_matrix: np.ndarray=None):
         
-        self.coords2d1 = coords2d1
-        self.coords2d2 = coords2d2
-        self.ax_2d_lines[0] = self.ax_2d.plot(coords2d1[:,0],coords2d1[:,1],c='k',marker='o',ls='')
-        self.ax_2d_lines[1] = self.ax_2d.plot(coords2d2[:,0],coords2d2[:,1],c='k',marker='o',ls='')
+        self.coords2d1 = np.ma.asarray(coords2d1)
+        self.coords2d2 = np.ma.asarray(coords2d2)
         
+        self.ax_2d_lines[0] = self.ax_2d.plot(self.coords2d1[:,0],self.coords2d1[:,1],c='k',marker='o',ls='')
+        self.ax_2d_lines[1] = self.ax_2d.plot(self.coords2d2[:,0],self.coords2d2[:,1],c='r',marker='o',ls='')
         
         self.distcutoff = distcutoff if distcutoff is not None else config.coords3dflagbadcoords_cutoff
         self.slider_distcutoff.set_val(self.distcutoff)
         
         self.camera_matrix = camera_matrix
+        
+        
+        self.ind = np.ones(coords2d1.shape[0],dtype=bool)
+        self.coords3d = np.ma.asarray( np.nan*np.zeros((self.coords2d1.shape[0],3)) )
+        print(self.coords3d)
+        
         
         self.update()
     
@@ -865,9 +943,13 @@ def iterative_pair_coords2d_to_coords3d(coords2d1,coords2d2,
         undistorted = np.squeeze(undistorted)
         coords2d2 = undistorted
     
-    coordObject = coords2dto3dObject()
     
-    coordObject.initialize(coords2d1,coords2d2,
+    
+    
+    
+    coordObject = coords2dto3dObject()
+    coordObject.initialize_fig()
+    coordObject.initialize_data(coords2d1,coords2d2,
                     distcutoff=None,# defaults to config
                     camera_matrix=camera_matrix)
     
@@ -883,51 +965,9 @@ def iterative_pair_coords2d_to_coords3d(coords2d1,coords2d2,
     # ax_2d.invert_yaxis()
     
     
-    from calibrate.triangulate import combine_pair_coords2d
-    # coords3d = combine_pair_coords2d(coords2d1,coords2d2,camera_matrix,distortions=distortions,new_camera_matrix=new_camera_matrix)
-    coords3d = combine_pair_coords2d(coords2d1,coords2d2,camera_matrix)
     
-    
-    dists_fwd,dists_bwd = calc_neighbour_distances(coords3d)
-    
-    
-    cutoff = 4.*np.nanmean(dists_fwd)/3. # average r is 3/4 of radius
-    print("Suggested cutoff {0}".format(cutoff))
-    cutoff = config.coords3dflagbadcoords_cutoff if config.coords3dflagbadcoords_cutoff is not None else cutoff
-    print("Mean Distance, Cutoff",np.nanmean(dists_fwd),cutoff)
-    
-    print(coords3d)
-    flags = coords3d_flag_bad_coords(coords3d,cutoff)
-    
-    
-    print("Plotting distances, Black: forward, Red: backward")
-    # plt.figure()
-    ax_distperind.plot(dists_fwd,range(len(dists_fwd)),c='k')
-    ax_distperind.plot(dists_bwd,range(len(dists_bwd)),c='r')
-    
-    cutoff_vline1 = ax_distperind.axvline(cutoff,c='k')
     # plt.show()
     
-    # print(dists)
-    print("Plotting distance distribution, Black: forward, Red: backward")
-    # plt.figure()
-    ax_distdistr.plot(np.sort(dists_fwd),range(len(dists_fwd)),c='k')
-    counts, bins = np.histogram(dists_fwd,range=(np.nanmin(dists_fwd),np.nanmax(dists_fwd)),bins='auto',density=True)
-    ax_distdistr.stairs(len(dists_fwd)*counts/np.max(counts), bins,ec='k') # Density times lens to share same y-range
-    ax_distdistr.plot(np.sort(dists_bwd),range(len(dists_bwd)),c='r')
-    counts, bins = np.histogram(dists_bwd,range=(np.nanmin(dists_bwd),np.nanmax(dists_bwd)),bins='auto',density=True)
-    ax_distdistr.stairs(len(dists_bwd)*counts/np.max(counts), bins,ec='r') # Density times lens to share same y-range
-    
-    cutoff_vline2 = ax_distdistr.axvline(cutoff,c='k')
-    # plt.show()
-    
-    
-    ###
-    # coords3d
-    ax_3d.plot(*coords3d.transpose(),c='k',marker='o',ls='')
-    ax_3d.set_xlabel('$x$')
-    ax_3d.set_ylabel('$y$')
-    ax_3d.set_zlabel('$z$')
     
     
     
