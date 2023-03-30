@@ -16,6 +16,14 @@ LitLedLights, they are Lit
 
 ## To do
 
+- coords2dto3d
+  - fix whe nno mouse available
+  - fix click dist ditribution window
+  - fix change reference inds
+  - fix iterative version
+  - test on ledz
+  - test on rpi
+  - pff
 - level converter "chip"
 - robust wiring
   - Cables with more power throughput

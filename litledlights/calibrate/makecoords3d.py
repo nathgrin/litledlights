@@ -768,12 +768,6 @@ class coords2dto3dObject(object):
         self.ax_xyzind2.lines.clear()
         self.ax_3d.lines.clear()
         self.ax_3d2.lines.clear()
-        # for l in self.ax_distperind.lines: l.remove()
-        # for l in self.ax_distdistr.lines: l.remove()
-        # for l in self.ax_xyzind.lines: l.remove()
-        # for l in self.ax_xyzind2.lines: l.remove()
-        # for l in self.ax_3d.lines: l.remove()
-        # for l in self.ax_3d2.lines: l.remove()
         
         # Distance plots
         self.ax_distperind_lines[0] = self.ax_distperind.axvline(distcutoff,c='k')
