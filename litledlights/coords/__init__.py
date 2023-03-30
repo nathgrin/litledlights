@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import config
 
 
 class Coords3d(object):
@@ -11,17 +12,17 @@ class Coords3d(object):
     def __init__(self):
         pass
     
-    def from_file(self, fname: str="coords.txt"):
+    def from_file(self, fname: str=config.coords3d_fname):
         self.xyz = load_coords_file(fname)
-        transp = self.xyz.transpose()
-        self.x = transp[0]
-        self.y = transp[1]
-        self.z = transp[2]
+        
+        self.x = self.xyz[:,0]
+        self.y = self.xyz[:,1]
+        self.z = self.xyz[:,2]
 
     def __getitem__(self, key: int):
         return self.xyz[key]
     
-def get_coords(fname: str="coords.txt"):
+def get_coords(fname: str=config.coords3d_fname):
     if os.path.isfile(fname):
         coords3d = Coords3d()
         coords3d.from_file(fname)
@@ -31,5 +32,5 @@ def get_coords(fname: str="coords.txt"):
     
     return coords3d
 
-def load_coords_file(fname:str="coords.txt"):
+def load_coords_file(fname:str=config.coords3d_fname):
     return np.loadtxt(fname)

@@ -49,7 +49,9 @@ LitLedLights, they are Lit
     - [x] rotate coords
     - [ ] fix wrong coords
     - [x] fix missing coords
-  - [ ] coords class
+    - [ ] make 2d_to_3d accesible without mouse
+    - [ ] iterate with missing coords
+  - [x] coords class
   - [ ] coords module organisation
   - [x] save
   - [ ] share coords (gift?)

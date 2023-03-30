@@ -264,9 +264,35 @@ def get_coords2d_from_multiple_angles(n_viewpoints: int,loc: str="_tmp") -> list
     
     return coords2d_list
 
+
+def coords3d_shiftorigin_norm_rotatetoreference(coords3d: np.ndarray,referenceinds: tuple[int,int,int]=None):
+    ind1,ind2,ind3 = referenceinds if referenceinds is not None else config.combinecoords3d_referenceinds_default
+    norm = np.sqrt( np.sum( np.square(coords3d[ind1]-coords3d[ind2])) )
+    
+    coords3d = coords3d.transpose()
+    
+    
+    for i in range(len(coords3d)): # Move to coordinate system
+        coords3d[i] = (coords3d[i]-coords3d[i][ind1])/norm
+    
+    
+    # rotate ind2 onto the x-axis
+    phi = np.arctan2(coords3d[1][ind2], coords3d[0][ind2])
+    # print("Angle",phi)
+    coords3d = np.dot( rotationmtx(npunit(2),-phi) , coords3d )
+    # rotate ind2 onto the z-axis
+    phi = np.arctan2(coords3d[0][ind2],coords3d[2][ind2])
+    # print("Angle",phi)
+    coords3d = np.dot( rotationmtx(npunit(1),-phi) , coords3d )
+    # rotate ind3 onto the x-axis
+    phi = np.arctan2(coords3d[1][ind3], coords3d[0][ind3])
+    # print("Angle",phi)
+    coords3d = np.dot( rotationmtx(npunit(2),-phi) , coords3d )
+    
+    return coords3d.transpose()
     
 def combine_coords3d(coords3d_list: list):
-    
+    # Does not combine anything bro
     
     # find common non-nans
     any_isnan = np.sum(np.isnan(coords3d_list[0]),axis=1)
@@ -315,27 +341,7 @@ def combine_coords3d(coords3d_list: list):
     out = []
     for ind,coords3d in enumerate(coords3d_list): # SKIPPING FIRST BY HAND BAD!
         
-        norm = np.sqrt( np.sum( np.square(coords3d[ind1]-coords3d[ind2])) )
-        
-        coords3d = coords3d.transpose()
-        
-        
-        for i in range(len(coords3d)): # Move to coordinate system
-            coords3d[i] = (coords3d[i]-coords3d[i][ind1])/norm
-        
-        
-        # rotate ind2 onto the x-axis
-        phi = np.arctan2(coords3d[1][ind2], coords3d[0][ind2])
-        # print("Angle",phi)
-        coords3d = np.dot( rotationmtx(npunit(2),-phi) , coords3d )
-        # rotate ind2 onto the z-axis
-        phi = np.arctan2(coords3d[0][ind2],coords3d[2][ind2])
-        # print("Angle",phi)
-        coords3d = np.dot( rotationmtx(npunit(1),-phi) , coords3d )
-        # rotate ind3 onto the x-axis
-        phi = np.arctan2(coords3d[1][ind3], coords3d[0][ind3])
-        # print("Angle",phi)
-        coords3d = np.dot( rotationmtx(npunit(2),-phi) , coords3d )
+        coords3d = coords3d_shiftorigin_norm_rotatetoreference(coords3d,(ind1,ind2,ind3))
         
         out.append(coords3d)
         # print("ind2",coords3d[0][ind2],coords3d[1][ind2],coords3d[2][ind2])
@@ -395,58 +401,6 @@ def combine_coords3d(coords3d_list: list):
     which = config.combinecoords3d_ind_coords3d
     return out[which].transpose()
 
-def calibrate_updown(coords3d): # not used
-    import keyboard
-    white = (155,155,155)
-    red = (155,0,0)
-    off = (0,0,0)
-    
-    
-    strip = get_strip()
-    
-    n_leds = strip.n
-    
-    # Setup
-    window = cv2.namedWindow("UpDown")
-    
-    
-    try:
-    
-        while True:
-            ind_w = np.random.randint(n_leds)
-            ind_r = np.random.randint(n_leds)
-            
-            strip.fill(off)
-            strip[ind_w] = white
-            strip[ind_r] = red
-            
-            strip.show()
-            print("Which is up? (W)hite, (R)ed or (I) don't know")
-            
-            fig = plt.figure()
-            ax = fig.add_subplot(projection='3d')
-            ax.plot(coords3d.transpose()[0],coords3d.transpose()[1],coords3d.transpose()[2],marker='o',ls='')
-            plt.show()
-            
-            k = cv2.waitKey(0)
-                
-            if k%256 == 27:
-                # ESC pressed
-                print("ESC: Quit")
-                break
-            elif k == ord('w'):
-                print("White above")
-            elif k == ord('r'):
-                print("Red above")
-            elif k == ord('i'):
-                print("I don't know")
-                
-                
-            time.sleep(0.1)
-    finally:
-        cv2.destroyAllWindows()
-        strip.fill((0,0,0))
-        strip.show()
 
 def calc_neighbour_distances(coords3d):
     # Calc all distances forwardly
@@ -459,147 +413,14 @@ def calc_neighbour_distances(coords3d):
     # print(coords3d[ind1],coords3d[ind2])
     # print(thecopy[ind1],thecopy[ind2])
     
-    dists_fwd = np.sqrt(np.sum(np.square(coords3d-fwd),axis=1))
-    dists_bwd = np.sqrt(np.sum(np.square(coords3d-bwd),axis=1))
+    # Actual distance
+    # dists_fwd = np.sqrt(np.sum(np.square(coords3d-fwd),axis=1))
+    # dists_bwd = np.sqrt(np.sum(np.square(coords3d-bwd),axis=1))
+    
+    dists_fwd = np.nanmax(np.abs(coords3d-fwd),axis=1)
+    dists_bwd = np.nanmax(np.abs(coords3d-bwd),axis=1)
     
     return dists_fwd,dists_bwd
-
-
-def OLD_coords3d_flag_bad_coords(coords3d:np.ndarray,
-                             cutoff_in: float = config.coords3dflagbadcoords_cutoff,
-                             ax_3d=None,ax_distperind=None,ax_distdistr=None):
-    
-    flags = np.zeros(len(coords3d))
-    
-    
-    dists_fwd,dists_bwd = calc_neighbour_distances(coords3d)
-    
-    global cutoff
-    cutoff = 4.*np.nanmean(dists_fwd)/3. # average r is 3/4 of radius
-    print("Suggested cutoff {0}".format(cutoff))
-    cutoff = cutoff_in if cutoff_in is not None else cutoff
-    print("Mean Distance, Cutoff",np.nanmean(dists_fwd),cutoff)
-    
-    
-    ## Select leds
-    # Prep
-    coords3d = coords3d.transpose()
-    eps = np.nanmean(dists_fwd)*0.01 # allow a bit of slack
-    ind_nandist = np.isnan(dists_fwd)
-    
-    # Flag nans
-    flags[np.any(np.isnan(coords3d),axis=0)] = 1
-    
-    # Prep
-    ind = np.logical_and( dists_fwd <= cutoff + eps , dists_bwd <= cutoff + eps )
-    ind_toofar = np.logical_and(~ind,~ind_nandist)
-    def set_inds_for_cutoff(cutoff):
-        ind = np.logical_and( dists_fwd <= cutoff + eps , dists_bwd <= cutoff + eps )
-        ind_toofar = np.logical_and(~ind,~ind_nandist)
-        
-
-        # Results
-        print("> Cutoff: {0}".format(cutoff))
-        print("  ind dist",np.sum(ind))
-        print("  nan",np.sum(np.any(np.isnan(coords3d),axis=0)),"nandist",np.sum(ind_nandist))
-        print("  too far",np.sum(ind_toofar))
-        return ind,ind_toofar
-        
-    set_inds_for_cutoff(cutoff)
-    
-    
-    # Show on leds
-    if config.connect_ledlights:
-        print("Show flags on leds. Red = nan, Blue = toofar")
-        with get_strip() as strip:
-            strip.fill( (0,0,0) )
-            strip[flags == 1] = ( 115,0,0 )
-            strip[flags == 2] = ( 0,0,115 )
-            strip.show()
-            input("Enter to continue")
-    
-    
-    ### Initialize fig
-    if ax_3d is None:
-        fig, axs = plt.subplots(1, 3, figsize=(15, 5))
-        fig.subplots_adjust(bottom=0.25)
-        ax_distperind = axs[0]
-        ax_distdistr = axs[1]
-        axs[2].remove()
-        axs[2]=fig.add_subplot(1,3,3,projection='3d')
-        ax_3d = axs[2]
-    
-    print("Plotting distances, Black: forward, Red: backward")
-    # plt.figure()
-    ax_distperind.plot(range(len(dists_fwd)),dists_fwd,c='k')
-    ax_distperind.plot(range(len(dists_bwd)),dists_bwd,c='r')
-    
-    cutoff_hline = ax_distperind.axhline(cutoff,c='k')
-    # plt.show()
-    
-    # print(dists)
-    print("Plotting distance distribution, Black: forward, Red: backward")
-    # plt.figure()
-    ax_distdistr.plot(np.sort(dists_fwd),range(len(dists_fwd)),c='k')
-    counts, bins = np.histogram(dists_fwd,range=(np.nanmin(dists_fwd),np.nanmax(dists_fwd)),bins='auto',density=True)
-    ax_distdistr.stairs(len(dists_fwd)*counts/np.max(counts), bins,ec='k') # Density times lens to share same y-range
-    ax_distdistr.plot(np.sort(dists_bwd),range(len(dists_bwd)),c='r')
-    counts, bins = np.histogram(dists_bwd,range=(np.nanmin(dists_bwd),np.nanmax(dists_bwd)),bins='auto',density=True)
-    ax_distdistr.stairs(len(dists_bwd)*counts/np.max(counts), bins,ec='r') # Density times lens to share same y-range
-    
-    cutoff_vline = ax_distdistr.axvline(cutoff,c='k')
-    # plt.show()
-    
-
-    # Show in fig
-    print("Plot flags, Red: No dist, Cyan: too far")
-    ax_3d.set_xlabel('$x$')
-    ax_3d.set_ylabel('$y$')
-    ax_3d.set_zlabel('$z$')
-    
-    ax_3d.plot(coords3d[0],coords3d[1],coords3d[2],marker='',ls='-',c='k')
-    ax_3d.plot(coords3d[0][ind],coords3d[1][ind],coords3d[2][ind],marker='o',ls='',c='k')
-    ax_3d.plot(coords3d[0][ind_nandist],coords3d[1][ind_nandist],coords3d[2][ind_nandist],marker='o',ls='',c='r') # ...
-    
-    ax_3d.plot(coords3d[0][ind_toofar],coords3d[1][ind_toofar],coords3d[2][ind_toofar],marker='o',ls='',c='c') # ...
-    
-    # ax.set_xlim(xmax=4)
-    # ax.set_ylim(ymin=-2,ymax=2)
-    # ax.invert_yaxis()
-    # slider
-    
-    if ax_3d is None:
-        from matplotlib.widgets import RangeSlider,Slider,Button
-        # Create the Slider
-        slider_ax = fig.add_axes([0.20, 0.1, 0.60, 0.03])
-        slider_cutoff = Slider(slider_ax, "cutoff", 0, 5,valinit=cutoff,valstep=0.01)
-        
-        def update_cutoff(val):
-            
-            global cutoff 
-            cutoff = slider_cutoff.val
-            
-            cutoff_hline.set_ydata([cutoff,cutoff])
-            cutoff_vline.set_xdata([cutoff,cutoff])
-            
-            set_inds_for_cutoff(cutoff)
-            
-            # Redraw the figure to ensure it updates
-            fig.canvas.draw_idle()
-            
-        slider_cutoff.on_changed(update_cutoff)
-        # cutoff = slider_cutoff.val
-        
-        # SHOW
-        plt.show()
-    
-    print("Using cutoff: {0}".format(cutoff))
-    # Apply flags
-    ind,ind_toofar = set_inds_for_cutoff(cutoff)
-    flags[ind_toofar] = 2
-    
-    return flags
-
 
 def show_coords_onlights(coords3d):
     print("Showing coords on lights:")
@@ -660,7 +481,7 @@ def coords3d_fix_flagged_coords(coords3d: np.ndarray,flags: np.ndarray) -> np.nd
     
     coords3d = coords3d.transpose()
     
-    good = flags == 0
+    good = flags < 1 # 0.5 0.6 0.7 are reserved for reference inds
     print("Number not flagged:",np.sum(good))
     import scipy.interpolate as inter
     ind = np.arange(len(flags))
@@ -679,16 +500,16 @@ def coords3d_fix_flagged_coords(coords3d: np.ndarray,flags: np.ndarray) -> np.nd
         # plt.plot(ind[~good],coord[~good],marker='o',c='c',ls='')
         # plt.show()
         
-    
-    print("Plot fixed coords")
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
-    ax.set_xlabel('$x$')
-    ax.set_ylabel('$y$')
-    ax.set_zlabel('$z$')
-    ax.plot(coords3d[0][good],coords3d[1][good],coords3d[2][good],marker='o',ls='',c='k')
-    ax.plot(coords3d[0][~good],coords3d[1][~good],coords3d[2][~good],marker='o',ls='',c='c')
-    plt.show()
+    if False:
+        print("Plot fixed coords")
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        ax.set_xlabel('$x$')
+        ax.set_ylabel('$y$')
+        ax.set_zlabel('$z$')
+        ax.plot(coords3d[0][good],coords3d[1][good],coords3d[2][good],marker='o',ls='',c='k')
+        ax.plot(coords3d[0][~good],coords3d[1][~good],coords3d[2][~good],marker='o',ls='',c='c')
+        plt.show()
     
     
     return coords3d.transpose()
@@ -783,14 +604,33 @@ def coords3d_flag_bad_coords(coords3d,cutoff,dists_fwd=None,dists_bwd=None):
     
 class coords2dto3dObject(object):
     
+    fig_is_initialized = False
+    strip = None
+    
+    fname = os.path.join("_tmp","coords2dto3d.png")
+    
+    flag_dict = {
+            'noflag':{'n':0,'c':'k'},
+            'nan':{'n':1,'c':'gray'},
+            'toofar':{'n':2,'c':'c'},
+            'oriind_origin':{'n':0.5,'c':'c'},
+            'oriind_zdir':{'n':0.6,'c':'b'},
+            'oriind_xdir':{'n':0.7,'c':'gold'},
+            }
+    
+    oriind_strip_colors = [colors.red,colors.blue,colors.gold]
+    
     def __init__(self,*args,**kwargs):
         
-        pass
+        self.strip = kwargs.get('strip',None)
+        self.fname = kwargs.get('fname',self.fname)
     
     def initialize_fig(self,*args,**kwargs):
         
-        from matplotlib.widgets import Slider,Button
+        from matplotlib.widgets import Slider,Button,TextBox
+        import matplotlib.gridspec as gridspec
         
+        # init vals
         distcutoff = 1.#kwargs.get('distcutoff',1.)
         
         ##### Prepare figure
@@ -807,6 +647,10 @@ class coords2dto3dObject(object):
         self.ax_distdistr  = self.fig.add_subplot(self.gs[2, 0])
         self.ax_distdistr_lines = [self.ax_distdistr.axvline(distcutoff,c='k')]
         
+        # xyz-ind diagram
+        self.ax_xyzind = self.fig.add_subplot(self.gs[2,1:3])
+        self.ax_xyzind2 = self.fig.add_subplot(self.gs[2,3:5])
+        
         # coords3d
         self.ax_3d = self.fig.add_subplot(self.gs[0:2, 1:3],projection='3d')
         
@@ -816,6 +660,9 @@ class coords2dto3dObject(object):
         
         self.ax_3d2 = self.fig.add_subplot(self.gs[0:2, 3:5],projection='3d')
         
+        self.ax_3d2.set_xlabel('$x$')
+        self.ax_3d2.set_ylabel('$y$')
+        self.ax_3d2.set_zlabel('$z$')
         
         
         ### Sliders
@@ -829,6 +676,35 @@ class coords2dto3dObject(object):
         self.button_update = Button(self.ax_button_update, "Update")
         self.button_update.on_clicked(self.button_update_update)
         
+        self.gs_sliders_text_oriind = self.gs_sliders[1].subgridspec(1, 3)
+        # self.gs_sliders_text_oriind = gridspec.GridSpecFromSubplotSpec(3, 3, subplot_spec=gs_sliders)
+        self.ax_text_oriind = [ self.fig.add_subplot(self.gs_sliders_text_oriind[0]),
+                                self.fig.add_subplot(self.gs_sliders_text_oriind[1]),
+                                self.fig.add_subplot(self.gs_sliders_text_oriind[2]) ]
+        self.text_oriind = [ TextBox(self.ax_text_oriind[0], ""),
+                             TextBox(self.ax_text_oriind[1], ""),
+                             TextBox(self.ax_text_oriind[2], "") ]
+        self.text_oriind[0].on_submit(self.text_oriind_ori_update)
+        self.text_oriind[1].on_submit(self.text_oriind_zdir_update)
+        self.text_oriind[2].on_submit(self.text_oriind_xdir_update)
+        
+        self.fig_is_initialized = True
+        
+    def text_oriind_ori_update(self,val):
+        self.text_oriind_update(0,val)
+    def text_oriind_zdir_update(self,val):
+        self.text_oriind_update(1,val)
+    def text_oriind_xdir_update(self,val):
+        self.text_oriind_update(2,val)
+    def text_oriind_update(self,i,val):
+        # print(i,val)
+        try:
+            self.orientation_inds[i] = int(val)
+        except:
+            print("  That box needs an int")
+            self.text_oriind[i].set_val(self.orientation_inds[i])
+        
+    
     def slider_distcutoff_update(self,val):
     
         self.distcutoff = val
@@ -848,12 +724,11 @@ class coords2dto3dObject(object):
         self.update()
     
     def update(self):
-        print("Update")
+        print("> Update")
         distcutoff = self.distcutoff
         ## Calculation nation
         from calibrate.triangulate import combine_pair_coords2d
         coords3d = combine_pair_coords2d(self.coords2d1,self.coords2d2,self.camera_matrix)
-        coords3d =  h cd x c                                              xc coords3d
         self.coords3d = coords3d
         
         dists_fwd,dists_bwd = calc_neighbour_distances(self.coords3d)
@@ -865,18 +740,40 @@ class coords2dto3dObject(object):
         print("Mean Distance, Cutoff",np.nanmean(dists_fwd),distcutoff)
         
         
-    
+        ## Flagging
         # print(self.coords3d)
-        flags = coords3d_flag_bad_coords(coords3d,distcutoff)
+        flags = coords3d_flag_bad_coords(self.coords3d,distcutoff)
         
-        ind_toofar = flags == 2
-        ind_nan = flags == 1
+        self.coords3d_fixed = coords3d_fix_flagged_coords(self.coords3d.copy(),flags)
+        
+        self.coords3d_fixed = coords3d_shiftorigin_norm_rotatetoreference(self.coords3d_fixed,self.orientation_inds)
+        
+        flags[self.orientation_inds[0]] = 0.5
+        flags[self.orientation_inds[1]] = 0.6
+        flags[self.orientation_inds[2]] = 0.7
+        
+        
+        # Dict for difference indices
+        flag_dict = self.flag_dict
+        for key in flag_dict:
+            flag_dict[key]['ind'] = flags == flag_dict[key]['n']
+            
+        
         
         ## Plots
         # Clear
-        self.ax_distperind.clear()
-        self.ax_distdistr.clear()
-        self.ax_3d.clear()
+        self.ax_distperind.lines.clear()
+        self.ax_distdistr.lines.clear()
+        self.ax_xyzind.lines.clear()
+        self.ax_xyzind2.lines.clear()
+        self.ax_3d.lines.clear()
+        self.ax_3d2.lines.clear()
+        # for l in self.ax_distperind.lines: l.remove()
+        # for l in self.ax_distdistr.lines: l.remove()
+        # for l in self.ax_xyzind.lines: l.remove()
+        # for l in self.ax_xyzind2.lines: l.remove()
+        # for l in self.ax_3d.lines: l.remove()
+        # for l in self.ax_3d2.lines: l.remove()
         
         # Distance plots
         self.ax_distperind_lines[0] = self.ax_distperind.axvline(distcutoff,c='k')
@@ -899,32 +796,65 @@ class coords2dto3dObject(object):
         counts, bins = np.histogram(dists_bwd,range=(np.nanmin(dists_bwd),np.nanmax(dists_bwd)),bins='auto',density=True)
         self.ax_distdistr.stairs(len(dists_bwd)*counts/np.max(counts), bins,ec='r') # Density times lens to share same y-range
         
+        # xyz vs ind
+        xarr = np.arange(len(self.coords3d))
+        for i in range(3):
+            self.ax_xyzind.plot(xarr,self.coords3d[:,i],c='k',marker='',ls='-')
+            
+            for key,val in flag_dict.items():
+                ind = val['ind']
+                color,marker = val['c'],val.get('marker','.')
+                self.ax_xyzind.plot(xarr[ind],self.coords3d[ind,i],c=color,marker=marker,ls='')
+        # xyz vs ind2
+        xarr = np.arange(len(self.coords3d_fixed))
+        for i in range(3):
+            self.ax_xyzind2.plot(xarr,self.coords3d_fixed[:,i],c='k',marker='',ls='-')
+            
+            for key,val in flag_dict.items():
+                ind = val['ind']
+                color,marker = val['c'],val.get('marker','.')
+                self.ax_xyzind2.plot(xarr[ind],self.coords3d_fixed[ind,i],c=color,marker=marker,ls='')
+        
         # 3d
-        self.ax_3d.plot(*self.coords3d.transpose(),c='k',marker='o',ls='')
+        for key,val in flag_dict.items():
+            ind = val['ind']
+            color,marker = val['c'],val.get('marker','.')
+            self.ax_3d.plot(*self.coords3d[ind].transpose(),c=color,marker=marker,ls='')
+        
+        # 3d2
+        for key,val in flag_dict.items():
+            ind = val['ind']
+            color,marker = val['c'],val.get('marker','.')
+            self.ax_3d2.plot(*self.coords3d_fixed[ind].transpose(),c=color,marker=marker,ls='')
         
         # Redraw the figure to ensure it updates
         self.fig.canvas.draw_idle()
+        # Save it for future generations
+        self.fig.savefig(self.fname,bbox_inches="tight")
     
     def initialize_data(self,coords2d1,coords2d2,
             distcutoff: float = None,
+            orientation_inds: list[3] = None,
             camera_matrix: np.ndarray=None):
+        if not self.fig_is_initialized:
+            self.initialize_fig()
         
         self.coords2d1 = np.ma.asarray(coords2d1)
         self.coords2d2 = np.ma.asarray(coords2d2)
         
-        self.ax_2d_lines[0] = self.ax_2d.plot(self.coords2d1[:,0],self.coords2d1[:,1],c='k',marker='o',ls='')
-        self.ax_2d_lines[1] = self.ax_2d.plot(self.coords2d2[:,0],self.coords2d2[:,1],c='r',marker='o',ls='')
+        self.ax_2d_lines[0] = self.ax_2d.plot(self.coords2d1[:,0],self.coords2d1[:,1],c='k',marker='.',ls='')
+        self.ax_2d_lines[1] = self.ax_2d.plot(self.coords2d2[:,0],self.coords2d2[:,1],c='gray',marker='.',ls='')
         
         self.distcutoff = distcutoff if distcutoff is not None else config.coords3dflagbadcoords_cutoff
+        if self.distcutoff is None:
+            self.distcutoff = 1.
         self.slider_distcutoff.set_val(self.distcutoff)
         
         self.camera_matrix = camera_matrix
         
-        
-        self.ind = np.ones(coords2d1.shape[0],dtype=bool)
-        self.coords3d = np.ma.asarray( np.nan*np.zeros((self.coords2d1.shape[0],3)) )
-        print(self.coords3d)
-        
+        self.orientation_inds = list(orientation_inds) if orientation_inds is not None else list(config.combinecoords3d_referenceinds_default)
+        for i in range(len(self.orientation_inds)):
+            self.text_oriind[i].set_val(self.orientation_inds[i])
         
         self.update()
     
@@ -946,36 +876,19 @@ def iterative_pair_coords2d_to_coords3d(coords2d1,coords2d2,
     
     
     
-    
-    coordObject = coords2dto3dObject()
-    coordObject.initialize_fig()
-    coordObject.initialize_data(coords2d1,coords2d2,
-                    distcutoff=None,# defaults to config
-                    camera_matrix=camera_matrix)
-    
-    # ax_2d = coordObject.ax_2d
-    ax_distperind = coordObject.ax_distperind
-    ax_distdistr = coordObject.ax_distdistr
-    ax_3d = coordObject.ax_3d
-    
-    ###
-    # coords2d plot
-    # ax_2d.plot(*coords2d1.transpose(),c='k',marker='o',ls='')
-    # ax_2d.plot(*coords2d2.transpose(),c='r',marker='o',ls='')
-    # ax_2d.invert_yaxis()
+    with get_strip() as strip:
+        coordObject = coords2dto3dObject(strip=strip)
+        coordObject.initialize_fig()
+        coordObject.initialize_data(coords2d1,coords2d2,
+                        distcutoff=None,# defaults to config
+                        camera_matrix=camera_matrix)
     
     
-    
-    # plt.show()
-    
-    
+        ### Show 
+        plt.show()
     
     
-    
-    
-    ### Show and save
-    plt.savefig(os.path.join("_tmp","coords2d_to_3d"+".png"),bbox_inches='tight')
-    plt.show()
+    coords3d = coordObject.coords3d_fixed
     
     return coords3d
 
@@ -997,16 +910,20 @@ def main():
     if coords2d_list is None:
         coords2d_list = []
         for i in range(n_viewpoints):
-            fname = "_tmp/"+"coords2d_{}.txt".format(i)
+            fname = os.path.join("_tmp","coords2d_{}.txt".format(i))
             coords2d_list.append( coords2d_read(fname) )
             
     
     coords2d1,coords2d2 = coords2d_list[0],coords2d_list[1]
     
-    iterative_pair_coords2d_to_coords3d(coords2d1,coords2d2,
+    print(" > Iterative 2d to 3d")
+    coords3d = iterative_pair_coords2d_to_coords3d(coords2d1,coords2d2,
                                    camera_matrix=camera_matrix,distortions=distortions, new_camera_matrix=new_camera_matrix)
     
     
+    if config.save_coords3d:
+        print(" > Saving coords")
+        np.savetxt(config.savecoords3d_fname,coords3d)
     
     
 if __name__ == "__main__":
