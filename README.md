@@ -18,11 +18,10 @@ LitLedLights, they are Lit
 
 - coords2dto3d
   - fix whe nno mouse available
-  - fix click dist ditribution window
-  - fix change reference inds
   - fix iterative version
   - test on ledz
   - test on rpi
+  - referenceind on 2d plot
   - pff
 - level converter "chip"
 - robust wiring

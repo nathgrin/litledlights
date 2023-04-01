@@ -597,7 +597,7 @@ def coords3d_flag_bad_coords(coords3d,cutoff,dists_fwd=None,dists_bwd=None):
     flags[np.any(np.isnan(coords3d),axis=1)] = 1
     
     # flag too far
-    ind_toofar = np.logical_and(dists_fwd > cutoff, dists_bwd > cutoff)
+    ind_toofar = np.logical_or(dists_fwd > cutoff, dists_bwd > cutoff)
     flags[ind_toofar] = 2
     
     return flags
@@ -610,15 +610,22 @@ class coords2dto3dObject(object):
     fname = os.path.join("_tmp","coords2dto3d.png")
     
     flag_dict = {
-            'noflag':{'n':0,'c':'k'},
-            'nan':{'n':1,'c':'gray'},
-            'toofar':{'n':2,'c':'c'},
-            'oriind_origin':{'n':0.5,'c':'c'},
-            'oriind_zdir':{'n':0.6,'c':'b'},
-            'oriind_xdir':{'n':0.7,'c':'gold'},
+            'noflag':{'val':0,'c':'k'},
+            'nan':{'val':1,'c':'gray'},
+            'toofar':{'val':2,'c':'c'},
+            'oriind_origin':{'val':0.5,'c':'r'},
+            'oriind_zdir':{'val':0.6,'c':'b'},
+            'oriind_xdir':{'val':0.7,'c':'gold'},
             }
     
     oriind_strip_colors = [colors.red,colors.blue,colors.gold]
+    
+    
+    coords3d = None
+    flags = None
+    
+    accepted = False
+    
     
     def __init__(self,*args,**kwargs):
         
@@ -627,7 +634,7 @@ class coords2dto3dObject(object):
     
     def initialize_fig(self,*args,**kwargs):
         
-        from matplotlib.widgets import Slider,Button,TextBox
+        from matplotlib.widgets import Slider,Button,TextBox,CheckButtons
         import matplotlib.gridspec as gridspec
         
         # init vals
@@ -672,9 +679,21 @@ class coords2dto3dObject(object):
         self.slider_distcutoff = Slider(self.ax_slider_distcutoff, "Dist cutoff", 0., 3., valinit=distcutoff, valstep=0.01)
         self.slider_distcutoff.on_changed(self.slider_distcutoff_update)
         
-        self.ax_button_update = self.fig.add_subplot(self.gs_sliders[-1])
+        self.gs_sliders_button_update = self.gs_sliders[-2].subgridspec(1, 2)
+        self.ax_button_update = self.fig.add_subplot(self.gs_sliders_button_update[0])
         self.button_update = Button(self.ax_button_update, "Update")
-        self.button_update.on_clicked(self.button_update_update)
+        self.button_update.on_clicked(self.button_clicked_update)
+        self.ax_checkbox_updateuseflags = self.fig.add_subplot(self.gs_sliders_button_update[1])
+        self.checkbox_updateuseflags = CheckButtons(self.ax_checkbox_updateuseflags, ["Flags"])
+        # self.checkbox_updateuseflags.on_clicked(self.button_clicked_update)
+        
+        self.gs_sliders_button_close = self.gs_sliders[-1].subgridspec(1, 2)
+        self.ax_button_close_accept = self.fig.add_subplot(self.gs_sliders_button_close[0])
+        self.button_close_accept = Button(self.ax_button_close_accept, "Accept!")
+        self.button_close_accept.on_clicked(self.button_clicked_close_accept)
+        self.ax_button_close_reject = self.fig.add_subplot(self.gs_sliders_button_close[1])
+        self.button_close_reject = Button(self.ax_button_close_reject, "Reject!")
+        self.button_close_reject.on_clicked(self.button_clicked_close_reject)
         
         self.gs_sliders_text_oriind = self.gs_sliders[1].subgridspec(1, 3)
         # self.gs_sliders_text_oriind = gridspec.GridSpecFromSubplotSpec(3, 3, subplot_spec=gs_sliders)
@@ -688,7 +707,31 @@ class coords2dto3dObject(object):
         self.text_oriind[1].on_submit(self.text_oriind_zdir_update)
         self.text_oriind[2].on_submit(self.text_oriind_xdir_update)
         
+        
+        ### Events
+        self.cid = self.fig.canvas.mpl_connect('button_press_event', self.on_click)
+
+        # Is initialized
         self.fig_is_initialized = True
+        
+    def save_figure(self):
+        
+        self.fig.savefig(self.fname,bbox_inches="tight")
+        
+    def on_click(self,event): # When clicked in the figure
+        
+        # Fix if draggin
+        try: # use try/except in case we are not using Qt backend
+            zooming_panning = ( self.fig.canvas.cursor().shape() != 0 ) # 0 is the arrow, which means we are not zooming or panning.
+        except:
+            zooming_panning = False
+        if zooming_panning: 
+            # print("Zooming or panning")
+            return
+        
+        if event.inaxes == self.ax_distdistr or event.inaxes == self.ax_distperind:
+            # update distcutoff
+            self.slider_distcutoff.set_val(event.xdata)
         
     def text_oriind_ori_update(self,val):
         self.text_oriind_update(0,val)
@@ -699,10 +742,24 @@ class coords2dto3dObject(object):
     def text_oriind_update(self,i,val):
         # print(i,val)
         try:
-            self.orientation_inds[i] = int(val)
+            val = int(val)
         except:
             print("  That box needs an int")
             self.text_oriind[i].set_val(self.orientation_inds[i])
+            return
+        
+        if self.coords3d is not None:
+            if np.any(np.isnan(self.coords3d[val])):
+                print("  Index {0} has no coordinate value..".format(val))
+                self.text_oriind[i].set_val(self.orientation_inds[i])
+                return
+        if self.flags is not None:
+            if self.flags[val] > 0:
+                print("  Index {0} is already flagged..".format(val))
+                self.text_oriind[i].set_val(self.orientation_inds[i])
+                return
+        
+        self.orientation_inds[i] = val
         
     
     def slider_distcutoff_update(self,val):
@@ -719,7 +776,25 @@ class coords2dto3dObject(object):
         
         # self.update()
     
-    def button_update_update(self,event):
+    def button_clicked_close_reject(self,event):
+        print("!Rejected!")
+        self.accepted = False
+        self.coords3d = None
+        self.coords3d_fixed = None
+        self.close_figure(event)
+    def button_clicked_close_accept(self,event):
+        print("!Accepted!")
+        self.accepted = True
+        self.close_figure(event)
+    
+    def close_figure(self,event):
+        
+        self.save_figure()
+        
+        plt.close( self.fig )
+        
+        
+    def button_clicked_update(self,event):
         
         self.update()
     
@@ -727,12 +802,17 @@ class coords2dto3dObject(object):
         print("> Update")
         distcutoff = self.distcutoff
         ## Calculation nation
-        from calibrate.triangulate import combine_pair_coords2d
-        coords3d = combine_pair_coords2d(self.coords2d1,self.coords2d2,self.camera_matrix)
+        # Then triangulate
+        from calibrate.triangulate import coords3d_from_iterative_LS_triangulation
+        coords3d = coords3d_from_iterative_LS_triangulation(self.coords2d1,self.coords2d2,self.camera_matrix)
         self.coords3d = coords3d
         
         dists_fwd,dists_bwd = calc_neighbour_distances(self.coords3d)
         
+        # print(dists_fwd)
+        # Update slider range
+        self.slider_distcutoff.valmax = np.nanmax(dists_fwd)
+        self.slider_distcutoff.ax.set_xlim(self.slider_distcutoff.valmin,self.slider_distcutoff.valmax)
         
     
         suggested_distcutoff = 4.*np.nanmean(dists_fwd)/3. # average r is 3/4 of radius
@@ -752,11 +832,12 @@ class coords2dto3dObject(object):
         flags[self.orientation_inds[1]] = 0.6
         flags[self.orientation_inds[2]] = 0.7
         
+        self.flags = flags
         
         # Dict for difference indices
         flag_dict = self.flag_dict
         for key in flag_dict:
-            flag_dict[key]['ind'] = flags == flag_dict[key]['n']
+            flag_dict[key]['ind'] = flags == flag_dict[key]['val']
             
         
         
@@ -824,7 +905,7 @@ class coords2dto3dObject(object):
         # Redraw the figure to ensure it updates
         self.fig.canvas.draw_idle()
         # Save it for future generations
-        self.fig.savefig(self.fname,bbox_inches="tight")
+        self.save_figure()
     
     def initialize_data(self,coords2d1,coords2d2,
             distcutoff: float = None,
@@ -836,8 +917,8 @@ class coords2dto3dObject(object):
         self.coords2d1 = np.ma.asarray(coords2d1)
         self.coords2d2 = np.ma.asarray(coords2d2)
         
-        self.ax_2d_lines[0] = self.ax_2d.plot(self.coords2d1[:,0],self.coords2d1[:,1],c='k',marker='.',ls='')
-        self.ax_2d_lines[1] = self.ax_2d.plot(self.coords2d2[:,0],self.coords2d2[:,1],c='gray',marker='.',ls='')
+        self.ax_2d_lines[0] = self.ax_2d.plot(self.coords2d1[:,0],self.coords2d1[:,1],c='k',marker='.',ls='',alpha=0.8)
+        self.ax_2d_lines[1] = self.ax_2d.plot(self.coords2d2[:,0],self.coords2d2[:,1],c='midnightblue',marker='.',ls='',alpha=0.8)
         
         self.distcutoff = distcutoff if distcutoff is not None else config.coords3dflagbadcoords_cutoff
         if self.distcutoff is None:
@@ -915,7 +996,7 @@ def main():
                                    camera_matrix=camera_matrix,distortions=distortions, new_camera_matrix=new_camera_matrix)
     
     
-    if config.save_coords3d:
+    if config.save_coords3d and coords3d is not None:
         print(" > Saving coords")
         np.savetxt(config.savecoords3d_fname,coords3d)
     

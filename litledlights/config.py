@@ -36,7 +36,7 @@ combinecoords3d_referenceinds_default = 306,300,148 # Origin (red), z-point/unit
 combinecoords3d_ind_coords3d = 0 # for now, simply pick one
 
 # Fix bad coords
-coords3dflagbadcoords_cutoff = None#0.6# 1.3#None# Nones calculates this on fly
+coords3dflagbadcoords_cutoff = 0.6#None# 1.3#None# Nones calculates this on fly
 coords3d_fixbad_splinekind = 'quadratic' #one of .interp1d # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
 
 # Saving
