@@ -70,6 +70,9 @@ class ledstrip(*parentclasses):
                 raise KeyError("{0} has wrong type".format(key))
         else:
             self.__setitem__one(key,value)
+            
+    def clear(self):
+        self.fill( (0,0,0) )
         
     def set_multiple(self,keys,values):
         for i,(key,value) in enumerate(zip(keys,values)):

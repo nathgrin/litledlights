@@ -641,7 +641,7 @@ class coords2dto3dObject(object):
         distcutoff = 1.#kwargs.get('distcutoff',1.)
         
         ##### Prepare figure
-        self.fig = plt.figure(figsize=(10,10))
+        self.fig = plt.figure(figsize=(7.5,6))
         self.gs = self.fig.add_gridspec(4,5)
         # row,column (y,x in a sway)
         self.ax_2d = self.fig.add_subplot(self.gs[0, 0])
@@ -683,9 +683,9 @@ class coords2dto3dObject(object):
         self.ax_button_update = self.fig.add_subplot(self.gs_sliders_button_update[0])
         self.button_update = Button(self.ax_button_update, "Update")
         self.button_update.on_clicked(self.button_clicked_update)
-        self.ax_checkbox_updateuseflags = self.fig.add_subplot(self.gs_sliders_button_update[1])
-        self.checkbox_updateuseflags = CheckButtons(self.ax_checkbox_updateuseflags, ["Flags"])
-        # self.checkbox_updateuseflags.on_clicked(self.button_clicked_update)
+        self.ax_button_update_autoscale = self.fig.add_subplot(self.gs_sliders_button_update[1])
+        self.button_update_autoscale = Button(self.ax_button_update_autoscale, "Autoscale")
+        self.button_update_autoscale.on_clicked(self.button_clicked_update_autoscale)
         
         self.gs_sliders_button_close = self.gs_sliders[-1].subgridspec(1, 2)
         self.ax_button_close_accept = self.fig.add_subplot(self.gs_sliders_button_close[0])
@@ -758,8 +758,22 @@ class coords2dto3dObject(object):
                 print("  Index {0} is already flagged..".format(val))
                 self.text_oriind[i].set_val(self.orientation_inds[i])
                 return
+        if val >= len(self.coords2d1) or val < 0:
+            print("  Ind must be between 0<= ind < {0}".format(len(self.coords2d1)))
+            self.text_oriind[i].set_val(self.orientation_inds[i])
+            return
         
         self.orientation_inds[i] = val
+        
+        self.show_orientation_inds()
+        
+        
+    def show_orientation_inds(self):
+        if self.strip is not None:
+            self.strip.clear()
+            for i,ind in enumerate(self.orientation_inds):
+                self.strip[ind] = self.oriind_strip_colors[i]
+            self.strip.show()
         
     
     def slider_distcutoff_update(self,val):
@@ -797,6 +811,11 @@ class coords2dto3dObject(object):
     def button_clicked_update(self,event):
         
         self.update()
+        
+    def button_clicked_update_autoscale(self,event):
+        
+        for ax in [self.ax_2d,self.ax_distperind,self.ax_distdistr,self.ax_xyzind,self.ax_xyzind2,self.ax_3d,self.ax_3d2]:
+            ax.autoscale_view()
     
     def update(self):
         print("> Update")
@@ -878,29 +897,29 @@ class coords2dto3dObject(object):
             
             for key,val in flag_dict.items():
                 ind = val['ind']
-                color,marker = val['c'],val.get('marker','.')
-                self.ax_xyzind.plot(xarr[ind],self.coords3d[ind,i],c=color,marker=marker,ls='')
+                color,marker,ms = val['c'],val.get('marker','.'),val.get('ms',5)
+                self.ax_xyzind.plot(xarr[ind],self.coords3d[ind,i],c=color,marker=marker,ls='',ms=ms)
         # xyz vs ind2
         xarr = np.arange(len(self.coords3d_fixed))
         for i in range(3):
-            self.ax_xyzind2.plot(xarr,self.coords3d_fixed[:,i],c='k',marker='',ls='-')
+            self.ax_xyzind2.plot(xarr,self.coords3d_fixed[:,i],c='k',marker='',ls='-',ms=ms)
             
             for key,val in flag_dict.items():
                 ind = val['ind']
-                color,marker = val['c'],val.get('marker','.')
-                self.ax_xyzind2.plot(xarr[ind],self.coords3d_fixed[ind,i],c=color,marker=marker,ls='')
+                color,marker,ms = val['c'],val.get('marker','.'),val.get('ms',5)
+                self.ax_xyzind2.plot(xarr[ind],self.coords3d_fixed[ind,i],c=color,marker=marker,ls='',ms=ms)
         
         # 3d
         for key,val in flag_dict.items():
             ind = val['ind']
-            color,marker = val['c'],val.get('marker','.')
-            self.ax_3d.plot(*self.coords3d[ind].transpose(),c=color,marker=marker,ls='')
+            color,marker,ms = val['c'],val.get('marker','.'),val.get('ms',5)
+            self.ax_3d.plot(*self.coords3d[ind].transpose(),c=color,marker=marker,ls='',ms=ms)
         
         # 3d2
         for key,val in flag_dict.items():
             ind = val['ind']
-            color,marker = val['c'],val.get('marker','.')
-            self.ax_3d2.plot(*self.coords3d_fixed[ind].transpose(),c=color,marker=marker,ls='')
+            color,marker,ms = val['c'],val.get('marker','.'),val.get('ms',5)
+            self.ax_3d2.plot(*self.coords3d_fixed[ind].transpose(),c=color,marker=marker,ls='',ms=ms)
         
         # Redraw the figure to ensure it updates
         self.fig.canvas.draw_idle()
@@ -995,6 +1014,8 @@ def main():
     coords3d = iterative_pair_coords2d_to_coords3d(coords2d1,coords2d2,
                                    camera_matrix=camera_matrix,distortions=distortions, new_camera_matrix=new_camera_matrix)
     
+    if coords3d is not None:
+        show_coords_onlights(coords3d)
     
     if config.save_coords3d and coords3d is not None:
         print(" > Saving coords")
