@@ -2,6 +2,7 @@ import numpy as np
 import config
 import colors
 import coords
+from typing import Callable
 try:
     import utils
 except:
@@ -166,6 +167,7 @@ class AnimationObject():
     type="object"
     id = ""
     termination_func = None
+    force_func = None
     def __init__(self,x: np.ndarray(3),v: np.ndarray(3),a: np.ndarray(3),force: np.ndarray(3)=np.zeros(3),m: float=1.,id: str=None, instr: AnimationInstruction=None):
         self.x = x
         self.v = v
@@ -190,8 +192,10 @@ class AnimationObject():
         
     def calculate_force(self,dt:float) -> np.ndarray:
         
-        force = np.zeros(3)
-        return force
+        if self.force_func is None:
+            return np.zeros(3)
+        else:
+            return self.force_func(self,dt)
     
     def update(self,dt:float,force:np.ndarray(3)) -> str:
         self.force = force
@@ -207,14 +211,18 @@ class AnimationObject():
         if self.termination_func is not None:
             return self.termination_func(self,t)
         
-        if abs(self.x[0]) > 5 or abs(self.x[1])>5 or abs(self.x[2])>5:
-            return True
+        # if abs(self.x[0]) > 5 or abs(self.x[1])>5 or abs(self.x[2])>5:
+            # return True
         return False
     
     def set_termination_func(self, func):
         """ termination func needs to accept (self,t) see evaluate_termination
         """
         self.termination_func = func
+    def set_force_func(self, func):
+        """ force func needs to accept (self,dt) see evaluate_force
+        """
+        self.force_func = func
     
     def select_lights(self,coords3d: coords.Coords3d):
         ind = np.where(~np.isnan(coords3d.x))
@@ -244,9 +252,14 @@ class AnimationBall(AnimationObject):
     
 def animationloop(strip: 'ledstrip.ledstrip', anistrip: AnimationStrip, objects: list[type[AnimationObject]],
                   t0: float=0., dt: float=1.,
-                  tmax: float=100,
+                  tmax: float=300,
+                  
+                  spawn_func: Callable = None,
+                  spawn_odds: float = None,
+                  
                   idcnt: int=0):
     
+    do_spawn = spawn_func is not None and spawn_odds is not None
     
     anistrip.t = t0
     
@@ -254,10 +267,13 @@ def animationloop(strip: 'ledstrip.ledstrip', anistrip: AnimationStrip, objects:
     while True:
         timetime = time.time()
         # print("objects",t,objects)
-        if np.random.uniform() < 1*dt:
-            # print("SPAWN")
-            objects.extend( spawn_fireworks(str(idcnt)) )
-            idcnt += 1
+        if do_spawn:
+            if np.random.uniform() < spawn_odds:
+                # print("SPAWN")
+                objs_to_spawn = spawn_func(str(idcnt))
+                for obj in objs_to_spawn: obj.t0 = anistrip.t
+                objects.extend(objs_to_spawn)
+                idcnt += 1
         
         
         # Instruct lights
@@ -282,8 +298,9 @@ def animationloop(strip: 'ledstrip.ledstrip', anistrip: AnimationStrip, objects:
         
         # Update position
         for i,obj in enumerate(objects):
-            force = obj.calculate_forec(dt)
+            force = obj.calculate_force(dt)
             flag = obj.update(dt,force)
+            # print(obj.x)
             
             kill = obj.evaluate_termination(anistrip.t)
             if kill:
@@ -304,6 +321,8 @@ def spawn_ball(x0,v0,a0,radius,instr,id):
     
 def terminate_distance_from_start(self,t):
     return np.linalg.norm(self.x-self.x0) > self.max_distance
+def terminate_time_from_start(self,t):
+    return abs(t-self.t0) > self.max_t
     
 def spawn_random_ray(id,
         x0: np.ndarray(3)=None,v0: np.ndarray(3)=None,a0: np.ndarray(3)=None,
@@ -312,47 +331,47 @@ def spawn_random_ray(id,
         which: str="Fade",mode: str="staythenlinear",duration: float=None, tfrac: float=None, # For instruction
         radius: float=None, max_distance: float=None,
         ):
-        
-        if color_on is None:
-            # random color
-            ctup = (np.random.uniform(),np.random.uniform(),np.random.uniform())
-            color_on = colors.Color(ctup,ctype='hsv')
-        
-        t0 = 0. # dummy t0
-        
-        duration = 0.5 if duration is None else duration
-        tfrac = 0.5 if tfrac is None else tfrac # fraction of duration stay on after which linear decay
-        which = "Fade" if which is None else which
-        mode = "staythenlinear" if mode is None else mode
-        # instruction = AnimationInstruction(which="Fade",mode="linear",color=color_on,t0=t0,duration=duration)
-        instruction = AnimationInstruction(which=which,mode=mode,color=color_on,t0=t0,duration=duration,tfrac=tfrac)
-        instr = instruction
-        
-        x0 = np.random.uniform(-1,1,3) if x0 is None else x0
-        
-        v0 = np.random.uniform(-1,1,3) if v0 is None else v0
-        v =  np.random.uniform(3,4) if v is None else v
-        v0 = v*v0/np.linalg.norm(v0)
-        
-        a0 = np.zeros(3) if a0 is None else a0
-        
-        
-        radius = 0.15 if radius is None else radius
-        max_distance = np.random.uniform(2.,4.) if max_distance is None else max_distance
-        
-        ray = AnimationBall(x0,v0,a0,radius=radius,instr=instr,id=id)
-        
-        ray.set_termination_func( terminate_distance_from_start )
-        ray.max_distance = max_distance
-        ray.x0 = x0.copy()
-        
-        # print("Color",color_on,color_on['rgb'])
-        # print("x0",np.linalg.norm(x0),x0)
-        # print("v0",np.linalg.norm(v0),v0)
-        
-        return [ray]
+    
+    if color_on is None:
+        # random color
+        ctup = (np.random.uniform(),np.random.uniform(),np.random.uniform())
+        color_on = colors.Color(ctup,ctype='hsv')
+    
+    t0 = 0. # dummy t0
+    
+    duration = 0.5 if duration is None else duration
+    tfrac = 0.5 if tfrac is None else tfrac # fraction of duration stay on after which linear decay
+    which = "Fade" if which is None else which
+    mode = "staythenlinear" if mode is None else mode
+    # instruction = AnimationInstruction(which="Fade",mode="linear",color=color_on,t0=t0,duration=duration)
+    instruction = AnimationInstruction(which=which,mode=mode,color=color_on,t0=t0,duration=duration,tfrac=tfrac)
+    instr = instruction
+    
+    x0 = np.random.uniform(-1,1,3) if x0 is None else x0
+    
+    v0 = np.random.uniform(-1,1,3) if v0 is None else v0
+    v =  np.random.uniform(3,4) if v is None else v
+    v0 = v*v0/np.linalg.norm(v0)
+    
+    a0 = np.zeros(3) if a0 is None else a0
+    
+    
+    radius = 0.15 if radius is None else radius
+    max_distance = np.random.uniform(2.,4.) if max_distance is None else max_distance
+    
+    ray = AnimationBall(x0,v0,a0,radius=radius,instr=instr,id=id)
+    
+    ray.set_termination_func( terminate_distance_from_start )
+    ray.max_distance = max_distance
+    ray.x0 = x0.copy()
+    
+    # print("Color",color_on,color_on['rgb'])
+    # print("x0",np.linalg.norm(x0),x0)
+    # print("v0",np.linalg.norm(v0),v0)
+    
+    return [ray]
 
-def spawn_fireworks(id,
+def spawn_fireworks(theid: str,
             x0: np.ndarray(3)=None,
             color_on: colors.Color=None,
             ):
@@ -369,23 +388,26 @@ def spawn_fireworks(id,
     
     nrays = np.random.randint(12,20)
     
+    thetime = str(time.time())
+    
     for i in range(nrays):
-        objects.extend( spawn_random_ray(str(id)+str(i),x0=x0,color_on=color_on) )
+        objects.extend( spawn_random_ray(str(theid)+str(i)+thetime,x0=x0,color_on=color_on) )
     
     return objects
     
-def main():
-    print("animate")
-    print("nleds",config.nleds)
+def fireworks(coords3d:'coords.Coords3d'=None,
+            anistrip:AnimationStrip=None):
     
-    
-    coords3d = coords.get_coords()
-    
-    anistrip = AnimationStrip(coords3d=coords3d)
+    if coords3d is None:
+        coords3d = coords.get_coords()
+    if anistrip is None:
+        anistrip = AnimationStrip(coords3d=coords3d)
     
     # Settings
     t0 = 0.
     dt = 0.1
+    
+    spawn_odds = 0.5*dt
     
     # Define objects
     objects = []
@@ -393,7 +415,109 @@ def main():
     print(objects)
     
     with utils.get_strip() as strip:
-        animationloop(strip,anistrip,objects,t0=t0,dt=dt)
+        animationloop(strip,anistrip,objects,
+                spawn_func=spawn_fireworks,spawn_odds=spawn_odds,
+                t0=t0,dt=dt)
+                
+                
+def stuiterbal(coords3d:'coords.Coords3d'=None,
+            anistrip:AnimationStrip=None):
+    
+    if coords3d is None:
+        coords3d = coords.get_coords()
+    if anistrip is None:
+        anistrip = AnimationStrip(coords3d=coords3d)
+    
+    def force_func(self,dt):
+        force = np.zeros(3)
+        # force[0] = -2*self.x[0]
+        # force[1] = -2*self.x[1]
+        for i in range(2):
+            if abs(self.x[i]) > 1.5:
+                self.v[i] = -self.v[i]
+        if self.x[2] < -1.5:
+            # force[2] = -2*self.x[2]
+            self.v[2] = -self.v[2]
+        else:
+            force[2] = -self.m*9.81
+            
+        # force += -0.05*self.v*np.abs(self.v)
+        force[2] += -0.05*self.v[2]*np.abs(self.v[2])
+        
+        # if np.linalg.norm(self.v) > 3.:
+            # v = 3.*self.v/np.linalg.norm(self.v)
+            
+        return force
+        
+    def spawn_stuiterbal(id,
+        x0: np.ndarray(3)=None,v0: np.ndarray(3)=None,a0: np.ndarray(3)=None,
+        v: float=None,
+        color_on: colors.Color=None,
+        which: str="Fade",mode: str="staythenlinear",duration: float=None,tfrac: float=None,# For instruction
+        radius: float=None, max_distance: float=None,
+        ):
+        if color_on is None:
+            # random color
+            ctup = (np.random.uniform(),np.random.uniform(0.5,1.),np.random.uniform(0.5,1.))
+            color_on = colors.Color(ctup,ctype='hsv')
+        
+        theid = str(i)+str(time.time())
+        # print(theid)
+        
+        t0 = 0. # dummy t0
+        
+        duration = 0.5 if duration is None else duration
+        tfrac = 0.5 if tfrac is None else tfrac
+        which = "Fade" if which is None else which
+        mode = "staythenlinear" if mode is None else mode
+        instruction = AnimationInstruction(which=which,mode=mode,color=color_on,t0=t0,duration=duration)
+        instr = instruction
+        
+        x0 = np.random.uniform(-1,1,3) if x0 is None else x0
+        x0[1] = 0.
+        
+        v0 = np.random.uniform(-1,1,3) if v0 is None else v0
+        v0[1] = 0.
+        v =  np.random.uniform(2.,3.) if v is None else v
+        v0 = v*v0/np.linalg.norm(v0)
+        
+        a0 = np.zeros(3) if a0 is None else a0
+        
+        radius = 0.25 if radius is None else radius
+        
+        ball = AnimationBall(x0,v0,a0,radius=radius,instr=instr,id=theid)
+        ball.set_force_func(force_func)
+        
+        ball.set_termination_func(terminate_time_from_start)
+        ball.t0 = 0.
+        ball.max_t = 10.
+        
+        return [ball]
+    
+    # Settings
+    t0 = 0.
+    dt = 0.1
+    
+    spawn_odds = dt/10
+    
+    # Define objects
+    objects = []
+    for i in range(1):
+        obj = spawn_stuiterbal(i)
+        objects.extend(obj)
+    print(objects)
+    # input()
+    with utils.get_strip() as strip:
+        animationloop(strip,anistrip,objects,
+                spawn_func=spawn_stuiterbal,spawn_odds=spawn_odds,
+                t0=t0,dt=dt)
+    
+def main():
+    print("animate")
+    print("nleds",config.nleds)
+    
+    
+    fireworks()
     
 if __name__ == "__main__":
     main()

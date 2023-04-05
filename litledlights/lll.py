@@ -97,11 +97,15 @@ def run_one(args):
     strip.show()
     
 def run_animate(args):
-    if args.which[0] == "main":
-        import animate.animate
+    import animate.animate
+    which = args.which[0]
+    if which == "main":
         animate.animate.main()
+    elif hasattr(animate.animate,which):
+        func = getattr(animate.animate,which)
+        func()
     else:
-        raise ValueError("Wrong key ({0}) for which in lll animate".format(args.which))
+        raise ValueError("Wrong key ({0}) for which in lll animate".format(args.which[0]))
 
 def run_play(args):
     if   args.which[0] == "huphollandhup":
@@ -185,7 +189,7 @@ def main(argv):
     
     animate_parser = subparsers.add_parser('animate') # submodule
     animate_parser.set_defaults(func=run_animate)
-    animate_parser.add_argument('which',type=str,nargs=1,choices=['main','fireworks'])#,help="which animation, e.g., main PUT LIST OF POSSIBLE HERE?")
+    animate_parser.add_argument('which',type=str,nargs=1,choices=['main','fireworks','stuiterbal'])#,help="which animation, e.g., main PUT LIST OF POSSIBLE HERE?")
     
     
     calibrate_parser = subparsers.add_parser('calibrate') # submodule
