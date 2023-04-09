@@ -98,9 +98,13 @@ def run_one(args):
     
 def run_animate(args):
     import animate.animate
+    import animate
     which = args.which[0]
     if which == "main":
         animate.animate.main()
+    elif which == "pong":
+        import animate.pong
+        animate.pong.main()
     elif hasattr(animate.animate,which):
         func = getattr(animate.animate,which)
         func()
@@ -189,7 +193,7 @@ def main(argv):
     
     animate_parser = subparsers.add_parser('animate') # submodule
     animate_parser.set_defaults(func=run_animate)
-    animate_parser.add_argument('which',type=str,nargs=1,choices=['main','fireworks','stuiterbal'])#,help="which animation, e.g., main PUT LIST OF POSSIBLE HERE?")
+    animate_parser.add_argument('which',type=str,nargs=1,choices=['main','fireworks','stuiterbal','planes','pong'])#,help="which animation, e.g., main PUT LIST OF POSSIBLE HERE?")
     
     
     calibrate_parser = subparsers.add_parser('calibrate') # submodule

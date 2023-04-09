@@ -47,13 +47,13 @@ class Color(object):
         return "{1} not one of valid ctypes: {0}".format(self._types,ctype)
 
 # maybe this should be a json file
-red = (155,0,0) # bad, more like pink
-blue = (0,0,155)
-white = (155,155,155)
-green = (0,155,0)
-pink = (227,28,121)
-orange = (255,117,0)
-gold = (255, 215, 0)
+red = Color((155,0,0)) # bad, more like pink
+blue = Color((0,0,155))
+white = Color((155,155,155))
+green = Color((0,155,0))
+pink = Color((227,28,121))
+orange = Color((255,117,0))
+gold = Color((255, 215, 0))
 namedcolors = {
         'orange': orange,
         'red': red, 
@@ -254,6 +254,13 @@ colorfromto = {'rgb':{'hsv':rgb_to_hsv,'hsl':rgb_to_hsl},
                'hsv':{'rgb':hsv_to_rgb,'hsl':hsv_to_hsl},
                'hsl':{'rgb':hsl_to_rgb,'hsv':hsl_to_hsv},
                }
+
+
+
+def random_color():
+    ctup = (np.random.uniform(),np.random.uniform(0.5,1.),np.random.uniform(0.5,1.))
+    color_on = Color(ctup,ctype='hsv')
+    return color_on
 
 def main():
     print(rgb_to_hsl(150,0,0))
