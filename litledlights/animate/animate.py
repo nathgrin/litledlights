@@ -16,7 +16,7 @@ import misc_func
 import time
 
 class AnimationInstruction(dict):
-    
+    # List of possible kwargs here..
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -59,11 +59,16 @@ class AnimationLed(list):
         return "<{0} {1}>".format(type(self).__name__,str(self.state))
     
     def instruct(self,instruction: AnimationInstruction):
-        id = instruction.get('id',None)
+        theid = instruction.get('id',None)
+        overwrite = instruction.get('overwrite',False)
         
-        if id is not None: # Only allow single instruction per ID
-            if id in [instr['id'] for instr in self]:
-                return False
+        if theid is not None: # Only allow single instruction per ID
+            for i,instr in enumerate(self):
+                if theid == instr['id']:
+                    if overwrite:
+                        self.pop(i)
+                    else:
+                        return False
         self.append(instruction.copy())
         # print(instruction)
         return True
