@@ -123,7 +123,7 @@ def run_sound(args):
         animate.sound.main()
     elif which == "clapforfireworks":
         import animate.sound
-        animate.sound.main()
+        animate.sound.clap_for_fireworks()
     elif hasattr(animate.animate,which): # This doesnt seem to work
         func = getattr(animate.animate,which)
         func()
