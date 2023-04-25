@@ -105,11 +105,30 @@ def run_animate(args):
     elif which == "pong":
         import animate.pong
         animate.pong.main()
-    elif hasattr(animate.animate,which):
+    elif which == "sound":
+        import animate.sound
+        animate.sound.main()
+    elif hasattr(animate.animate,which): # This doesnt seem to work
         func = getattr(animate.animate,which)
         func()
     else:
         raise ValueError("Wrong key ({0}) for which in lll animate".format(args.which[0]))
+
+    
+def run_sound(args):
+    import animate.sound
+    import animate
+    which = args.which[0]
+    if which == "main":
+        animate.sound.main()
+    elif which == "clapforfireworks":
+        import animate.sound
+        animate.sound.main()
+    elif hasattr(animate.animate,which): # This doesnt seem to work
+        func = getattr(animate.animate,which)
+        func()
+    else:
+        raise ValueError("Wrong key ({0}) for which in lll sound".format(args.which[0]))
 
 def run_play(args):
     if   args.which[0] == "huphollandhup":
@@ -193,7 +212,11 @@ def main(argv):
     
     animate_parser = subparsers.add_parser('animate') # submodule
     animate_parser.set_defaults(func=run_animate)
-    animate_parser.add_argument('which',type=str,nargs=1,choices=['main','fireworks','stuiterbal','planes','pong'])#,help="which animation, e.g., main PUT LIST OF POSSIBLE HERE?")
+    animate_parser.add_argument('which',type=str,nargs=1,choices=['main','fireworks','stuiterbal','planes','pong','sound'])#,help="which animation, e.g., main PUT LIST OF POSSIBLE HERE?")
+    
+    animate_parser = subparsers.add_parser('sound') # not (yet?) submodule
+    animate_parser.set_defaults(func=run_sound)
+    animate_parser.add_argument('which',type=str,nargs=1,choices=['main','clapforfireworks'])#,help="which animation, e.g., main PUT LIST OF POSSIBLE HERE?")
     
     
     calibrate_parser = subparsers.add_parser('calibrate') # submodule
