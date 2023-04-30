@@ -1,6 +1,7 @@
 import numpy as np
 import config
 import colors
+random_color = colors.random_color
 import coords
 from typing import Callable
 try:
@@ -15,7 +16,7 @@ import misc_func
 import time
 
 class AnimationInstruction(dict):
-    
+    # List of possible kwargs here..
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -58,11 +59,16 @@ class AnimationLed(list):
         return "<{0} {1}>".format(type(self).__name__,str(self.state))
     
     def instruct(self,instruction: AnimationInstruction):
-        id = instruction.get('id',None)
+        theid = instruction.get('id',None)
+        overwrite = instruction.get('overwrite',False)
         
-        if id is not None: # Only allow single instruction per ID
-            if id in [instr['id'] for instr in self]:
-                return False
+        if theid is not None: # Only allow single instruction per ID
+            for i,instr in enumerate(self):
+                if theid == instr['id']:
+                    if overwrite:
+                        self.pop(i)
+                    else:
+                        return False
         self.append(instruction.copy())
         # print(instruction)
         return True
@@ -147,9 +153,9 @@ class AnimationLed(list):
         elif which == "stay":
             
             c = instr.get('color')
-            
-            self._off_state = c
-            self.turn_off()
+            state = c
+            # self._off_state = c
+            # self.turn_off()
             return state
             
             
@@ -190,8 +196,7 @@ class AnimationObject():
         instr['id'] = self.id
         self.instruction = instr.copy()
         
-    def calculate_force(self,dt:float) -> np.ndarray:
-        
+    def calculate_force(self,dt:float) -> np.ndarray(3):
         if self.force_func is None:
             return np.zeros(3)
         else:
@@ -248,6 +253,29 @@ class AnimationBall(AnimationObject):
     def select_lights(self,coords3d: coords.Coords3d):
         dists = np.sum( np.power( coords3d.xyz - self.x ,2) ,axis=1)
         ind = np.where( dists < self.rsqr )[0]
+        return ind
+    
+class AnimationPlane(AnimationObject):
+    type = "ball"
+    
+    
+    
+    def __init__(self,*args,**kwargs):
+        # print("ballinit")
+        
+        self.thickness = kwargs.pop('thickness',1.)
+        self.normal = kwargs.pop('normal',np.zeros(3))
+        norm = np.linalg.norm(self.normal)
+        if norm != 0.:
+            self.normal = self.normal/norm
+        
+        super().__init__(*args,**kwargs)
+    
+    def select_lights(self,coords3d: coords.Coords3d):
+        ind1 = np.dot(coords3d.xyz-self.x , self.normal) <  0.5*self.thickness
+        ind2 = np.dot(coords3d.xyz-self.x , self.normal) > -0.5*self.thickness
+        ind = np.logical_and(ind1,ind2)
+        ind = np.where( ind )[0]
         return ind
     
 def animationloop(strip: 'ledstrip.ledstrip', anistrip: AnimationStrip, objects: list[type[AnimationObject]],
@@ -324,6 +352,9 @@ def terminate_distance_from_start(self,t):
 def terminate_time_from_start(self,t):
     return abs(t-self.t0) > self.max_t
     
+    
+    
+    
 def spawn_random_ray(id,
         x0: np.ndarray(3)=None,v0: np.ndarray(3)=None,a0: np.ndarray(3)=None,
         v: float=None,
@@ -334,8 +365,7 @@ def spawn_random_ray(id,
     
     if color_on is None:
         # random color
-        ctup = (np.random.uniform(),np.random.uniform(),np.random.uniform())
-        color_on = colors.Color(ctup,ctype='hsv')
+        color_on = random_color()
     
     t0 = 0. # dummy t0
     
@@ -379,8 +409,7 @@ def spawn_fireworks(theid: str,
     
     if color_on is None:
         # random color
-        ctup = (np.random.uniform(),np.random.uniform(),np.random.uniform())
-        color_on = colors.Color(ctup,ctype='hsv')
+        color_on = random_color()
     
     if x0 is None:
         x0 = np.zeros(3)
@@ -388,10 +417,10 @@ def spawn_fireworks(theid: str,
     
     nrays = np.random.randint(12,20)
     
-    thetime = str(time.time())
+    theid = "{0}_{1}".format(theid,time.time())
     
     for i in range(nrays):
-        objects.extend( spawn_random_ray(str(theid)+str(i)+thetime,x0=x0,color_on=color_on) )
+        objects.extend( spawn_random_ray(theid,x0=x0,color_on=color_on) )
     
     return objects
     
@@ -418,6 +447,7 @@ def fireworks(coords3d:'coords.Coords3d'=None,
         animationloop(strip,anistrip,objects,
                 spawn_func=spawn_fireworks,spawn_odds=spawn_odds,
                 t0=t0,dt=dt)
+                
                 
                 
 def stuiterbal(coords3d:'coords.Coords3d'=None,
@@ -458,10 +488,9 @@ def stuiterbal(coords3d:'coords.Coords3d'=None,
         ):
         if color_on is None:
             # random color
-            ctup = (np.random.uniform(),np.random.uniform(0.5,1.),np.random.uniform(0.5,1.))
-            color_on = colors.Color(ctup,ctype='hsv')
+            color_on = random_color()
         
-        theid = str(i)+str(time.time())
+        theid = "{0}_{1}".format(id,time.time())
         # print(theid)
         
         t0 = 0. # dummy t0
@@ -512,12 +541,91 @@ def stuiterbal(coords3d:'coords.Coords3d'=None,
                 spawn_func=spawn_stuiterbal,spawn_odds=spawn_odds,
                 t0=t0,dt=dt)
     
+def planes(coords3d:'coords.Coords3d'=None,
+            anistrip:AnimationStrip=None):
+    
+    if coords3d is None:
+        coords3d = coords.get_coords()
+    if anistrip is None:
+        anistrip = AnimationStrip(coords3d=coords3d)
+    
+    
+    def spawn_plane(id,
+        x0: np.ndarray(3)=None,v0: np.ndarray(3)=None,a0: np.ndarray(3)=None,
+        v: float=None,
+        color_on: colors.Color=None,
+        which: str=None,mode: str=None,duration: float=None,tfrac: float=None,# For instruction
+        thickness: float=None,normal: np.ndarray(3)=None,
+        ):
+        if color_on is None:
+            # random color
+            color_on = random_color()
+        
+        theid = "{0}_{1}".format(id,time.time())
+        # print(theid)
+        
+        t0 = 0. # dummy t0
+        
+        thickness = 0.15 if thickness is None else thickness
+        normal = np.array([1,0,1.]) if normal is None else normal # normalised internally
+        
+        duration = 0.25 if duration is None else duration
+        tfrac = 0.5 if tfrac is None else tfrac
+        which = "stay" if which is None else which
+        mode = "staythenlinear" if mode is None else mode
+        instruction = AnimationInstruction(which=which,mode=mode,color=color_on,t0=t0,duration=duration)
+        instr = instruction
+        
+        x0 = np.random.uniform(-1,1,3) if x0 is None else x0
+        x0[1] = 0.
+        
+        v0 = normal if v0 is None else v0
+        v0[1] = 0.
+        v =  np.random.uniform(1.,2.) if v is None else v
+        speed = np.linalg.norm(v0)
+        if speed != 0.:
+            v0 = v*v0/speed
+        
+        a0 = np.zeros(3) if a0 is None else a0
+        
+        
+        plane = AnimationPlane(x0,v0,a0,thickness=thickness,normal=normal,instr=instr,id=theid)
+        
+        return [plane]
+        
+    def movingplane_force(self,dt):
+        force = np.zeros(3)
+        if abs(self.x[2]) > 2.:
+            self.x[2] = -self.x[2]
+        return force
+        
+    # Settings
+    t0 = 0.
+    dt = 0.1
+    
+    spawn_odds = dt/10
+    
+    # Define objects
+    objects = []
+    for i in range(5):
+        objs = spawn_plane(i,x0=np.array([0,0,0.75*(i-3)]),v0=np.zeros(3))
+        objects.extend(objs)
+    objs = spawn_plane("MOVING",x0=np.array([0,0,0.75*(5.2-3)]),v0=np.array([0,0,-1]),which="Fade")
+    objs[0].set_force_func( movingplane_force )
+    objects.extend(objs)
+    # input()
+    with utils.get_strip() as strip:
+        animationloop(strip,anistrip,objects,
+                spawn_func=None,spawn_odds=spawn_odds,
+                t0=t0,dt=dt)
+    
+    
 def main():
     print("animate")
     print("nleds",config.nleds)
     
-    
-    fireworks()
+    planes()
+    # fireworks()
     
 if __name__ == "__main__":
     main()

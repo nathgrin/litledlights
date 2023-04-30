@@ -267,27 +267,27 @@ def piemel(strip=None,
         dt: float=1., loop: bool=False,
         color_off:tuple[int]=(0,0,0)):
         
-        strip = get_strip() if strip is None else strip
+    strip = get_strip() if strip is None else strip
+
+    radius = 0.2
+    ball1 = (0,0,0)
+    ball2 = (-0.5,0,0)
     
-        radius = 0.2
-        ball1 = (0,0,0)
-        ball2 = (-0.5,0,0)
-        
-        ind = np.square(strip.coords3d.x-ball1[0])+np.square(strip.y-ball1[1])+np.square(strip.z-ball1[2]) <= radius*radius
-        strip[ind] = color
-        
-        ind = np.square(strip.coords3d.x-ball2[0])+np.square(strip.y-ball2[1])+np.square(strip.z-ball2[2]) <= radius*radius
-        strip[ind] = color
-        
-        pillar = (-0.25,0,0)
-        ind1 = np.square(strip.coords3d.x-pillar[0])+np.square(strip.y-pillar[1]) <= 0.75*0.75*radius*radius
-        ind2 = strip.z > 0
-        ind = np.logical_and( ind1, ind2 )
-        strip[ind] = color
-        
-        
-        strip.show()
-        
+    ind = np.square(strip.coords3d.x-ball1[0])+np.square(strip.y-ball1[1])+np.square(strip.z-ball1[2]) <= radius*radius
+    strip[ind] = color
+    
+    ind = np.square(strip.coords3d.x-ball2[0])+np.square(strip.y-ball2[1])+np.square(strip.z-ball2[2]) <= radius*radius
+    strip[ind] = color
+    
+    pillar = (-0.25,0,0)
+    ind1 = np.square(strip.coords3d.x-pillar[0])+np.square(strip.y-pillar[1]) <= 0.75*0.75*radius*radius
+    ind2 = strip.z > 0
+    ind = np.logical_and( ind1, ind2 )
+    strip[ind] = color
+    
+    
+    strip.show()
+    
                 
         
         
