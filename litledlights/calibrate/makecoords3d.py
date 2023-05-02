@@ -186,7 +186,7 @@ def sequential_fotography(strip=None,
                 print("update background..")
                 ret, img_bg = cam.read()
                 img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
-                img_name = os.path.join(loc,"background.png")
+                img_name = os.path.join(loc,"led_{}background.png".format(ind))
                 cv2.imwrite(img_name, img_bg)
                 
             elif k%256 == 32:
