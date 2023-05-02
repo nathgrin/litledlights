@@ -71,9 +71,9 @@ LitLedLights, they are Lit
   - [ ] fix index error `lll one 155`
   - [x] config/setup/settings file with
     - nleds (or get automatically?)
-  - [ ] Color module
+  - [x] Color module
     - [ ] calibrate colors (orange = yellow ?!)
-    - [ ] conversions
+    - [x] conversions
     - [ ] documentation & docstrings
     - [x] color object
       - [x] use .get method in stead of bs now
@@ -87,6 +87,9 @@ LitLedLights, they are Lit
     - [ ] automate moar
   - [ ] Pre-rendered animations
   - [ ] facilitate overlapping animations
+  - [x] Animation module
+    - [ ] Document which instructions
+    - [ ] documentation for instruction kwargs
 - [ ] pkg
   - [ ] organise pkg
     - [x] connect git
