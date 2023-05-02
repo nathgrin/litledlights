@@ -15,9 +15,6 @@ class Coords3d(object):
     def from_file(self, fname: str=config.coords3d_fname):
         self.xyz = load_coords_file(fname)
         
-        self.x = self.xyz[:,0]
-        self.y = self.xyz[:,1]
-        self.z = self.xyz[:,2]
 
     def __getitem__(self, key: int):
         return self.xyz[key]
