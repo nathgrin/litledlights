@@ -124,6 +124,12 @@ def run_sound(args):
     elif which == "clapforfireworks":
         import animate.sound
         animate.sound.clap_for_fireworks()
+    elif which == "equalizer":
+        import animate.sound
+        animate.sound.equalizer()
+    elif which == "soundsnake":
+        import animate.sound
+        animate.sound.soundsnake()
     elif hasattr(animate.animate,which): # This doesnt seem to work
         func = getattr(animate.animate,which)
         func()
@@ -162,6 +168,10 @@ def run_calibrate(args):
     elif args.which[0] == "calibratecamera":
         import calibrate.calibratecamera
         calibrate.calibratecamera.main()
+    elif args.which[0] == "sequentialsave":
+        import calibrate.makecoords3d
+        # calibrate.makecoords3d.sequential_fotography()
+        print(args.which)
     else:
         raise ValueError("Wrong key ({0}) for which in lll calibrate".format(args.which))
     
@@ -216,12 +226,12 @@ def main(argv):
     
     animate_parser = subparsers.add_parser('sound') # not (yet?) submodule
     animate_parser.set_defaults(func=run_sound)
-    animate_parser.add_argument('which',type=str,nargs=1,choices=['main','clapforfireworks'])#,help="which animation, e.g., main PUT LIST OF POSSIBLE HERE?")
+    animate_parser.add_argument('which',type=str,nargs=1,choices=['main','clapforfireworks','equalizer','soundsnake'])#,help="which animation, e.g., main PUT LIST OF POSSIBLE HERE?")
     
     
     calibrate_parser = subparsers.add_parser('calibrate') # submodule
     calibrate_parser.set_defaults(func=run_calibrate)
-    calibrate_parser.add_argument('which',type=str,nargs=1,choices=['main','makecoords3d','calibratecamera','findlights'])#,help="which calibration, e.g., makecoords3d PUT LIST OF POSSIBLE HERE?")
+    calibrate_parser.add_argument('which',type=str,nargs=1,choices=['main','makecoords3d','calibratecamera','findlights','sequentialsave'])#,help="which calibration, e.g., makecoords3d PUT LIST OF POSSIBLE HERE?")
 
 
     args = parser.parse_args(argv)

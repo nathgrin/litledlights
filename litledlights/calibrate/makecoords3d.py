@@ -98,7 +98,9 @@ def sequential_fotography(strip=None,
                             delta_t: int = None,# in arbitrary units
                             loc: str=None,
                             
-                            findlight_threshold: int=None
+                            findlight_threshold: int=None,
+                            
+                            grayscale: float = None,
                             
                             ) -> np.ndarray:
     """example from stackoverflow, in turn stolen from the "docs" 
@@ -116,6 +118,7 @@ def sequential_fotography(strip=None,
     color_on = config.sequentialfotography_coloron if color_on is None else color_on
     delta_t = config.sequentialfotography_deltat if delta_t is None else delta_t
     loc = config.sequentialfotography_loc if loc is None else loc
+    grayscale = config.sequentialfotography_grayscale if grayscale is None else grayscale
     
     # Strip
     strip = get_strip() if strip is None else strip
@@ -140,7 +143,8 @@ def sequential_fotography(strip=None,
     
     # BG img
     ret, img_bg = cam.read()
-    img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
+    if grayscale:
+        img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
     
     # Prep
     coords2d = [None for x in range(nleds)]
@@ -157,7 +161,9 @@ def sequential_fotography(strip=None,
                 print("failed to grab frame")
                 break
             
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            if grayscale:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            
             if preview_subtract:
                 preview = cv2.subtract(frame,img_bg)
             else:
@@ -185,7 +191,8 @@ def sequential_fotography(strip=None,
                 # update background img
                 print("update background..")
                 ret, img_bg = cam.read()
-                img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
+                if grayscale:
+                    img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
                 img_name = os.path.join(loc,"background.png")
                 cv2.imwrite(img_name, img_bg)
                 

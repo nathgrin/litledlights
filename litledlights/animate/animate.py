@@ -36,13 +36,26 @@ class AnimationStrip(list):
         for i in range(self.nleds):
             if coords3d is not None:
                 xyz = coords3d[i]
+            else:
+                xyz = None
             self.append(AnimationLed(state=initial_state,xyz=xyz))
-
+    
+    def set_off_states(self,off_state):
+        for i in range(len(self)):
+            self[i]._off_state = off_state
+    
+    def turn_all_off(self):
+        for i in range(len(self)):
+            self[i].turn_off()
+            
     def instruct(self,ind,instruction):
         if instruction.get('t0',None) is not None:
             instruction['t0'] = self.t
         for i in ind:
             self[i].instruct(instruction)
+            
+    def instruct_all(self,instruction):
+        self.instruct(range(len(self)),instruction)
 
     def render(self,t: float):
         
@@ -72,6 +85,8 @@ class AnimationLed(list):
         self.append(instruction.copy())
         # print(instruction)
         return True
+    
+
     
     def render(self,t: float):
         # Something with instruction
