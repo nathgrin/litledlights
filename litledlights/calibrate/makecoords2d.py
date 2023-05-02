@@ -1,6 +1,6 @@
-import cv2 as cv
+import cv2 as cv2
 import numpy as np
-"""Stolen from opencv readthedocs tutorial (not recommended) 
+"""Stolen from opencv readthedocs tutorial (full of mistakes, but well it helped) 
 https://opencv-tutorial.readthedocs.io/en/latest/app/app.html
 https://github.com/rasql/opencv-tutorial/blob/master/cvlib.py
 """
@@ -25,25 +25,42 @@ class App:
     win_id = 0
     
     def __init__(self):
-        cv.namedWindow('window0')
+        cv2.namedWindow('window0')
         #  Keys           key : (function,help msg)
-        self.shortcuts = { 'h': (self.help,"help"),
+        self.hotkeys = { 'h': (self.help,"help"),
                            'i': (self.inspect,"inspect"),
                            'w': (Window,"new window"),
-                           'o': (Object,"new Object"),
-                           'n': (Node,"new Node"),
+                           'o': (Rectangle,"new Object"),
                            }
         
         self.win_id = 0
         
         Window()
         
+        Text("Test")
+        Text("Jemoeder")
+        Rectangle()
+        
+
+        
     def help(self):
+        def print_keyval(k,val):
+            print("  {0}: {1}".format(repr(k)[1:-1],val)) # Strip 'quotes
+            
         print("---- HELP --- ")
         print("> Not implemented yet")
-        print("q: quit")
-        for k,val in self.shortcuts.items():
-            print("{0}: {1}".format(k,val[1]))
+        print_keyval('q',"quit")
+        for k,val in self.hotkeys.items():
+            print_keyval(k,val[1])
+            
+        if self.win is not None:
+            for k,val in self.win.hotkeys.items():
+                print_keyval(k,val[1])
+            if self.win.obj is not None:
+                print("> Selected object has keys:")
+                for k,val in self.win.obj.hotkeys.items():
+                    print_keyval(k,val[1])
+                print_keyval('alt+L-click', "Move object to cursor (hold to drag)")
     
     def inspect(self):
         print('--- INSPECT ---')
@@ -51,36 +68,37 @@ class App:
         print('App.win', App.win)
         print('App.win.objs', App.win.objs)
         print('App.win.obj', App.win.obj)
-        print('App.win.children', App.win.children)
-        print('App.win.node', App.win.node)
         
     def run(self):
         key = ''
         while key != 'q':
-            k = cv.waitKey(0)
+            k = cv2.waitKey(0)
             
             key = chr(k)
             
-            print(k, key)
-            self.key(key)
+            print("KeyPress",k, key,repr(key))
+            
+            ret = self.key(key)
+            if not ret:
+                print("Did not recognize key:",k,key,repr(key))
+                self.help()
             
 
-        cv.destroyAllWindows()
+        cv2.destroyAllWindows()
         
     
 
     def key(self, k):
-        "Keypress handler"
+        """Keypress handler"""
 
         if self.win is not None:
             ret = self.win.key(k)
             if ret:
                 return True
-        if k in self.shortcuts:
-            self.shortcuts[k][0]()
+        if k in self.hotkeys:
+            self.hotkeys[k][0]()
             return True
-        else:
-            self.help()
+        
         return False
 
         
@@ -88,28 +106,22 @@ class App:
 class Window:
     """Create a window."""
     
-    obj_options = dict(pos=(100, 40), size=(100, 30), id=0)
+    obj_options = dict(pos=(100, 40), size=(100, 30),
+                       id=0,
+                       color=App.options['obj_color'],
+                       anchor='cm',
+                       )
     
-    node_options = dict(pos=np.array((20, 20)),
-                        size=np.array((100, 20)),
-                        gap=np.array((10, 10)),
-                        dir=np.array((0, 1)),
-                        )
     
-    def __init__(self, win=None, img=None):
+    def __init__(self, win=None, img=None, size=[200, 600], deltapos=[20,5]):
         App.wins.append(self)
         App.win = self
         
         self.objs = []
         self.obj = None # Currently selected
-        # For some reason we treat nodes sepeartely from other objects?
-        self.children = []
-        self.stack = [self] # parent stack
-        self.node = None # Currently selected
-        self.current_parent = None
-
+        
         if img is None:
-            img = np.zeros((200, 600, 3), np.uint8)
+            img = np.zeros((size[0],size[1], 3), np.uint8)
             img[:,:] = App.options['win_color']
 
         if win is None:
@@ -118,60 +130,64 @@ class Window:
 
         self.win = win
         self.img = img
-
-
+        
+        self.size = img.shape[:2][::-1] # shape of img is (y,x) (and #channels)
+        
         self.img0 = img.copy()
         
         self.obj_options = Window.obj_options.copy()
         
-        self.upper = False
+        self.deltapos = deltapos # increment position of new objects
         
-        self.shortcuts = {  '\t': (self.select_next_obj,"Select next object"),
-                    chr(27): (self.unselect_obj,"Deselect object"),
-                    chr(0): (self.toggle_case,"Toggle case"), }
         
-        cv.imshow(win, img)
+        self.hotkeys = {
+                    '\t': (self.select_next_obj,"(tab) Select next object"),
+                    chr(27): (self.unselect_obj,"(esc) Deselect object"),
+                    'r': (self.delete_obj,"(r) Remove object"),
+                    }
         
-        cv.setMouseCallback(win, self.mouse)
+        cv2.imshow(win, img)
         
-        # Reset node options
-        Node.options = Window.node_options.copy()
+        cv2.setMouseCallback(win, self.mouse)
+        
 
     
 
     def mouse(self, event, x, y, flags, param):
         """
         Events:
-EVENT_LBUTTONDBLCLK 7   EVENT_LBUTTONDOWN    1   EVENT_LBUTTONUP    4
-EVENT_MBUTTONDBLCLK 9   EVENT_MBUTTONDOWN    3   EVENT_MBUTTONUP    6
-EVENT_MOUSEHWHEEL  11   EVENT_MOUSEWHEEL    10   EVENT_MOUSEMOVE    0
-EVENT_RBUTTONDBLCLK 8   EVENT_RBUTTONDOWN    2   EVENT_RBUTTONUP    5
+            EVENT_LBUTTONDBLCLK 7   EVENT_LBUTTONDOWN    1   EVENT_LBUTTONUP    4
+            EVENT_MBUTTONDBLCLK 9   EVENT_MBUTTONDOWN    3   EVENT_MBUTTONUP    6
+            EVENT_MOUSEHWHEEL  11   EVENT_MOUSEWHEEL    10   EVENT_MOUSEMOVE    0
+            EVENT_RBUTTONDBLCLK 8   EVENT_RBUTTONDOWN    2   EVENT_RBUTTONUP    5
         Flags:
-EVENT_FLAG_LBUTTON  1   EVENT_FLAG_MBUTTON   4   EVENT_FLAG_RBUTTON 2
-EVENT_FLAG_CTRLKEY  8   EVENT_FLAG_SHIFTKEY 16   EVENT_FLAG_ALTKEY 32
-    """
-        text = 'mouse event {} at ({}, {}) with flags {}'.format(event, x, y, flags)
-        # cv.displayStatusBar(self.win, text, 1000)
-        # cv.displayOverlay(self.win, text, 1000)
+            EVENT_FLAG_LBUTTON  1   EVENT_FLAG_MBUTTON   4   EVENT_FLAG_RBUTTON 2
+            EVENT_FLAG_CTRLKEY  8   EVENT_FLAG_SHIFTKEY 16   EVENT_FLAG_ALTKEY 32
+        """
+        # text = 'mouse event {} at ({}, {}) with flags {}'.format(event, x, y, flags)
+        # cv2.displayStatusBar(self.win, text, 1000)
+        # cv2.displayOverlay(self.win, text, 1000)
         # print(text)
         
-        if event == cv.EVENT_LBUTTONDOWN:
-            App.win = self # set self as current active window
-            
-            self.draw() # redraw
-            
-            
-            self.obj = None
-            for obj in self.objs:
-                obj.selected = False
-                if obj.is_inside(x, y):
-                    obj.selected = True
-                    self.obj = obj
-        # print(event)
-        if event == cv.EVENT_MOUSEMOVE:
-            if flags == cv.EVENT_FLAG_ALTKEY:
+        if event == cv2.EVENT_LBUTTONDOWN:
+            if flags == cv2.EVENT_FLAG_LBUTTON:
+                App.win = self # set self as current active window
+                
+                self.obj = None
+                for obj in self.objs:
+                    obj.selected = False
+                    if obj.is_inside(x, y):
+                        obj.selected = True
+                        self.obj = obj
+                
+                self.draw() # redraw
+        # print(event)  
+        
+        if event == cv2.EVENT_MOUSEMOVE:
+            if flags == cv2.EVENT_FLAG_ALTKEY:
                 if self.obj is not None:
-                    self.obj.pos = x-self.obj.size[0]//2, y-self.obj.size[1]//2
+                    self.obj.set_pos( [x,y],{'event':event,'flags':flags,'param':param} )
+                    self.draw() # redraw
 
     def key(self,k):
         """Keypress handler"""
@@ -180,8 +196,8 @@ EVENT_FLAG_CTRLKEY  8   EVENT_FLAG_SHIFTKEY 16   EVENT_FLAG_ALTKEY 32
             if ret:
                 self.draw()
                 return True
-        if k in self.shortcuts:
-            self.shortcuts[k][0]()
+        if k in self.hotkeys:
+            self.hotkeys[k][0]()
             self.draw()
             return True
         
@@ -194,16 +210,17 @@ EVENT_FLAG_CTRLKEY  8   EVENT_FLAG_SHIFTKEY 16   EVENT_FLAG_ALTKEY 32
         for obj in self.objs: # Draw objects
             obj.draw()
 
-        cv.imshow(self.win, self.img)
+        cv2.imshow(self.win, self.img)
         
         
     def select_next_obj(self):
         """Select the next object, or the first in none is selected."""
-        try:
-            i = self.objs.index(self.obj)
-        except ValueError:
+        if self.obj is None:
             i = -1
-        self.objs[i].selected = False
+        else:
+            i = self.objs.index(self.obj)
+            self.objs[i].selected = False
+        
         i = (i+1) % len(self.objs)
         self.objs[i].selected = True
         self.obj = self.objs[i]
@@ -212,58 +229,90 @@ EVENT_FLAG_CTRLKEY  8   EVENT_FLAG_SHIFTKEY 16   EVENT_FLAG_ALTKEY 32
         if self.obj != None:
             self.obj.selected = False
             self.obj = None
+            
+    def delete_obj(self):
+        if self.obj != None:
+            
+            i = self.objs.index(self.obj)
+            
+            obj = self.objs.pop(i)
+            obj.selected = False
+            del(obj)
+            
+            self.obj = None
+            
+            
     
-    def toggle_case(self):
-        
-        # elif k == chr(0):  # alt, ctrl, shift
-        self.upper = not self.upper
-        if self.upper:
-            print("UPPER case")
-        else:
-            print("LOWER CASE")
-        # if self.upper:
-        #     cv.displayStatusBar(self.win, 'UPPER case', 1000)
-        # else:
-        #     cv.displayStatusBar(self.win, 'LOWER case', 1000)
-        return True
-
 class Object:
     """Add an object to the current window."""
+    
     def __init__(self, **options):
         App.win.objs.append(self)
-        App.win.obj = self
+        # App.win.obj = self # set self as current obj
         self.img = App.win.img
         
         self.selected = False
         
-        # options 
+        # options # Watch out, this overwrites the defaults!! sounds very bad
+        App.win.obj_options['id'] += 1
         d = App.win.obj_options
         d.update(options)
         self.id = d['id']
         self.pos = x, y = d['pos']
         self.size = w, h = d['size']
         
-        d['id'] += 1 # increment id
-        d['pos'] = x,y+h+5 # position of next object
+        self.color = d['color']
+        
+        self.set_anchor(d['anchor'])
+        
+        d['pos'] = x,y+h+App.win.deltapos[1] # position of next object
+        if d['pos'][1] > App.win.size[1]:
+            d['pos'] = x+w+App.win.deltapos[0],h+2*App.win.deltapos[1]
         
         
-        self.shortcuts = {  }
+        self.hotkeys = {}
         
         App.win.draw()
 
     def __str__(self):
         return '<Object {} at ({}, {})>'.format(self.id, *self.pos)
     
+    
+    def set_pos(self, xy, options: dict):
+        xy = self.center_from_anchor(xy)
+        self.pos = xy
+    
+    
+    def set_anchor(self, anchor: str) -> None:
+        helpstr = """
+        anchor: str of length 2
+        concatenate:
+        hor:  (l)eft (c)enter (r)ight
+        vert: (t)op (m)iddle (b)ottom
+        e.g., cm is center-middle
+        exact position depends on shape (see e.g., rectangle)
+        """
+        err = False
+        if len(anchor) != 2:
+            err = True
+        elif anchor[0] not in 'lcr':
+            err = True
+        elif anchor[1] not in 'tmb':
+            err = True
+        if err:
+            raise ValueError("Invalid Anchor: {}, {} ".format(anchor,helpstr))
+        
+        self.anchor = anchor
+    def center_from_anchor(self, xy):
+        return xy
+    
     def draw(self):
-        x, y = self.pos
-        w, h = self.size
-        color = App.options['obj_color'] if not self.selected else App.options['sel_color']
-        cv.rectangle(self.img, (x, y, w, h), color, 1)
+        # see e.g., rectangle
+        return False
 
     def is_inside(self, x, y):
-        x0, y0 = self.pos
-        w, h = self.size
-        return x0 <= x <= x0+w and y0 <= y <= y0+h
+        # see e.g., rectangle
+        return False
     
     def mouse(self, event, x, y, flags, param):
         """ See also window mouse method
@@ -276,124 +325,119 @@ class Object:
             param (_type_): _description_
         """
         # print(event)
-        if event == cv.EVENT_LBUTTONDOWN:
+        if event == cv2.EVENT_LBUTTONDOWN:
             print(self)
-            
+        
         
     def key(self, k):
         """Keypress handler"""
-        if k in self.shortcuts:
-            self.shortcuts[k][0]()
+        if k in self.hotkeys:
+            self.hotkeys[k][0]()
             self.draw()
             return True
         
         return False
+
+class Rectangle(Object):
+    def __init__(self,
+                 **options):
+        
+        
+        super().__init__(**options)
+    
+    def center_from_anchor(self, xy):
+        w,h = self.size
+        # Adjust for anchor
+        if self.anchor[0] == 'l':
+            xy[0] += w//2
+        elif self.anchor[0] == 'r':
+            xy[0] += -w//2
+        if self.anchor[1] == 't':
+            xy[1] += h//2
+        elif self.anchor[1] == 'b':
+            xy[1] += -h//2
+        return xy
+    
+    def is_inside(self,x,y):
+        x0, y0 = self.pos
+        w, h = self.size
+        return x0 <= x+w//2 <= x0+w and y0 <= y+h//2 <= y0+h
+    
+    def draw(self):
+        x, y = self.pos
+        w, h = self.size
+        color = self.color if not self.selected else App.options['sel_color']
+        cv2.rectangle(self.img, (x-w//2, y-h//2, w, h), color, 1)
         
 
-class Text(Object):
+class Text(Rectangle):
     """Add a text object to the current window."""
-    options = dict( fontFace=cv.FONT_HERSHEY_SIMPLEX,
-                    fontScale=1,
-                    color=BLUE,
-                    thickness=1,
-                    lineType=cv.LINE_8, )
     
-    def __init__(self, text='Text', **options):
+    text_options = dict(fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                   fontScale=1,
+                   thickness=2,
+                   lineType=cv2.LINE_8,
+                   # color=GREEN, # Color is an object prop
+                   bottomLeftOrigin=False)
+    
+    
+    
+    def __init__(self, text: str, draw_box: bool=True,
+                 **options):
         
-        self.text_options = Text.options.copy()
+        self.text_options = self.text_options.copy()
         
         for k, v in options.items():
-            if k in Text.options:
-                self.text_options[k] = v
+            if k in Text.text_options:
+                self.text_options[k] = options.pop(k)
 
+        
         self.text = text
+        
+        
+        self.draw_box = draw_box
+        
+        super().__init__(**options)
+        
+        text_hotkeys = {}
+        self.hotkeys.update(text_hotkeys)
+        
+    def set_text(self,text: str):
+        self.text = text
+        
         
     def get_size(self):
         """Returns the text size and baseline under the forme (w, h), b."""
         d = self.text_options
-        return cv.getTextSize(self.text, d['fontFace'], d['fontScale'],d['thickness'])
-
-class Node:
+        return cv2.getTextSize(self.text, d['fontFace'], d['fontScale'],d['thickness'])
     
-    def __init__(self,level=0, **options):
-        # This is very nasty, default node options get updated and saved at creation of new notes
-        # update node options from constructor options
-        for k, v in options.items():
-            if k in Node.options:
-                if isinstance(v, tuple):
-                    v = np.array(v)
-                Node.options[k] = v
-            
-        # create instance attributes
-        self.pos = None
-        self.size = None
-        self.gap = None
-        self.dir = None
-        self.level = None
-        self.parent = None
-        self.win = None
-        # update instance attributes from node options
-        self.__dict__.update(Node.options)
-        
-        # Next node position
-        pos = self.pos + (self.size+self.gap)*self.dir
-        Node.options['pos'] = pos
-        
-        if self.win is None:
-            self.win = App.win
-        
-        if self.parent is None:
-            self.parent = self.win.node
-        self.win.current_parent = self.parent
-        
-        # if level was negative
-        for i in range(-self.level):
-            self.win.current_parent.enclose_children()
-            self.parent = self.win.current_parent.parent
-            self.win.current_parent = self.parent
-        
-        
-        
     def draw(self, pos=np.array((0, 0))):
-        x, y = pos + self.pos
-        w, h =  self.size
-        cv.rectangle(self.img, (x, y, w, h), RED, 1)
-        if self.selected:
-            cv.rectangle(self.img, (x-2, y-2, w+4, h+4), GREEN, 1)
+        """_summary_
 
-        for child in self.children:
-            child.draw(self.pos)
-            
-    def is_inside(self, pos):
-        """Check if the point (x, y) is inside the object."""
-        pos = np.array(pos)
-        return all(self.pos < pos) and all(pos < self.pos+self.size)
+        Args:
+            pos (_type_, optional): offset for text. Defaults to np.array((0, 0)).
+        """
+        self.size,b = (w, h), b = self.get_size()
+        x, y = pos + self.pos # for offset
         
-    def enclose_children(self):
-        p = np.array((0, 0))
-        for node in self.children:
-            p = np.maximum(p, node.pos+node.size)
-        self.size = p - self.pos # thiongy doesnt say self.pos?
-
-class Demo(App):
-    def __init__(self):
-        super().__init__()
-
-        Node()
-        Node(level=1)
-        Node()
-        Node()
-        Node(level=-1, dir=(1, 0))
-        Node()
-        Node()
-        Node()
-
+        opt = self.text_options.copy() # tmp copy
+        color = self.color
+        if self.selected:
+            color = App.options['sel_color']
+        cv2.putText(self.img, self.text, (x-w//2, y+h//2), color=color,**opt)
+        
+        if self.draw_box:
+            super().draw()
+        
+    def toggle_drawbox(self):
+        self.draw_box = not self.draw_box
+    
+    
 def main():
     
     print("makecoords2d")
     
-    # App().run()
-    Demo().run()
+    App().run()
     
     
 if __name__ == "__main__":
