@@ -191,7 +191,8 @@ def sequential_fotography(strip=None,
                 # update background img
                 print("update background..")
                 ret, img_bg = cam.read()
-                img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
+                if grayscale:
+                    img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
                 img_name = os.path.join(loc,"led_{}background.png".format(ind))
                 cv2.imwrite(img_name, img_bg)
                 
