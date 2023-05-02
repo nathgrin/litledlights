@@ -25,21 +25,33 @@ class App:
     win_id = 0
     
     def __init__(self):
-        cv2.namedWindow('window0')
-        #  Keys           key : (function,help msg)
-        self.hotkeys = { 'h': (self.help,"help"),
-                           'i': (self.inspect,"inspect"),
-                           'w': (Window,"new window"),
-                           'o': (Rectangle,"new Object"),
-                           }
         
+        #  Keys           key : (function,help msg)
+        self.hotkeys = {    'h': (self.help,"help"),
+                            'i': (self.inspect,"inspect"),
+                            'w': (Window,"new window"),
+                            'o': (Rectangle,"new Object"),
+                            }
         self.win_id = 0
         
-        Window()
+        # Lets go
+        winname = 'window0'
+        cv2.namedWindow(winname)
         
-        Text("Test")
-        Text("Jemoeder")
-        Rectangle()
+        Window(win=winname)
+        
+        xy = [100,40]
+        dy = 35
+        Text(xy,"Test",anchor='lt')
+        xy[1] += dy
+        Rectangle(xy,color=BLUE)
+        xy[1] += dy
+        Circle(xy,anchor='lb')
+        xy[1] += dy
+        CrossedRectangle(xy,anchor='lb')
+        xy[1] += dy
+        CrossedCircle(xy,anchor='lb')
+        xy[1] += dy
         
 
         
@@ -106,14 +118,13 @@ class App:
 class Window:
     """Create a window."""
     
-    obj_options = dict(pos=(100, 40), size=(100, 30),
-                       id=0,
+    obj_options = dict(id=0,
                        color=App.options['obj_color'],
-                       anchor='cm',
+                       anchor=None,
                        )
     
     
-    def __init__(self, win=None, img=None, size=[200, 600], deltapos=[20,5]):
+    def __init__(self, win=None, img=None, size=[200, 600]):
         App.wins.append(self)
         App.win = self
         
@@ -137,7 +148,6 @@ class Window:
         
         self.obj_options = Window.obj_options.copy()
         
-        self.deltapos = deltapos # increment position of new objects
         
         
         self.hotkeys = {
@@ -176,7 +186,7 @@ class Window:
                 self.obj = None
                 for obj in self.objs:
                     obj.selected = False
-                    if obj.is_inside(x, y):
+                    if self.obj is None and obj.is_inside(x, y):
                         obj.selected = True
                         self.obj = obj
                 
@@ -246,29 +256,27 @@ class Window:
 class Object:
     """Add an object to the current window."""
     
-    def __init__(self, **options):
+    def __init__(self, pos, **kwargs):
+        
+        pos = np.array(pos)
+        
         App.win.objs.append(self)
         # App.win.obj = self # set self as current obj
         self.img = App.win.img
         
         self.selected = False
         
-        # options # Watch out, this overwrites the defaults!! sounds very bad
-        App.win.obj_options['id'] += 1
-        d = App.win.obj_options
-        d.update(options)
-        self.id = d['id']
-        self.pos = x, y = d['pos']
-        self.size = w, h = d['size']
+        # kwargs # Watch out, this overwrites the defaults!! sounds very bad
+        defaults = App.win.obj_options
+        defaults['id'] += 1
+        self.id = defaults['id']
         
-        self.color = d['color']
+        self.color = kwargs.get('color',defaults['color'])
         
-        self.set_anchor(d['anchor'])
-        
-        d['pos'] = x,y+h+App.win.deltapos[1] # position of next object
-        if d['pos'][1] > App.win.size[1]:
-            d['pos'] = x+w+App.win.deltapos[0],h+2*App.win.deltapos[1]
-        
+        anchor = kwargs.get('anchor',defaults['anchor'])
+        self.set_anchor( anchor, {} )
+            
+        self.set_pos(pos, {}) # empty options
         
         self.hotkeys = {}
         
@@ -279,11 +287,12 @@ class Object:
     
     
     def set_pos(self, xy, options: dict):
-        xy = self.center_from_anchor(xy)
+        if self.anchor is not None:
+            xy = self.center_from_anchor(xy, options)
         self.pos = xy
     
     
-    def set_anchor(self, anchor: str) -> None:
+    def set_anchor(self, anchor: str, options: dict) -> None:
         helpstr = """
         anchor: str of length 2
         concatenate:
@@ -293,17 +302,21 @@ class Object:
         exact position depends on shape (see e.g., rectangle)
         """
         err = False
-        if len(anchor) != 2:
+        if anchor is None:
+            err = False
+        elif len(anchor) != 2:
             err = True
         elif anchor[0] not in 'lcr':
             err = True
         elif anchor[1] not in 'tmb':
             err = True
+        
         if err:
             raise ValueError("Invalid Anchor: {}, {} ".format(anchor,helpstr))
         
         self.anchor = anchor
-    def center_from_anchor(self, xy):
+    def center_from_anchor(self, xy, options):
+        # see e.g., rectangle
         return xy
     
     def draw(self):
@@ -339,13 +352,17 @@ class Object:
         return False
 
 class Rectangle(Object):
-    def __init__(self,
-                 **options):
+    def __init__(self, pos: np.ndarray,
+                 size: list=[100,40],
+                 border_thickness: int=1,
+                 **kwargs):
         
+        self.size = w, h = size
+        self.border_thickness = border_thickness
         
-        super().__init__(**options)
+        super().__init__(pos,**kwargs)
     
-    def center_from_anchor(self, xy):
+    def center_from_anchor(self, xy, options):
         w,h = self.size
         # Adjust for anchor
         if self.anchor[0] == 'l':
@@ -367,7 +384,7 @@ class Rectangle(Object):
         x, y = self.pos
         w, h = self.size
         color = self.color if not self.selected else App.options['sel_color']
-        cv2.rectangle(self.img, (x-w//2, y-h//2, w, h), color, 1)
+        cv2.rectangle(self.img, (x-w//2, y-h//2, w, h), color, self.border_thickness)
         
 
 class Text(Rectangle):
@@ -382,14 +399,16 @@ class Text(Rectangle):
     
     
     
-    def __init__(self, text: str, draw_box: bool=True,
-                 **options):
+    def __init__(self, pos: np.ndarray, text: str, draw_box: bool=True,
+                 **kwargs):
+        
+        pos = np.array(pos)
         
         self.text_options = self.text_options.copy()
         
-        for k, v in options.items():
+        for k, v in kwargs.items():
             if k in Text.text_options:
-                self.text_options[k] = options.pop(k)
+                self.text_options[k] = kwargs.pop(k)
 
         
         self.text = text
@@ -397,10 +416,14 @@ class Text(Rectangle):
         
         self.draw_box = draw_box
         
-        super().__init__(**options)
+        super().__init__(pos,**kwargs)
+        
+        self.size = self.get_size()
         
         text_hotkeys = {}
         self.hotkeys.update(text_hotkeys)
+        
+        
         
     def set_text(self,text: str):
         self.text = text
@@ -432,6 +455,88 @@ class Text(Rectangle):
     def toggle_drawbox(self):
         self.draw_box = not self.draw_box
     
+    
+
+class CrossedRectangle(Rectangle):
+    def __init__(self, *args,
+                 **kwargs):
+        
+        super().__init__(*args,**kwargs)
+    
+    def draw(self):
+        x, y = self.pos
+        w, h = self.size
+        xmin,xmax = x-w//2,x+w//2
+        ymin,ymax = y-h//2,y+h//2
+        color = self.color if not self.selected else App.options['sel_color']
+        cv2.rectangle(self.img, (xmin, ymin, w, h), color, self.border_thickness)
+        
+        cv2.line( self.img, (xmin,ymin),(xmax,ymax), color, self.border_thickness )
+        cv2.line( self.img, (xmin,ymax),(xmax,ymin), color, self.border_thickness )
+        
+class Circle(Object):
+    def __init__(self, pos: np.ndarray,
+                 size: float=20, # Size is radius
+                 border_thickness: int=1,
+                 **kwargs):
+        
+        self.size = r = size
+        self.border_thickness = border_thickness
+        
+        super().__init__(pos,**kwargs)
+    
+    
+    def center_from_anchor(self, xy, options):
+        r = self.size
+        # Adjust for anchor
+        if self.anchor[0] == 'l':
+            xy[0] += r
+        elif self.anchor[0] == 'r':
+            xy[0] += -r
+        if self.anchor[1] == 't':
+            xy[1] += r
+        elif self.anchor[1] == 'b':
+            xy[1] += -r
+        return xy
+    
+    def is_inside(self,x,y):
+        x0, y0 = self.pos
+        r = self.size
+        return (x-x0)**2+(y-y0)**2 <= r**2
+    
+    def draw(self):
+        x, y = self.pos
+        r    = self.size
+        color = self.color if not self.selected else App.options['sel_color']
+        cv2.circle(self.img,(x,y),r,color,self.border_thickness)
+    
+
+class CrossedCircle(Circle):
+    def __init__(self, *args,
+                 **kwargs):
+        """_summary_
+        kwargs:
+        orientation: diagonal or upright
+        """
+        self.orientation = kwargs.pop('orientation','diagonal')
+        
+        super().__init__(*args,**kwargs)
+    
+    def draw(self):
+        x, y = self.pos
+        r    = self.size
+        color = self.color if not self.selected else App.options['sel_color']
+        cv2.circle(self.img,(x,y),r,color,self.border_thickness)
+        
+        if self.orientation == 'diagonal':
+            rsin45 = r*0.70710678118 # sin45deg
+            xmin,xmax = int(x-rsin45),int(x+rsin45)
+            ymin,ymax = int(y-rsin45),int(y+rsin45)
+            cv2.line( self.img, (xmin,ymin),(xmax,ymax), color, self.border_thickness )
+            cv2.line( self.img, (xmin,ymax),(xmax,ymin), color, self.border_thickness )
+        elif self.orientation == 'upright':
+            cv2.line( self.img, (x-r,y),(x+r,y), color, self.border_thickness )
+            cv2.line( self.img, (x,y-r),(x,y+r), color, self.border_thickness )
     
 def main():
     
