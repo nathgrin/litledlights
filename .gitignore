@@ -1,5 +1,2 @@
-<<<<<<< HEAD
-__pycache__/
-=======
-__pycache__/
->>>>>>> 7ec9aa33f2ef3dc206fb97533735065ffa8cfc8c
+.vscode/
+.venv/
