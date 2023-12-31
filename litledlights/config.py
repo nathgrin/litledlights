@@ -10,7 +10,6 @@ connect_ledlights = True
 
 
 coords3d_fname = "coords.txt"
-# coords3d = get_coords(coords3d_fname)
 
 ### Calibrate
 
@@ -25,7 +24,8 @@ sequentialfotography_skiptoreprocess = False # For the first viewpoint, skip to 
 sequentialfotography_coloron = (115,115,115) # tuple[int,int,int]
 sequentialfotography_deltat = 6 # int, how many cycles (frames) between images
 sequentialfotography_loc = "_tmp" # str, location for storing imgs
-sequentialfotography_grayscale = True # float, make grayscale
+sequentialfotography_grayscale = True # bool, make grayscale?
+sequentialfotography_dofindlight = True # float, findlight in loop?
 
 # Find light in image
 findlight_threshold = 80

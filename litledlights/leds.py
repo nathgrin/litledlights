@@ -202,7 +202,7 @@ def huphollandhup(strip=None,
     strip = get_strip() if strip is None else strip  
     
     if strip.coords3d.xyz is not None:
-        z = strip.coords3d.z
+        z = strip.coords3d.xyz[2]
         zmin,zmax = np.nanmin(z),np.nanmax(z)
         dz = zmax-zmin
         
@@ -227,8 +227,8 @@ def huphollandhup(strip=None,
             white_ind = z < np.inf # all
             
             # Red
-            ind = z >= zmin+sinfunc(strip.coords3d.x,t,cnst_red)
-            val = sinfunc(strip.coords3d.x,t,cnst_val_red)
+            ind = z >= zmin+sinfunc(strip.coords3d.xyz[0],t,cnst_red)
+            val = sinfunc(strip.coords3d.xyz[0],t,cnst_val_red)
             h,s = 0.,1.
             color = [ hsv_to_rgb( h,s,v ) if not np.isnan(v) else (0,0,0) for v in val ]
             strip.set_multiple(ind,color)
@@ -236,8 +236,8 @@ def huphollandhup(strip=None,
             white_ind = np.logical_and(white_ind,~ind) # filter redz
             
             # Blue
-            ind = z <= zmin+sinfunc(strip.coords3d.x,t,cnst_blue)
-            val = sinfunc(strip.coords3d.x,t,cnst_val_blue)
+            ind = z <= zmin+sinfunc(strip.coords3d.xyz[0],t,cnst_blue)
+            val = sinfunc(strip.coords3d.xyz[0],t,cnst_val_blue)
             h,s = 240./360.,1.
             color = [ hsv_to_rgb( h,s,v ) if not np.isnan(v) else (0,0,0) for v in val ]
             strip.set_multiple(ind,color)
@@ -246,7 +246,7 @@ def huphollandhup(strip=None,
             
             # White
             ind = white_ind # otherz
-            val = sinfunc(strip.coords3d.x,t,cnst_val_white)
+            val = sinfunc(strip.coords3d.xyz[0],t,cnst_val_white)
             h,s = 0.,0.
             color = [ hsv_to_rgb( h,s,v ) if not np.isnan(v) else (0,0,0) for v in val ]
             strip.set_multiple(ind,color)

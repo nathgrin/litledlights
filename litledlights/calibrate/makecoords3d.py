@@ -100,7 +100,9 @@ def sequential_fotography(strip=None,
                             
                             findlight_threshold: int=None,
                             
-                            grayscale: float = None,
+                            grayscale: bool = None,
+                            
+                            do_findlight: bool = None
                             
                             ) -> np.ndarray:
     """example from stackoverflow, in turn stolen from the "docs" 
@@ -119,6 +121,7 @@ def sequential_fotography(strip=None,
     delta_t = config.sequentialfotography_deltat if delta_t is None else delta_t
     loc = config.sequentialfotography_loc if loc is None else loc
     grayscale = config.sequentialfotography_grayscale if grayscale is None else grayscale
+    do_findlight = config.sequentialfotography_dofindlight if do_findlight is None else do_findlight
     
     # Strip
     strip = get_strip() if strip is None else strip
@@ -171,7 +174,7 @@ def sequential_fotography(strip=None,
             # frame = cv2.absdiff(frame,img_bg)
             cv2.imshow(window_name, preview)
             
-            frame = cv2.subtract(frame,img_bg) # Even if preview doesnt subtract, THIS IS Subtracted anyway
+            # frame = cv2.subtract(frame,img_bg) # Even if preview doesnt subtract, THIS IS Subtracted anyway
     
             if started: t += 1
             
@@ -221,9 +224,12 @@ def sequential_fotography(strip=None,
                 cv2.imwrite(img_name, frame)
                 # print("{} written!".format(img_name))
                 
-                xy = find_light(frame,threshold=findlight_threshold)
+                if do_findlight:
+                    xy = find_light(frame,threshold=findlight_threshold)
                 
-                coords2d[ind] = xy
+                    coords2d[ind] = xy
+                else:
+                    xy = None
                 
                 print("Frame",ind,"%.02f"%(time.time()-start),xy)
                 

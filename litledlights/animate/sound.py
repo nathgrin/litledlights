@@ -422,13 +422,16 @@ def soundsnakeloop(strip,anistrip,
                 spawn_func: Callable=None,
                 ymax: float = None, fixed_ymax: bool=True,
                 objects: list=[],
-                t0: float=0, dt: float=0.1, tmax: float=300):
+                t0: float=0, dt: float=0.1, tmax: float=3000):
     
     ymax = 0.1 if ymax is None else ymax
     
     color_on = colors.red if color_on is None else color_on
     
+    hue_change_period = 60.
+    
     color_hsv = list(color_on['hsv'])
+    color_hsv[1] = 0.5
     print(color_hsv)
     
     anistrip.t = t0
@@ -441,6 +444,8 @@ def soundsnakeloop(strip,anistrip,
         soha.update_yarr()
         
         # Set leds
+        color_hsv[0] = anistrip.t/hue_change_period %1. #0.5+0.5*np.sin(2.*np.pi*anistrip.t/hue_change_period)
+        
         ymean = 0. # Can get this from data
         carr = np.abs(soha.yarr[:,0]-ymean)/ymax
         for i in range(config.nleds):
@@ -457,7 +462,7 @@ def soundsnakeloop(strip,anistrip,
         
         if anistrip.t > tmax:
             print("Max t ({0}) reached".format(tmax))
-            # break
+            break
 
 def soundsnake():
     
@@ -541,7 +546,8 @@ def main():
     soha = SoundHandle(device,window=window)
     
     # Some settings
-    color_on = colors.pink
+    color_on = colors.pink # overwriten; color cylces
+    ymax = 0.1 # 
     
     print(objects)
     # input()
@@ -552,6 +558,7 @@ def main():
                         device=device,stream=stream,soha=soha,
                         color_on=color_on,
                         objects=objects,
+                        ymax=ymax,
                         t0=t0,dt=dt)
     except KeyboardInterrupt:
         pass

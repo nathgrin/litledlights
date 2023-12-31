@@ -137,6 +137,8 @@ def run_sound(args):
         raise ValueError("Wrong key ({0}) for which in lll sound".format(args.which[0]))
 
 def run_play(args):
+    args.func()
+
     if   args.which[0] == "huphollandhup":
         with get_strip() as strip:
             leds.huphollandhup(strip=strip)
@@ -170,7 +172,7 @@ def run_calibrate(args):
         calibrate.calibratecamera.main()
     elif args.which[0] == "sequentialsave":
         import calibrate.makecoords3d
-        # calibrate.makecoords3d.sequential_fotography()
+        calibrate.makecoords3d.sequential_fotography()
         print(args.which)
     else:
         raise ValueError("Wrong key ({0}) for which in lll calibrate".format(args.which))
@@ -215,8 +217,16 @@ def main(argv):
     tst_parser.set_defaults(func=run_piemel)
     
     play_parser = subparsers.add_parser('play') # submodule
-    play_parser.set_defaults(func=run_play)
-    play_parser.add_argument('which',type=str,nargs=1,choices=['main','blink_binary','huphollandhup','movingplane','rotatingplane'])#),help="which play, e.g., moving_plane PUT LIST OF POSSIBLE HERE?")
+    play_parser.set_defaults(func=lambda args: args.sub_func())
+    
+    def init_play_parser(parser):
+        subparsers = parser.add_subparsers()
+
+        main = subparsers.add_parser('main')
+        main.set_defaults(sub_func=None)#run_play_main)
+        
+    init_play_parser(play_parser)
+    # play_parser.add_argument('which',type=str,nargs=1,choices=['main','blink_binary','huphollandhup','movingplane','rotatingplane'])#),help="which play, e.g., moving_plane PUT LIST OF POSSIBLE HERE?")
     # play_parser.add_argument('register',type=str,nargs=1,help="register an animation, PUT LIST OF POSSIBLE HERE?")
     
     
@@ -224,9 +234,9 @@ def main(argv):
     animate_parser.set_defaults(func=run_animate)
     animate_parser.add_argument('which',type=str,nargs=1,choices=['main','fireworks','stuiterbal','planes','pong','sound'])#,help="which animation, e.g., main PUT LIST OF POSSIBLE HERE?")
     
-    animate_parser = subparsers.add_parser('sound') # not (yet?) submodule
-    animate_parser.set_defaults(func=run_sound)
-    animate_parser.add_argument('which',type=str,nargs=1,choices=['main','clapforfireworks','equalizer','soundsnake'])#,help="which animation, e.g., main PUT LIST OF POSSIBLE HERE?")
+    sound_parser = subparsers.add_parser('sound') # not (yet?) submodule
+    sound_parser.set_defaults(func=run_sound)
+    sound_parser.add_argument('which',type=str,nargs=1,choices=['main','clapforfireworks','equalizer','soundsnake'])#,help="which animation, e.g., main PUT LIST OF POSSIBLE HERE?")
     
     
     calibrate_parser = subparsers.add_parser('calibrate') # submodule
