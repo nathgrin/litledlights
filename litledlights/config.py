@@ -24,7 +24,7 @@ sequentialfotography_skiptoreprocess = False # For the first viewpoint, skip to 
 sequentialfotography_coloron = (115,115,115) # tuple[int,int,int]
 sequentialfotography_deltat = 6 # int, how many cycles (frames) between images
 sequentialfotography_loc = "_tmp" # str, location for storing imgs
-sequentialfotography_grayscale = True # bool, make grayscale?
+sequentialfotography_grayscale = False # bool, make grayscale?
 sequentialfotography_dofindlight = True # float, findlight in loop?
 
 # Find light in image
