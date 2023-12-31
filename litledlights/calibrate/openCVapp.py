@@ -140,11 +140,8 @@ class Window:
             App.win_id += 1
 
         self.win = win
-        self.img = img
         
-        self.size = img.shape[:2][::-1] # shape of img is (y,x) (and #channels)
-        
-        self.img0 = img.copy()
+        self.set_img(img)
         
         self.obj_options = Window.obj_options.copy()
         
@@ -161,6 +158,14 @@ class Window:
         cv2.setMouseCallback(win, self.mouse)
         
 
+    def set_img(self,img):
+        
+        self.img = img
+        
+        self.size = img.shape[:2][::-1] # shape of img is (y,x) (and #channels)
+        
+        self.img0 = img.copy()
+        
     
 
     def mouse(self, event, x, y, flags, param):

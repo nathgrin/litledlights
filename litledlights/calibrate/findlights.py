@@ -3,20 +3,60 @@ import os
 import cv2
 import numpy as np
 
+from ultralytics import YOLO
+
+def load_neuralnet(fname: str=None):
+    
+    fname = config.findlight_neuralnet_fname if fname is None else fname
+    
+    return YOLO(fname)
+    
+    
 
 def find_light(img,
-               blur_radius: int=9, # has to be odd!
-               threshold: int=None,
-               return_ind: float=False,
+               *args,
+               method:str = None,
+               **kwargs
                )->tuple[float,float]:
     """
     follow matt, simply get brightest pixels
     """
     
+    method = config.findlight_method if method is None else method
+    
+    if method == "simplematt":
+        find_light_matt(img,*args,**kwargs)
+    elif method == "neuralnet":
+        find_light_neuralnet(img,*kwargs,**kwargs)
+    else:
+        raise ValueError("find_light: kwarg 'method' not recognized, has to be one of 'simplematt' or 'neuralnet'.")
+    
+def find_light_neuralnet(img,
+                         themodel=None,return_ind=False)->tuple[float,float]:
+    
+    themodel = load_neuralnet() if themodel is None else themodel
+
+    
+    print("Neuralnet!")
+    if True:
+        pass
+    else:
+        y,x = np.nan,np.nan
+        
+    if return_ind:
+        return (x,y),ind
+    return (x,y)
+    
+
+def find_light_matt(img,
+               blur_radius: int=9, # has to be odd!
+               threshold: int=None,
+               return_ind: float=False,
+               )->tuple[float,float]:
     
     blur = cv2.GaussianBlur(img, (blur_radius,blur_radius),cv2.BORDER_DEFAULT)
     
-    threshold = config.findlight_threshold if threshold is None else threshold
+    threshold = config.findlight_simplematt_threshold if threshold is None else threshold
     # print(threshold)
     ind = blur > threshold#80#100
     # print(ind)
