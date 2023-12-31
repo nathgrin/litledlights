@@ -9,9 +9,5 @@
 
 ### 2023-12-31
 
-<<<<<<< HEAD
-- try to install venv...
-=======
 - try to install venv...
 - failed, is not installing packages, is not using venv, git hates .pyc files that come out of nowhere and doesnt want to sync anymore
->>>>>>> 1edf9845a148411c1d6142468d7f54905702a3bb
