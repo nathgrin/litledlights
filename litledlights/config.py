@@ -28,7 +28,7 @@ sequentialfotography_grayscale = True # bool, make grayscale?
 sequentialfotography_dofindlight = True # float, findlight in loop?
 
 # Find light in image
-findlight_threshold = 80
+findlight_method = "neuralnet" # "neuralnet" or "simplematt", see below
 # reprocessing find lights
 reprocess_drawradius = 15
 
@@ -86,3 +86,13 @@ new_camera_matrix = np.array([[633.53369141  , 0.  ,       307.62247084],
                             # [  0,793.20324707 ,247.94272481],
                             # [  0,0,1.        ]]) # newcameramtx
 # new_camera_matrix = None
+
+
+
+### Findlight methods
+
+# simplematt
+findlight_simplematt_threshold = 80
+
+# neuralnet
+findlight_neuralnet_fname = "neuralnet_findlight_20231231.onnx"

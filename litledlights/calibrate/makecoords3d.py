@@ -6,7 +6,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-from calibrate.findlights import find_light, reprocess
+from calibrate.findlights import find_light, reprocess,load_neuralnet
 from calibrate.triangulate import combine_coords_2d_to_3d
 
 import colors
@@ -128,8 +128,11 @@ def sequential_fotography(strip=None,
     strip.fill( color_off )
     strip.show()
     
-    # Findlight settings
-    findlight_threshold = config.findlight_threshold if findlight_threshold is None else findlight_threshold
+    # Findlight
+    findlight_kwargs = {}
+    if config.findlight_method == "neuralnet":
+        findlight_neuralnet = load_neuralnet(config.findlight_neuralnet_fname)
+        findlight_kwargs['themodel'] = findlight_neuralnet
     
     # setup
     cam = cv2.VideoCapture(0)
