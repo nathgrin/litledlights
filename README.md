@@ -51,7 +51,7 @@ LitLedLights, they are Lit
     - [x] live view camera?
     - [x] calibrate camera
   - [x] get pts from picture/video
-    - [ ] improve get pts
+    - [ ] improve get pts (neural net)
     - [ ] combine pictures
     - [x] rotate coords
     - [ ] fix wrong coords
