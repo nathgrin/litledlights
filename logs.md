@@ -28,4 +28,4 @@
   - apparently sudo PYTHON3_VENV_PATH=$(which python3) $PYTHON3_VENV_PATH path/to/your/script.py is a good thing too
 - and the lights work now too. cloned old repo and works. 
 - use activate.sh to activate venv and pylll and lll <option> to play lights
-
+- git is up and running again too
