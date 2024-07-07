@@ -17,12 +17,11 @@
 - port to rpi-4B
 - try venv now
 
-
 ### 2024-07-07
 
 - install venv
 - circuitpython <https://learn.adafruit.com/circuitpython-on-raspberrypi-linux/installing-circuitpython-on-raspberry-pi> kills the GUI
-- reinstall
+- reinstall rpi4
 - circuitpython <https://learn.adafruit.com/circuitpython-on-raspberrypi-linux/installing-circuitpython-on-raspberry-pi>
 - adafruit https://learn.adafruit.com/neopixels-on-raspberry-pi/python-usage and things worked but not yet the lights
   - in the venv with (.venv) $ sudo -E env PATH=$PATH ./myscript.py
