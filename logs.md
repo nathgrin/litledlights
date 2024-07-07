@@ -27,3 +27,6 @@
 - adafruit https://learn.adafruit.com/neopixels-on-raspberry-pi/python-usage and things worked but not yet the lights
   - in the venv with (.venv) $ sudo -E env PATH=$PATH ./myscript.py
   - apparently sudo PYTHON3_VENV_PATH=$(which python3) $PYTHON3_VENV_PATH path/to/your/script.py is a good thing too
+- and the lights work now too. cloned old repo and works. 
+- use activate.sh to activate venv and pylll and lll <option> to play lights
+
