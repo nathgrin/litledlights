@@ -41,8 +41,9 @@ def find_light_neuralnet(img,
     
     print("Neuralnet!")
     
-    result = nnmodel.run(None, {'images': img})
+    result = nnmodel(img)
     
+    print(result)
     
     if True:
         pass
