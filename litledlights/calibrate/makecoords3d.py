@@ -134,6 +134,8 @@ def sequential_fotography(strip=None,
     
     # setup
     cam = cv2.VideoCapture(0)
+    if cam is None or not cam.isOpened():
+       raise BufferError('Warning: unable to open video source: ', 0)
     window_name = "Cam"
     cv2.namedWindow(window_name)
     
