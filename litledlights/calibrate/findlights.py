@@ -41,9 +41,10 @@ def find_light_neuralnet(img,
     
     print("Neuralnet!")
     
-    result = nnmodel(img)
+    results = nnmodel(img)
     
-    print(result)
+    for res in results:
+        print(res) 
     
     if True:
         pass
