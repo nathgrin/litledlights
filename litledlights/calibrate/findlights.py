@@ -41,7 +41,7 @@ def find_light_neuralnet(img,
     
     print("Neuralnet!")
     
-    result = nnsession.run(img)
+    result = nnsession.run(None, {'images': img})
     
     
     if True:
