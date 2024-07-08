@@ -55,7 +55,6 @@ def tst():
 
 def initiate_sequential_fotography(loc: str=None,skip_to_reprocess: bool=None):
     loc = config.sequentialfotography_loc if loc is None else loc
-    findlight_threshold = config.findlight_threshold# if findlight_threshold is None else findlight_threshold
     
     ok = False
     do_reprocess = config.sequentialfotography_skiptoreprocess if skip_to_reprocess is None else skip_to_reprocess
@@ -64,7 +63,7 @@ def initiate_sequential_fotography(loc: str=None,skip_to_reprocess: bool=None):
             coords2d = reprocess(loc=loc,findlight_threshold=findlight_threshold)
             do_reprocess = False
         else:
-            coords2d = sequential_fotography(loc=loc,findlight_threshold=findlight_threshold)
+            coords2d = sequential_fotography(loc=loc)
         # print(coords2d)
         if coords2d is not None:
             print("NaN/tot: {}/{}".format(np.sum(np.isnan(coords2d)),len(coords2d)))
@@ -98,12 +97,9 @@ def sequential_fotography(strip=None,
                             delta_t: int = None,# in arbitrary units
                             loc: str=None,
                             
-                            findlight_threshold: int=None,
-                            
                             grayscale: bool = None,
                             
                             do_findlight: bool = None
-                            
                             ) -> np.ndarray:
     """example from stackoverflow, in turn stolen from the "docs" 
     
@@ -132,7 +128,9 @@ def sequential_fotography(strip=None,
     findlight_kwargs = {}
     if config.findlight_method == "neuralnet":
         findlight_neuralnet = load_neuralnet(config.findlight_neuralnet_fname)
-        findlight_kwargs['themodel'] = findlight_neuralnet
+        findlight_kwargs['nnsession'] = findlight_neuralnet
+    elif config.findlight_method == "simplematt":
+        findlight_threshold = config.findlight_threshold# if findlight_threshold is None else findlight_threshold
     
     # setup
     cam = cv2.VideoCapture(0)
