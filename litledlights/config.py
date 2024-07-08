@@ -16,7 +16,7 @@ coords3d_fname = "coords.txt"
 ## makecoords3d
 getcoords2d_nviewpoints = 2
 
-getcoords2d_fromangles = False
+getcoords2d_fromangles = True # in calibrate.makecoords3d get new coords2d?
 do_2d_to_3d = False
 
 # Sequential_photography
