@@ -8,11 +8,11 @@ def load_neuralnet(fname: str=None):
     
     fname = config.findlight_neuralnet_fname if fname is None else fname
     
-    import onnxruntime as ort
+    from ultralytics import YOLO
     
-    nnsession = ort.InferenceSession(fname)
+    nnmodel = YOLO(fname)
     
-    return nnsession
+    return nnmodel
     
     
 
@@ -34,14 +34,14 @@ def find_light(img,
     return (x,y)
     
 def find_light_neuralnet(img,
-                         nnsession=None,return_ind=False)->tuple[float,float]:
+                         nnmodel=None,return_ind=False)->tuple[float,float]:
     
-    nnsession = load_neuralnet() if nnsession is None else nnsession
+    nnmodel = load_neuralnet() if nnmodel is None else nnmodel
     
     
     print("Neuralnet!")
     
-    result = nnsession.run(None, {'images': img})
+    result = nnmodel.run(None, {'images': img})
     
     
     if True:

@@ -128,7 +128,7 @@ def sequential_fotography(strip=None,
     findlight_kwargs = {}
     if config.findlight_method == "neuralnet":
         findlight_neuralnet = load_neuralnet(config.findlight_neuralnet_fname)
-        findlight_kwargs['nnsession'] = findlight_neuralnet
+        findlight_kwargs['nnmodel'] = findlight_neuralnet
     elif config.findlight_method == "simplematt":
         findlight_threshold = config.findlight_threshold# if findlight_threshold is None else findlight_threshold
         findlight_kwargs['threshold'] = findlight_threshold
