@@ -3,13 +3,16 @@ import os
 import cv2
 import numpy as np
 
-from ultralytics import YOLO
 
 def load_neuralnet(fname: str=None):
     
     fname = config.findlight_neuralnet_fname if fname is None else fname
     
-    return YOLO(fname)
+    import onnxruntime as ort
+    
+    nnsession = ort.InferenceSession(fname)
+    
+    return nnsession
     
     
 
@@ -22,17 +25,20 @@ def find_light(img,
     method = config.findlight_method if method is None else method
     
     if method == "simplematt":
-        find_light_matt(img,*args,**kwargs)
+        x,y = find_light_matt(img,*args,**kwargs)
     elif method == "neuralnet":
-        find_light_neuralnet(img,*kwargs,**kwargs)
+        x,y = find_light_neuralnet(img,*kwargs,**kwargs)
     else:
         raise ValueError("find_light: kwarg 'method' not recognized, has to be one of 'simplematt' or 'neuralnet'.")
+    
+    return (x,y)
     
 def find_light_neuralnet(img,
                          themodel=None,return_ind=False)->tuple[float,float]:
     
-    themodel = load_neuralnet() if themodel is None else themodel
+    nnsession = load_neuralnet() if themodel is None else themodel
 
+    print(nnsession)
     
     print("Neuralnet!")
     if True:
