@@ -18,9 +18,6 @@ def find_light(img,
                method:str = None,
                **kwargs
                )->tuple[float,float]:
-    """
-    follow matt, simply get brightest pixels
-    """
     
     method = config.findlight_method if method is None else method
     
@@ -53,6 +50,9 @@ def find_light_matt(img,
                threshold: int=None,
                return_ind: float=False,
                )->tuple[float,float]:
+    """
+    follow matt, simply get brightest pixels
+    """
     
     blur = cv2.GaussianBlur(img, (blur_radius,blur_radius),cv2.BORDER_DEFAULT)
     
