@@ -37,10 +37,13 @@ def find_light_neuralnet(img,
                          nnsession=None,return_ind=False)->tuple[float,float]:
     
     nnsession = load_neuralnet() if nnsession is None else nnsession
-
-    print(nnsession)
+    
     
     print("Neuralnet!")
+    
+    result = nnsession.run(img)
+    
+    
     if True:
         pass
     else:
