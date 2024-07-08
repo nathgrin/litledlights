@@ -229,7 +229,7 @@ def sequential_fotography(strip=None,
                 # print("{} written!".format(img_name))
                 
                 if do_findlight:
-                    xy = find_light(frame,findlight_kwargs)
+                    xy = find_light(frame,**findlight_kwargs)
                 
                     coords2d[ind] = xy
                 else:

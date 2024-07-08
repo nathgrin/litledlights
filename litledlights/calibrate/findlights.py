@@ -27,7 +27,7 @@ def find_light(img,
     if method == "simplematt":
         x,y = find_light_matt(img,*args,**kwargs)
     elif method == "neuralnet":
-        x,y = find_light_neuralnet(img,*kwargs,**kwargs)
+        x,y = find_light_neuralnet(img,*args,**kwargs)
     else:
         raise ValueError("find_light: kwarg 'method' not recognized, has to be one of 'simplematt' or 'neuralnet'.")
     
@@ -38,16 +38,10 @@ def find_light_neuralnet(img,
     
     nnmodel = load_neuralnet() if nnmodel is None else nnmodel
     
+    results = nnmodel.predict(img,verbose=False,classes=[0])[0] # only detect litledlights
     
-    print("Neuralnet!")
-    
-    results = nnmodel(img)
-    
-    for res in results:
-        print(res) 
-    
-    if True:
-        pass
+    if len(results) > 0:
+        x,y = float(results.boxes.xywh[0][0]),float(results.boxes.xywh[0][1])
     else:
         y,x = np.nan,np.nan
         
