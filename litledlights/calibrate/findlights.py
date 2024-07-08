@@ -10,7 +10,7 @@ def load_neuralnet(fname: str=None):
     
     from ultralytics import YOLO
     
-    nnmodel = YOLO(fname)
+    nnmodel = YOLO(fname, task='detect')
     
     return nnmodel
     
