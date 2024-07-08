@@ -43,10 +43,9 @@ def find_light_neuralnet(img,
     
     results = nnmodel(img)
     
-    for res in results:
-        print(res) 
+    res = results[0]
     
-    if True:
+    if res.boxes:
         pass
     else:
         y,x = np.nan,np.nan
