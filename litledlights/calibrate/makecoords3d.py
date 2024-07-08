@@ -131,6 +131,7 @@ def sequential_fotography(strip=None,
         findlight_kwargs['nnsession'] = findlight_neuralnet
     elif config.findlight_method == "simplematt":
         findlight_threshold = config.findlight_threshold# if findlight_threshold is None else findlight_threshold
+        findlight_kwargs['threshold'] = findlight_threshold
     
     # setup
     cam = cv2.VideoCapture(0)

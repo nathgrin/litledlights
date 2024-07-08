@@ -34,9 +34,9 @@ def find_light(img,
     return (x,y)
     
 def find_light_neuralnet(img,
-                         themodel=None,return_ind=False)->tuple[float,float]:
+                         nnsession=None,return_ind=False)->tuple[float,float]:
     
-    nnsession = load_neuralnet() if themodel is None else themodel
+    nnsession = load_neuralnet() if nnsession is None else nnsession
 
     print(nnsession)
     
