@@ -21,7 +21,7 @@ do_2d_to_3d = False
 
 # Sequential_photography
 sequentialfotography_skiptoreprocess = False # For the first viewpoint, skip to ?
-sequentialfotography_coloron = (115,115,115) # tuple[int,int,int]
+sequentialfotography_coloron = (175,175,175)#(115,115,115) # tuple[int,int,int]
 sequentialfotography_deltat = 12 # int, how many cycles (frames) between images
 sequentialfotography_loc = "_tmp" # str, location for storing imgs
 sequentialfotography_grayscale = False # bool, make grayscale?

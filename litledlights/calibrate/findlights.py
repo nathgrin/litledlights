@@ -40,14 +40,11 @@ def find_light_neuralnet(img,
     
     results = nnmodel.predict(img,verbose=False,classes=[0])[0] # only detect litledlights
     
-    print("Neuralnet!")
+    # print("Neuralnet!")
     
-    results = nnmodel(img)
-    
-    res = results[0]
-    
-    if res.boxes:
-        pass
+    # print(results.boxes)
+    if results.boxes:
+        x,y = float(results.boxes[0].xywh[0][0]),float(results.boxes[0].xywh[0][1])
     else:
         y,x = np.nan,np.nan
         
