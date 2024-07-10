@@ -60,7 +60,7 @@ def initiate_sequential_fotography(loc: str=None,skip_to_reprocess: bool=None):
     do_reprocess = config.sequentialfotography_skiptoreprocess if skip_to_reprocess is None else skip_to_reprocess
     while not ok:
         if do_reprocess:
-            coords2d = reprocess(loc=loc,findlight_threshold=findlight_threshold)
+            coords2d = reprocess(loc=loc)
             do_reprocess = False
         else:
             coords2d = sequential_fotography(loc=loc)
@@ -180,7 +180,9 @@ def sequential_fotography(strip=None,
             
             # frame = cv2.subtract(frame,img_bg) # Even if preview doesnt subtract, THIS IS Subtracted anyway
     
-            if started: t += 1
+            t += 1
+            if t % delta_t == 0:
+                t = 0
             
             k = cv2.waitKey(1)
             if k%256 == 27:
@@ -214,19 +216,38 @@ def sequential_fotography(strip=None,
                     t = 0 # reset t because we can
                     started = True
                 
-            elif started and (t+delta_t//2)%delta_t == 0: # Interlacing turning on/off lights and cam picture
+            elif started and t%delta_t == 0: # Interlacing turning on/off lights and cam picture
+                
+                
                 
                 strip[ind-1] = color_off
-                strip[ind]   = color_on
+                # strip[ind]   = color_on
                 strip.show()
                 
-            elif started and t%delta_t == 0: # Interlacing turning on/off lights and cam picture
                 # print(t,started)
+                ind += 1
+                print(' - Led',ind)
+                if ind == nleds:
+                    print(" > We got em all")
+                    break
                 
+            elif started and (t+delta_t//2)%delta_t == 0: # Interlacing turning on/off lights and cam picture
                 
                 img_name = os.path.join(loc,"led_{}.png".format(ind))
                 cv2.imwrite(img_name, frame)
-                # print("{} written!".format(img_name))
+                print("   {} written!".format(img_name))
+                
+            elif started and t == delta_t//3:
+                
+                strip[ind] = color_on
+                strip.show()
+                
+            elif started and t > delta_t//3 and t < 2*delta_t//3:
+                
+                factor = 1-(3*t-delta_t)/((3-1)*delta_t)
+                strip[ind] = (factor*color_on[0],factor*color_on[1],factor*color_on[2])
+                strip.show()
+                
                 
                 if do_findlight:
                     xy = find_light(frame,**findlight_kwargs)
@@ -235,12 +256,8 @@ def sequential_fotography(strip=None,
                 else:
                     xy = None
                 
-                print("Frame",ind,"%.02f"%(time.time()-start),xy)
+                print("   ",t,"%.02f"%(time.time()-start),xy)
                 
-                ind += 1
-                if ind == nleds:
-                    print(" > We got em all")
-                    break
     finally:
         cam.release()
         cv2.destroyAllWindows()

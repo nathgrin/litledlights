@@ -52,6 +52,8 @@ def find_light_neuralnet(img,
         y,x = np.nan,np.nan
         
     if return_ind:
+        print("WARNING: can not return ind")
+        ind = np.nan
         return (x,y),ind
     return (x,y)
     
