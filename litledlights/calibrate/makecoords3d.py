@@ -143,7 +143,11 @@ def sequential_fotography(strip=None,
     # params
     nleds = len(strip)
     ind = 0
-    t = -1
+    t = 1
+    
+    xlist = []
+    ylist = []
+    
     
     started = False
     preview_subtract = True
@@ -180,7 +184,8 @@ def sequential_fotography(strip=None,
             
             # frame = cv2.subtract(frame,img_bg) # Even if preview doesnt subtract, THIS IS Subtracted anyway
     
-            t += 1
+            if started:
+                t += 1
             if t % delta_t == 0:
                 t = 0
             
@@ -213,16 +218,22 @@ def sequential_fotography(strip=None,
                     started = False
                 else:
                     print(" > Vamonos")
-                    t = 0 # reset t because we can
+                    # t = 0 # reset t because we can
                     started = True
                 
             elif started and t%delta_t == 0: # Interlacing turning on/off lights and cam picture
                 
+                # reset
                 
-                
-                strip[ind-1] = color_off
+                strip[ind] = color_off
                 # strip[ind]   = color_on
                 strip.show()
+                
+                coords2d[ind] = (np.nanmedian(xlist),np.nanmedian(ylist))
+                print("   Done",coords2d[ind])
+                
+                xlist = []
+                ylist = []
                 
                 # print(t,started)
                 ind += 1
@@ -231,32 +242,39 @@ def sequential_fotography(strip=None,
                     print(" > We got em all")
                     break
                 
-            elif started and (t+delta_t//2)%delta_t == 0: # Interlacing turning on/off lights and cam picture
+            #elif started and (t+delta_t//2)%delta_t == 0: # Interlacing turning on/off lights and cam picture
                 
-                img_name = os.path.join(loc,"led_{}.png".format(ind))
-                cv2.imwrite(img_name, frame)
-                print("   {} written!".format(img_name))
-                
-            elif started and t == delta_t//3:
+            elif started and t == delta_t//3-1:
                 
                 strip[ind] = color_on
                 strip.show()
                 
-            elif started and t > delta_t//3 and t < 2*delta_t//3:
+            elif started and t >= delta_t//3 and t <= 2*delta_t//3:
                 
-                factor = 1-(3*t-delta_t)/((3-1)*delta_t)
+                if (t+delta_t//2)%delta_t == 0:
+                    img_name = os.path.join(loc,"led_{}.png".format(ind))
+                    cv2.imwrite(img_name, frame)
+                    print("   {} written!".format(img_name))
+                
+                n_pieces = 3 # its the 3 from above here
+                lower_level = 0. # lower level fraction of max level
+                
+                factor = t*(lower_level*n_pieces-n_pieces)/((n_pieces-2)*delta_t)+1-(lower_level-1)/(n_pieces-2)
+                
                 strip[ind] = (factor*color_on[0],factor*color_on[1],factor*color_on[2])
                 strip.show()
-                
-                
+            
                 if do_findlight:
                     xy = find_light(frame,**findlight_kwargs)
-                
-                    coords2d[ind] = xy
+                    xlist.append(xy[0])
+                    ylist.append(xy[1])
+                    # coords2d[ind] = xy
                 else:
                     xy = None
+                    
                 
                 print("   ",t,"%.02f"%(time.time()-start),xy)
+                # time.sleep(1)
                 
     finally:
         cam.release()
