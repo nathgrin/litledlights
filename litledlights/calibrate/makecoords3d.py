@@ -161,7 +161,7 @@ def sequential_fotography(strip=None,
     print(" >",help_msg)
     
     try:
-        while True:
+        while cam.isOpened():
             
             ret, frame = cam.read()
             if not ret:
