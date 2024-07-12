@@ -165,7 +165,7 @@ def sequential_fotography(strip=None,
     print(" >",help_msg)
     
     try:
-        while True:
+        while cam.isOpened():
             
             ret, frame = cam.read()
             if not ret:
@@ -274,7 +274,7 @@ def sequential_fotography(strip=None,
                     
                 
                 print("   ",t,"%.02f"%(time.time()-start),xy)
-                # time.sleep(1)
+            # time.sleep(1)
                 
     finally:
         cam.release()
