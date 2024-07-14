@@ -134,6 +134,8 @@ def sequential_fotography(strip=None,
         findlight_kwargs['threshold'] = findlight_threshold
     
     # setup
+    # import acapture
+    # cam = acapture.open(0) 
     cam = cv2.VideoCapture(0)
     if cam is None or not cam.isOpened():
        raise BufferError('Warning: unable to open video source: ', 0)
@@ -165,7 +167,7 @@ def sequential_fotography(strip=None,
     print(" >",help_msg)
     
     try:
-        while cam.isOpened():
+        while True:
             
             ret, frame = cam.read()
             if not ret:
@@ -221,7 +223,7 @@ def sequential_fotography(strip=None,
                     # t = 0 # reset t because we can
                     started = True
                 
-            elif started and t%delta_t == 0: # Interlacing turning on/off lights and cam picture
+            if started and t%delta_t == 0: # Interlacing turning on/off lights and cam picture
                 
                 # reset
                 
@@ -274,7 +276,7 @@ def sequential_fotography(strip=None,
                     
                 
                 print("   ",t,"%.02f"%(time.time()-start),xy)
-            # time.sleep(1)
+                # time.sleep(1)
                 
     finally:
         cam.release()
