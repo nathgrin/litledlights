@@ -95,4 +95,4 @@ new_camera_matrix = np.array([[633.53369141  , 0.  ,       307.62247084],
 findlight_simplematt_threshold = 80
 
 # neuralnet
-findlight_neuralnet_fname = "neuralnet_findlight_bg_20240708.onnx"
+findlight_neuralnet_fname = "litledlights/calibrate/neuralnets/neuralnet_findlight_bg_15_20240714_151.onnx"

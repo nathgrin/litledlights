@@ -66,7 +66,8 @@ def initiate_sequential_fotography(loc: str=None,skip_to_reprocess: bool=None):
             coords2d = sequential_fotography(loc=loc)
         # print(coords2d)
         if coords2d is not None:
-            print("NaN/tot: {}/{}".format(np.sum(np.isnan(coords2d)),len(coords2d)))
+            # print(coords2d)
+            print("NaN/tot: {}/{}".format(np.sum(np.isnan(coords2d))//2,len(coords2d))) # divide by 2 because counts x&y nan-values
             
             # img_bg = cv2.imread(os.path.join(loc,"background.png"))
             # for i in range(len(coords2d)):
@@ -184,7 +185,7 @@ def sequential_fotography(strip=None,
             # frame = cv2.absdiff(frame,img_bg)
             cv2.imshow(window_name, preview)
             
-            # frame = cv2.subtract(frame,img_bg) # Even if preview doesnt subtract, THIS IS Subtracted anyway
+            frame = cv2.subtract(frame,img_bg) # Even if preview doesnt subtract, THIS IS Subtracted anyway
     
             if started:
                 t += 1
@@ -228,7 +229,7 @@ def sequential_fotography(strip=None,
                 # reset
                 
                 strip[ind] = color_off
-                # strip[ind]   = color_on
+                # strip[ind+1]   = color_on
                 strip.show()
                 
                 coords2d[ind] = (np.nanmedian(xlist),np.nanmedian(ylist))
@@ -251,7 +252,7 @@ def sequential_fotography(strip=None,
                 strip[ind] = color_on
                 strip.show()
                 
-            elif started and t >= delta_t//3 and t <= 2*delta_t//3:
+            elif started and t >= delta_t//3 and t <= 2*delta_t//3:#(t+delta_t//2)%delta_t == 0:#
                 
                 if (t+delta_t//2)%delta_t == 0:
                     img_name = os.path.join(loc,"led_{}.png".format(ind))
@@ -262,7 +263,6 @@ def sequential_fotography(strip=None,
                 lower_level = 0. # lower level fraction of max level
                 
                 factor = t*(lower_level*n_pieces-n_pieces)/((n_pieces-2)*delta_t)+1-(lower_level-1)/(n_pieces-2)
-                
                 strip[ind] = (factor*color_on[0],factor*color_on[1],factor*color_on[2])
                 strip.show()
             
@@ -271,6 +271,7 @@ def sequential_fotography(strip=None,
                     xlist.append(xy[0])
                     ylist.append(xy[1])
                     # coords2d[ind] = xy
+                    # print("   Done",coords2d[ind])
                 else:
                     xy = None
                     
@@ -314,6 +315,7 @@ def get_coords2d_from_multiple_angles(n_viewpoints: int,loc: str="_tmp") -> list
         coords2d_list.append(coords2d)
         
         fname = os.path.join(loc,"coords2d_{}.txt".format(i))
+        print("Save coords2d in",fname)
         coords2d_write(fname,coords2d)
     
     return coords2d_list
