@@ -44,6 +44,7 @@ class findLightByHandApp(FLA.mplApp):
         
         # Some settings
         self.grayscale = config.sequentialfotography_grayscale
+        self.findlight_kwargs = {}
         
         options = {}
         self.options.update(options)
