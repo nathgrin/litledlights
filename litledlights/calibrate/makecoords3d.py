@@ -42,6 +42,8 @@ class findLightByHandApp(FLA.mplApp):
                             }
         self.hotkeys.update(hotkeys)
         
+        # Some settings
+        self.grayscale = config.sequentialfotography_grayscale
         
         options = {}
         self.options.update(options)
@@ -78,6 +80,7 @@ class findLightByHandApp(FLA.mplApp):
         if which is None:
             which = range(config.nleds)
             
+            
         print("RUN find lights by hand")
         
             
@@ -100,22 +103,20 @@ class findLightByHandApp(FLA.mplApp):
         self.strip = get_strip()
             
         # BG img
-        ret, img_bg = cam.read()
-        if grayscale:
+        ret, img_bg = self.cam.read()
+        if self.grayscale:
             img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
         self.set_img_bg(img_bg)
         
+        positions = []
+        
         for ind in which:
-            self.image_loop(ind)
-            
+            pos = self.image_loop(ind)
+            positions.append(pos)
         
-        
+        return positions
         
     def image_loop(self,ind):
-        
-        
-        
-        
         print( " > image_loop",ind)
         
         
@@ -123,13 +124,6 @@ class findLightByHandApp(FLA.mplApp):
         self.set_img( self.load_img() )
         self.reset_canvas_draw()
         
-        # Check labelfile
-        if self.load_labels_if_destination_exists and \
-            os.path.isfile(out_path_labels): # Load from label file
-            objs = self.get_objs_from_labelfile(out_path_labels)
-            print("   Load objects from labelfile (#obj: {})".format(len(objs)))
-            for obj in objs:
-                self.add_object( obj )
             
         # Check if find light
         if self.do_findlight_before_image_loop: # Find light
@@ -170,40 +164,30 @@ class findLightByHandApp(FLA.mplApp):
         # rw, rh - relative size of the bbox
         # label_id cx cy rw rh
         
+        pos = [np.nan,np.nan]
+        
         if self.accepted:
             print("   Accepted")
-            writeline_labels = ""
+            
             nobjs = 0
             while(len(self.objs)):
                 self.select_next_obj()
                 obj = self.obj
+                pos = obj.pos
                 
-                imgsize = self.img.shape[:2][::-1]
-                
-                writeline = YOLO_labelline_from_obj(obj,imgsize=imgsize)
                 nobjs += 1
-                print("   Obj:",writeline)
+                print("   Obj:", pos )
                 
                 if nobjs > 1:
-                    writeline_labels += "\n"
-                writeline_labels += writeline
+                    print("WARNING: Multiple objects found! that doesnt bode well")
+                
                 
                 self.delete_obj()
             # print(writeline_labels)
             
-            # Copy img and make label files
-            simple_overwrite_file(out_path_labels,writeline_labels)
-            if self.save_background_subtracted_image:
-                if self.img_bg is not None:
-                    out_img = cv2.subtract(self.img,self.img_bg)
-                    cv2.imwrite(out_path_img,out_img)
-                else:
-                    print(" Warning: self.img_bg is None")
-            if not self.save_background_subtracted_image or self.img_bg is None: 
-                shutil.copy2(in_path,out_path_img)
         
         self.delete_all_objs()
-        return
+        return pos
         
     def do_findlight(self):
         if self.img is None:
@@ -255,8 +239,9 @@ def coords2d_fix_nans_byhand(coords2d, loc: str=None):
     which = np.where(np.isnan(coords2d).any(axis=1))[0]
     
     
-    coords2d = findLightByHandApp.run(which)
-    
+    nan_positions = findLightByHandApp.run(which)
+    for ind,pos in zip(which,nan_positions):
+        coords2d[ind] = pos
     
     return coords2d
     
