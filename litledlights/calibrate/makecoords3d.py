@@ -57,9 +57,14 @@ class findLightByHandApp(FLA.mplApp):
         # color_or_grayscale = cv2.IMREAD_COLOR # cv2.IMREAD_GRAYSCALE #
         ret,img = self.cam.read()
         if ret:
+            if self.grayscale:
+                img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
             return img
         else:
             raise BufferError("Read cam failed")
+    def get_bg_img(self):
+        img_bg = self.load_img()
+        self.set_img_bg(img_bg)
     
     def set_img(self,img):
         self.img = img
@@ -103,10 +108,7 @@ class findLightByHandApp(FLA.mplApp):
         self.strip = get_strip()
             
         # BG img
-        ret, img_bg = self.cam.read()
-        if self.grayscale:
-            img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
-        self.set_img_bg(img_bg)
+        self.get_bg_img()
         
         positions = []
         
@@ -119,6 +121,10 @@ class findLightByHandApp(FLA.mplApp):
     def image_loop(self,ind):
         print( " > image_loop",ind)
         
+        self.strip[ind] = config.sequentialfotography_coloron
+        self.strip.show()
+        
+        time.sleep(1)
         
         # Reset
         self.set_img( self.load_img() )
@@ -186,6 +192,7 @@ class findLightByHandApp(FLA.mplApp):
             # print(writeline_labels)
             
         
+        self.strip[ind] = (0,0,0)
         self.delete_all_objs()
         return pos
         
