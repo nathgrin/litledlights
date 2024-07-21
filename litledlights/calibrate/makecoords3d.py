@@ -21,6 +21,202 @@ except:
 
 from misc_func import npunit,rotationmtx,xyz_to_rthetaphi
 
+import FindLightApp as FLA
+
+
+class findLightByHandApp(FLA.mplApp):
+    
+    def __init__(self,**kwargs):
+        
+        # Setup
+        self.set_img_bg(None)
+        self.set_img(None)
+        self.img_name = ""
+        
+        # Lets go
+        super().__init__(**kwargs)
+        
+        #  Keys           key : (function,help msg)
+        hotkeys = {
+                    ' ': (self.key_toggle_autoplay ,"Toggle Autoplay")
+                            }
+        self.hotkeys.update(hotkeys)
+        
+        
+        options = {}
+        self.options.update(options)
+        
+    def print_options(self):
+        print("--- Options ---")
+        print('autoplay',self.autoplay)
+        print("--- OOOO ---")
+        
+    def load_img(self):
+        # color_or_grayscale = cv2.IMREAD_COLOR # cv2.IMREAD_GRAYSCALE #
+        ret,img = self.cam.read()
+        if ret:
+            return img
+        else:
+            raise BufferError("Read cam failed")
+    
+    def set_img(self,img):
+        self.img = img
+        if self.img_bg is not None:
+            self.img_bgsubtract = cv2.subtract(self.img,self.img_bg)
+        else:
+            self.img_bgsubtract = None
+    
+    def set_img_bg(self,img_bg):
+        self.img_bg = img_bg
+    
+    def key_toggle_autoplay(self,event):
+        self.autoplay = not self.autoplay
+        print(" + Autoplay {}".format(self.autoplay))
+        
+        
+    def run(self,which=None):
+        if which is None:
+            which = range(config.nleds)
+            
+        print("RUN find lights by hand")
+        
+            
+        # Findlight
+        findlight_kwargs = {}
+        if config.findlight_method == "neuralnet":
+            findlight_neuralnet = load_neuralnet(config.findlight_neuralnet_fname)
+            findlight_kwargs['nnmodel'] = findlight_neuralnet
+        elif config.findlight_method == "simplematt":
+            findlight_threshold = config.findlight_threshold# if findlight_threshold is None else findlight_threshold
+            findlight_kwargs['threshold'] = findlight_threshold
+        self.findlight_kwargs = findlight_kwargs
+        
+        # CAM
+        self.cam = cv2.VideoCapture(0)
+        if not self.cam.isOpened():
+            raise BufferError("No videosource 0 found :(")
+            
+        # STRIP
+        self.strip = get_strip()
+            
+        # BG img
+        ret, img_bg = cam.read()
+        if grayscale:
+            img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
+        self.set_img_bg(img_bg)
+        
+        for ind in which:
+            self.image_loop(ind)
+            
+        
+        
+        
+    def image_loop(self,ind):
+        
+        
+        
+        
+        print( " > image_loop",ind)
+        
+        
+        # Reset
+        self.set_img( self.load_img() )
+        self.reset_canvas_draw()
+        
+        # Check labelfile
+        if self.load_labels_if_destination_exists and \
+            os.path.isfile(out_path_labels): # Load from label file
+            objs = self.get_objs_from_labelfile(out_path_labels)
+            print("   Load objects from labelfile (#obj: {})".format(len(objs)))
+            for obj in objs:
+                self.add_object( obj )
+            
+        # Check if find light
+        if self.do_findlight_before_image_loop: # Find light
+            pos,size = self.do_findlight()
+            # print(pos,size)
+            if pos is not None:
+                self.add_object( FLA.CrossedRectangle(pos,size=size, ax=self.ax.img) )
+                self.select_obj(self.objs[-1])
+        
+        
+        
+        ### The loop
+        self.go_to_next_image = False
+        self.go_to_previous_image = False
+        self.accepted = False
+        while not self.go_to_next_image and not self.go_to_previous_image:
+            
+            if self.autoplay:
+                plt.pause(3)
+                
+            if self.autoplay: # If in those pausing secs, space is pressed, but nice to wait c
+                self.go_to_next_image = True
+                self.accepted = True
+            else:
+                plt.waitforbuttonpress()
+            
+            if self.closing:
+                return
+
+        print("   Done loop")
+        if self.go_to_previous_image:
+            print("   Go back to previous")
+        
+        # Write entries, also delete objects
+        # image_name.txt:
+        # label_id - id from obj.names
+        # cx, cy - relative coordinates of the bbox center
+        # rw, rh - relative size of the bbox
+        # label_id cx cy rw rh
+        
+        if self.accepted:
+            print("   Accepted")
+            writeline_labels = ""
+            nobjs = 0
+            while(len(self.objs)):
+                self.select_next_obj()
+                obj = self.obj
+                
+                imgsize = self.img.shape[:2][::-1]
+                
+                writeline = YOLO_labelline_from_obj(obj,imgsize=imgsize)
+                nobjs += 1
+                print("   Obj:",writeline)
+                
+                if nobjs > 1:
+                    writeline_labels += "\n"
+                writeline_labels += writeline
+                
+                self.delete_obj()
+            # print(writeline_labels)
+            
+            # Copy img and make label files
+            simple_overwrite_file(out_path_labels,writeline_labels)
+            if self.save_background_subtracted_image:
+                if self.img_bg is not None:
+                    out_img = cv2.subtract(self.img,self.img_bg)
+                    cv2.imwrite(out_path_img,out_img)
+                else:
+                    print(" Warning: self.img_bg is None")
+            if not self.save_background_subtracted_image or self.img_bg is None: 
+                shutil.copy2(in_path,out_path_img)
+        
+        self.delete_all_objs()
+        return
+        
+    def do_findlight(self):
+        if self.img is None:
+            return
+        
+        pos = find_light(self.img,self.findlight_kwargs)
+        size = (0.05,0.05)
+        
+        if self.obj is not None and pos is not None:
+            self.obj.pos = pos
+            self.obj.size = size
+        return pos,size
+        
     
 def tst():
     """example from stackoverflow, in turn stolen from the "docs" """
@@ -52,16 +248,33 @@ def tst():
 
     cam.release()
     cv2.destroyAllWindows()
+    
+def coords2d_fix_nans_byhand(coords2d, loc: str=None):
+    loc = config.sequentialfotography_loc if loc is None else loc
+    
+    which = np.where(np.isnan(coords2d).any(axis=1))[0]
+    
+    
+    coords2d = findLightByHandApp.run(which)
+    
+    
+    return coords2d
+    
 
 def initiate_sequential_fotography(loc: str=None,skip_to_reprocess: bool=None):
     loc = config.sequentialfotography_loc if loc is None else loc
     
+    
     ok = False
     do_reprocess = config.sequentialfotography_skiptoreprocess if skip_to_reprocess is None else skip_to_reprocess
+    do_fixnans = False
     while not ok:
         if do_reprocess:
             coords2d = reprocess(loc=loc)
             do_reprocess = False
+        elif do_fixnans:
+            coords2d = coords2d_fix_nans_byhand(coords2d,loc=loc)
+            do_fixnans = False
         else:
             coords2d = sequential_fotography(loc=loc)
         # print(coords2d)
@@ -74,17 +287,20 @@ def initiate_sequential_fotography(loc: str=None,skip_to_reprocess: bool=None):
                 # img_bg = cv2.putText(img_bg,str(i),coords2d[i],cv2.FONT_HERSHEY_SIMPLEX,1,(255,0,0),2,cv2.LINE_AA)
             # cv2.imshow("Background with found lights",img_bg)
             
-            print("You happy? Enter to accept, p to reprocess, anything else to redo")
+            print("You happy? Enter to accept, p to reprocess, h to redo nans by hand, anything else to redo")
             theinput = input("")
             # k = cv2.waitKey(0)
             
             ok = theinput == ""#k%256 == 10
             do_reprocess = theinput == "p"
+            do_fixnans = theinput == "h"
             
         else:
             ok = False
         if do_reprocess:
             print("Lets reprocess..")
+        elif do_fixnans:
+            print("Lets Fix nans by hand")
         elif not ok:
             print("Not happy, try again")
         else:
@@ -139,7 +355,7 @@ def sequential_fotography(strip=None,
     # cam = acapture.open(0) 
     cam = cv2.VideoCapture(0)
     if cam is None or not cam.isOpened():
-       raise BufferError('Warning: unable to open video source: ', 0)
+       raise BufferError('Error: unable to open video source: ', 0)
     window_name = "Cam"
     cv2.namedWindow(window_name)
     
@@ -252,7 +468,7 @@ def sequential_fotography(strip=None,
                 strip[ind] = color_on
                 strip.show()
                 
-            elif started and t >= delta_t//3 and t <= 2*delta_t//3:#(t+delta_t//2)%delta_t == 0:#
+            elif started and t >= delta_t//2 -1 and t <= delta_t//2+1: #t >= delta_t//3 and t <= 2*delta_t//3:#(t+delta_t//2)%delta_t == 0:#
                 
                 if (t+delta_t//2)%delta_t == 0:
                     img_name = os.path.join(loc,"led_{}.png".format(ind))
