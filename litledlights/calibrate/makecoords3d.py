@@ -12,6 +12,7 @@ from calibrate.triangulate import combine_coords_2d_to_3d
 import colors
 
 import os
+import datetime
 
 try:
     from utils import get_strip
@@ -29,6 +30,8 @@ class findLightByHandApp(FLA.mplApp):
     def __init__(self,**kwargs):
         
         # Setup
+        self.img = None
+        self.img_bg = None
         self.set_img_bg(None)
         self.set_img(None)
         self.img_name = ""
@@ -36,15 +39,33 @@ class findLightByHandApp(FLA.mplApp):
         # Lets go
         super().__init__(**kwargs)
         
+        
         #  Keys           key : (function,help msg)
         hotkeys = {
-                    ' ': (self.key_toggle_autoplay ,"Toggle Autoplay")
+                    ' ': (self.key_toggle_autoplay ,"Toggle Autoplay"),
+                    'j': (self.key_toggle_do_findlight_before_image_loop ,"Toggle do_findlight_before_image_loop"),
+                    'f': (self.key_toggle_subtract_background_image,"Toggle subtract_background_image"),
+                    'm': (self.key_new_image,"Make new image"),
+                    'b': (self.key_new_background_image,"Make new background image"),
                             }
         self.hotkeys.update(hotkeys)
         
         # Some settings
         self.grayscale = config.sequentialfotography_grayscale
-        self.findlight_kwargs = {}
+        self.do_findlight_before_image_loop = True
+        self.subtract_background_image = True
+        self.autoplay = False
+        
+        
+        # Findlight
+        findlight_kwargs = {}
+        if config.findlight_method == "neuralnet":
+            findlight_neuralnet = load_neuralnet(config.findlight_neuralnet_fname)
+            findlight_kwargs['nnmodel'] = findlight_neuralnet
+        elif config.findlight_method == "simplematt":
+            findlight_threshold = config.findlight_threshold# if findlight_threshold is None else findlight_threshold
+            findlight_kwargs['threshold'] = findlight_threshold
+        self.findlight_kwargs = findlight_kwargs
         
         options = {}
         self.options.update(options)
@@ -59,13 +80,13 @@ class findLightByHandApp(FLA.mplApp):
         ret,img = self.cam.read()
         if ret:
             if self.grayscale:
-                img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             return img
         else:
             raise BufferError("Read cam failed")
+        
     def get_bg_img(self):
-        img_bg = self.load_img()
-        self.set_img_bg(img_bg)
+        self.set_img_bg(self.load_img())
     
     def set_img(self,img):
         self.img = img
@@ -76,11 +97,44 @@ class findLightByHandApp(FLA.mplApp):
     
     def set_img_bg(self,img_bg):
         self.img_bg = img_bg
+        if self.img_bg is not None:
+            if self.img is not None:
+                self.img_bgsubtract = cv2.subtract(self.img,self.img_bg)
+        else:
+            self.img_bgsubtract = None
     
     def key_toggle_autoplay(self,event):
         self.autoplay = not self.autoplay
         print(" + Autoplay {}".format(self.autoplay))
         
+    def key_toggle_do_findlight_before_image_loop(self,event):
+        self.do_findlight_before_image_loop = not self.do_findlight_before_image_loop
+        print(" + do_findlight_before_image_loop {}".format(self.do_findlight_before_image_loop))
+    
+    def key_new_image(self,event):
+        
+        print(" + new_image")
+        self.set_img(self.load_img())
+        
+        self.reset_canvas_draw()
+        
+    def key_new_background_image(self,event):
+        
+        print(" + new_background_image, shown {}".format(self.subtract_background_image))
+        self.get_bg_img()
+        
+        self.reset_canvas_draw()
+    
+    def key_toggle_subtract_background_image(self,event):
+        self.subtract_background_image = not self.subtract_background_image
+        print(" + subtract_background_image {}".format(self.subtract_background_image))
+        
+        if self.img_bgsubtract is not None:
+            self.ax.img.im.set_visible(not self.subtract_background_image)
+            self.ax.zoomed.im.set_visible(not self.subtract_background_image)
+            
+            self.ax.img.im_bgsubtract.set_visible(self.subtract_background_image)
+            self.ax.zoomed.im_bgsubtract.set_visible(self.subtract_background_image)
         
     def run(self,which=None):
         if which is None:
@@ -88,17 +142,6 @@ class findLightByHandApp(FLA.mplApp):
             
             
         print("RUN find lights by hand")
-        
-            
-        # Findlight
-        findlight_kwargs = {}
-        if config.findlight_method == "neuralnet":
-            findlight_neuralnet = load_neuralnet(config.findlight_neuralnet_fname)
-            findlight_kwargs['nnmodel'] = findlight_neuralnet
-        elif config.findlight_method == "simplematt":
-            findlight_threshold = config.findlight_threshold# if findlight_threshold is None else findlight_threshold
-            findlight_kwargs['threshold'] = findlight_threshold
-        self.findlight_kwargs = findlight_kwargs
         
         # CAM
         self.cam = cv2.VideoCapture(0)
@@ -111,11 +154,26 @@ class findLightByHandApp(FLA.mplApp):
         # BG img
         self.get_bg_img()
         
-        positions = []
+        positions = [(np.nan,np.nan) for x in which]
         
-        for ind in which:
+        i = 0
+        while i < len(which):
+            ind = which[i]
             pos = self.image_loop(ind)
-            positions.append(pos)
+            positions[i] = pos
+            # print("after loop",i,self.go_to_next_image,self.go_to_previous_image)
+            if self.go_to_next_image:
+                i += 1 
+            elif self.go_to_previous_image:
+                i += -1
+            else:
+                i += 0
+            # print("Next number",i)
+        
+        # Release Cam and close off
+        self.cam.release()
+        self.pressed_close = datetime.datetime.now()
+        self.close("EVENT")
         
         return positions
         
@@ -125,7 +183,9 @@ class findLightByHandApp(FLA.mplApp):
         self.strip[ind] = config.sequentialfotography_coloron
         self.strip.show()
         
-        time.sleep(1)
+        time.sleep(0.5)
+        
+        self.img_name_info = "Led {}".format(ind)
         
         # Reset
         self.set_img( self.load_img() )
@@ -135,7 +195,7 @@ class findLightByHandApp(FLA.mplApp):
         # Check if find light
         if self.do_findlight_before_image_loop: # Find light
             pos,size = self.do_findlight()
-            # print(pos,size)
+            # print("FIND LIGHT BEFORE LOOP",pos,size)
             if pos is not None:
                 self.add_object( FLA.CrossedRectangle(pos,size=size, ax=self.ax.img) )
                 self.select_obj(self.objs[-1])
@@ -201,12 +261,17 @@ class findLightByHandApp(FLA.mplApp):
         if self.img is None:
             return
         
-        pos = find_light(self.img,self.findlight_kwargs)
-        size = (0.05,0.05)
+        pos = find_light(self.img,**self.findlight_kwargs)
+        if np.isnan(pos).any():
+            pos = None
+            size = None
+        else:
+            size = (15,15)
         
         if self.obj is not None and pos is not None:
             self.obj.pos = pos
             self.obj.size = size
+        print("  Try find light:",pos,size)
         return pos,size
         
     
@@ -246,10 +311,13 @@ def coords2d_fix_nans_byhand(coords2d, loc: str=None):
     
     which = np.where(np.isnan(coords2d).any(axis=1))[0]
     
+    # print(coords2d)
     
-    nan_positions = findLightByHandApp.run(which)
+    nan_positions = findLightByHandApp().run(which=which)
     for ind,pos in zip(which,nan_positions):
         coords2d[ind] = pos
+    
+    # print(coords2d)
     
     return coords2d
     
@@ -270,6 +338,7 @@ def initiate_sequential_fotography(loc: str=None,skip_to_reprocess: bool=None):
             do_fixnans = False
         else:
             coords2d = sequential_fotography(loc=loc)
+        
         # print(coords2d)
         if coords2d is not None:
             # print(coords2d)
@@ -290,6 +359,7 @@ def initiate_sequential_fotography(loc: str=None,skip_to_reprocess: bool=None):
             
         else:
             ok = False
+        
         if do_reprocess:
             print("Lets reprocess..")
         elif do_fixnans:
@@ -308,6 +378,7 @@ def sequential_fotography(strip=None,
                             loc: str=None,
                             
                             grayscale: bool = None,
+                            save_images: bool = None,
                             
                             do_findlight: bool = None
                             ) -> np.ndarray:
@@ -328,6 +399,7 @@ def sequential_fotography(strip=None,
     loc = config.sequentialfotography_loc if loc is None else loc
     grayscale = config.sequentialfotography_grayscale if grayscale is None else grayscale
     do_findlight = config.sequentialfotography_dofindlight if do_findlight is None else do_findlight
+    save_images = config.sequationalfotography_saveimages if save_images is None else save_images
     
     # Strip
     strip = get_strip() if strip is None else strip
@@ -420,7 +492,8 @@ def sequential_fotography(strip=None,
                 if grayscale:
                     img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
                 img_name = os.path.join(loc,"led_{}background.png".format(ind))
-                cv2.imwrite(img_name, img_bg)
+                if save_images:
+                    cv2.imwrite(img_name, img_bg)
                 
             elif k%256 == 32:
                 # SPACE pressed
@@ -463,7 +536,7 @@ def sequential_fotography(strip=None,
                 
             elif started and t >= delta_t//2 -1 and t <= delta_t//2+1: #t >= delta_t//3 and t <= 2*delta_t//3:#(t+delta_t//2)%delta_t == 0:#
                 
-                if (t+delta_t//2)%delta_t == 0:
+                if (t+delta_t//2)%delta_t == 0 and save_images:
                     img_name = os.path.join(loc,"led_{}.png".format(ind))
                     cv2.imwrite(img_name, frame)
                     print("   {} written!".format(img_name))

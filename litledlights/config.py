@@ -3,7 +3,7 @@ import numpy as np
 print(".This.Is.Config.")
 
 ###
-nleds = 5#700
+nleds = 700
 dbg = False
 
 connect_ledlights = True
@@ -25,7 +25,8 @@ sequentialfotography_coloron = (175,175,175)#(115,115,115) # tuple[int,int,int]
 sequentialfotography_deltat = 12 # int, how many cycles (frames) between images
 sequentialfotography_loc = "_tmp" # str, location for storing imgs
 sequentialfotography_grayscale = False # bool, make grayscale?
-sequentialfotography_dofindlight = True # float, findlight in loop?
+sequentialfotography_dofindlight = True # bool, findlight in loop?
+sequationalfotography_saveimages = False # bool, save images during loop?
 
 # Find light in image
 findlight_method = "neuralnet" # "neuralnet" or "simplematt", see below
@@ -95,4 +96,4 @@ new_camera_matrix = np.array([[633.53369141  , 0.  ,       307.62247084],
 findlight_simplematt_threshold = 80
 
 # neuralnet
-findlight_neuralnet_fname = "litledlights/calibrate/neuralnets/neuralnet_findlight_bg_15_20240719.onnx"
+findlight_neuralnet_fname = "litledlights/calibrate/neuralnets/neuralnet_findlight_bg_15_20240722.onnx"
