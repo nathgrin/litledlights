@@ -7,7 +7,7 @@ try:
     import neopixel
     import board
 except:
-    print("utils: imports failed.. set connect_ledlights=False")
+    print("utils: imports failed.. setting connect_ledlights=False")
     config.connect_ledlights = False
 
 def clear(strip: ledstrip.ledstrip=None):

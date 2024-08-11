@@ -12,7 +12,7 @@ try:
     # this verbose manner
     parentclasses.append(neopixel.NeoPixel)
 except:
-    print("ledstrip: imports failed.. set connect_ledlights=False")
+    print("ledstrip: imports failed.. setting connect_ledlights=False")
     config.connect_ledlights = False
 
 
@@ -75,7 +75,8 @@ class ledstrip(*parentclasses):
             
             
     def clear(self):
-        self.fill( (0,0,0) )
+        if self.connect_ledlights:
+            self.fill( (0,0,0) )
         
     def set_multiple(self,keys,values):
         for i,(key,value) in enumerate(zip(keys,values)):
