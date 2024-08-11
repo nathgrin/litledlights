@@ -56,7 +56,7 @@ camera_matrix = np.array([[638.72088052  , 0.      ,   309.964957  ],
 new_camera_matrix = np.array([[633.53369141  , 0.  ,       307.62247084],
  [  0.        , 628.33099365, 249.52211068],
  [  0.      ,     0.   ,        1.        ]])
-
+# camera_matrix = new_camera_matrix
 
 # distortions = np.array([[-0.03816212,0.44906195,0.01597279,0.00651138,-0.66210417]])
 # camera_matrix = np.array([[627.83081055,0,330.48518022],

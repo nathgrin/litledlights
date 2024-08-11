@@ -1358,7 +1358,6 @@ def iterative_pair_coords2d_to_coords3d(coords2d1,coords2d2,
     
     
     
-    
     with get_strip() as strip:
         coordObject = coords2dto3dObject(strip=strip)
         coordObject.initialize_fig()
