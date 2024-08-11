@@ -130,6 +130,9 @@ def run_sound(args):
     elif which == "soundsnake":
         import animate.sound
         animate.sound.soundsnake()
+    elif which == 'soundpiemel':
+        import animate.sound
+        animate.sound.soundpiemel()
     elif hasattr(animate.animate,which): # This doesnt seem to work
         func = getattr(animate.animate,which)
         func()
@@ -137,7 +140,7 @@ def run_sound(args):
         raise ValueError("Wrong key ({0}) for which in lll sound".format(args.which[0]))
 
 def run_play(args):
-    args.func()
+    # args.func()
 
     if   args.which[0] == "huphollandhup":
         with get_strip() as strip:
@@ -157,6 +160,15 @@ def run_play(args):
             color = colors.pink
             color_off = colors.blue
             leds.rotating_plane(misc_func.npunit(0),misc_func.npunit(1),strip=strip,color=color,color_off=color_off)
+    elif args.which[0] == "travellingwave":
+        with get_strip() as strip:
+            leds.travellingwave()
+    elif args.which[0] == "travellingsphericalwave":
+        with get_strip() as strip:
+            leds.travellingsphericalwave()
+    elif args.which[0] == "fourierplay":
+        with get_strip() as strip:
+            leds.fourierplay()
     else:
         raise ValueError("Wrong key ({0}) for which in lll run".format(args.which))
     
@@ -173,7 +185,10 @@ def run_calibrate(args):
     elif args.which[0] == "sequentialsave":
         import calibrate.makecoords3d
         calibrate.makecoords3d.sequential_fotography()
-        print(args.which)
+    elif args.which[0] == "fixnansinfile":
+        import calibrate.makecoords3d
+        # print(args.which)
+        calibrate.makecoords3d.coords2dfile_fixnansbyhand()
     else:
         raise ValueError("Wrong key ({0}) for which in lll calibrate".format(args.which))
     
@@ -217,16 +232,8 @@ def main(argv):
     tst_parser.set_defaults(func=run_piemel)
     
     play_parser = subparsers.add_parser('play') # submodule
-    play_parser.set_defaults(func=lambda args: args.sub_func())
-    
-    def init_play_parser(parser):
-        subparsers = parser.add_subparsers()
-
-        main = subparsers.add_parser('main')
-        main.set_defaults(sub_func=None)#run_play_main)
-        
-    init_play_parser(play_parser)
-    # play_parser.add_argument('which',type=str,nargs=1,choices=['main','blink_binary','huphollandhup','movingplane','rotatingplane'])#),help="which play, e.g., moving_plane PUT LIST OF POSSIBLE HERE?")
+    play_parser.set_defaults(func=run_play)
+    play_parser.add_argument('which',type=str,nargs=1,choices=['main','blink_binary','huphollandhup','movingplane','rotatingplane','travellingwave','travellingsphericalwave','fourierplay'])#),help="which play, e.g., moving_plane PUT LIST OF POSSIBLE HERE?")
     # play_parser.add_argument('register',type=str,nargs=1,help="register an animation, PUT LIST OF POSSIBLE HERE?")
     
     
@@ -236,13 +243,14 @@ def main(argv):
     
     sound_parser = subparsers.add_parser('sound') # not (yet?) submodule
     sound_parser.set_defaults(func=run_sound)
-    sound_parser.add_argument('which',type=str,nargs=1,choices=['main','clapforfireworks','equalizer','soundsnake'])#,help="which animation, e.g., main PUT LIST OF POSSIBLE HERE?")
+    sound_parser.add_argument('which',type=str,nargs=1,choices=['main','clapforfireworks','equalizer','soundsnake','soundpiemel'])#,help="which animation, e.g., main PUT LIST OF POSSIBLE HERE?")
     
     
     calibrate_parser = subparsers.add_parser('calibrate') # submodule
     calibrate_parser.set_defaults(func=run_calibrate)
-    calibrate_parser.add_argument('which',type=str,nargs=1,choices=['main','makecoords3d','calibratecamera','findlights','sequentialsave'])#,help="which calibration, e.g., makecoords3d PUT LIST OF POSSIBLE HERE?")
-
+    calibrate_parser.add_argument('which',type=str,nargs=1,choices=['main','makecoords3d','calibratecamera','findlights','sequentialsave','fixnansinfile'])#,help="which calibration, e.g., makecoords3d PUT LIST OF POSSIBLE HERE?")
+    
+    
 
     args = parser.parse_args(argv)
     if not hasattr(args, 'func'):

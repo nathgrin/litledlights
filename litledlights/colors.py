@@ -10,7 +10,17 @@ class Color(object):
         self.__setitem__(ctype,color)
         
 
-    def __getitem__(self, ctype: str) -> tuple[int,int,int]:
+    def __getitem__(self, key) -> tuple[int,int,int]:
+        if type(key) == int: # if you get an int, then expect RGB
+            if self.ctype != 'rgb':
+                return colorfromto[self.ctype]['rgb'](self.val)[key]
+            else:
+                return self.val[key]
+        elif type(key) == str: # If you get a str, then expect a ctype
+            ctype = key
+        else:
+            raise KeyError("key not recognized: {}".format(key))
+        
         if ctype not in self._types:
             raise KeyError(self._KeyErrorMessage(ctype))
         if ctype == self.ctype:
@@ -45,6 +55,9 @@ class Color(object):
     
     def _KeyErrorMessage(self,ctype: str) -> str:
         return "{1} not one of valid ctypes: {0}".format(self._types,ctype)
+    
+    def __len__(self) -> int:
+        return len(self.val)
 
 # maybe this should be a json file
 red = Color((155,0,0)) # bad, more like pink
@@ -54,6 +67,7 @@ green = Color((0,155,0))
 pink = Color((227,28,121))
 orange = Color((255,117,0))
 gold = Color((255, 215, 0))
+hotpink = Color((330/360,0.588,100),ctype='hsv')
 namedcolors = {
         'orange': orange,
         'red': red, 
@@ -126,6 +140,8 @@ def hsv_to_rgb(*args):
     from Tcll https://stackoverflow.com/questions/24852345/hsv-to-rgb-color-conversion
     h,s,v in (0,1)
     """
+    if np.any(np.isnan(*args)):
+        return(np.nan,np.nan,np.nan) # IGNORE NANS
     if len(args) == 1:
         h, s, v = args[0]
     elif len(args) == 3:

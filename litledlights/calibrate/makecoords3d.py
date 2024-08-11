@@ -116,14 +116,14 @@ class findLightByHandApp(FLA.mplApp):
         print(" + new_image")
         self.set_img(self.load_img())
         
-        self.reset_canvas_draw()
+        self.redraw_canvas()
         
     def key_new_background_image(self,event):
         
         print(" + new_background_image, shown {}".format(self.subtract_background_image))
         self.get_bg_img()
         
-        self.reset_canvas_draw()
+        self.redraw_canvas()
     
     def key_toggle_subtract_background_image(self,event):
         self.subtract_background_image = not self.subtract_background_image
@@ -306,12 +306,28 @@ def tst():
     cam.release()
     cv2.destroyAllWindows()
     
-def coords2d_fix_nans_byhand(coords2d, loc: str=None):
-    loc = config.sequentialfotography_loc if loc is None else loc
+def coords2dfile_fixnansbyhand(fname: str=None):
+    
+    if fname is None:
+        print("Give filename of coords2d file:")
+        fname = input("")
+    # print(fname)
+    
+    coords2d = coords2d_read(fname)
+    
+    coords2d = coords2d_fix_nans_byhand(coords2d)
+    
+    print("Done fix nans by hand, overwriting",fname)
+    coords2d_write(fname, coords2d)
+    
+    
+    
+def coords2d_fix_nans_byhand(coords2d):
     
     which = np.where(np.isnan(coords2d).any(axis=1))[0]
     
     # print(coords2d)
+    print("Fixing {} NaNs".format(len(which)))
     
     nan_positions = findLightByHandApp().run(which=which)
     for ind,pos in zip(which,nan_positions):
@@ -348,6 +364,9 @@ def initiate_sequential_fotography(loc: str=None,skip_to_reprocess: bool=None):
             # for i in range(len(coords2d)):
                 # img_bg = cv2.putText(img_bg,str(i),coords2d[i],cv2.FONT_HERSHEY_SIMPLEX,1,(255,0,0),2,cv2.LINE_AA)
             # cv2.imshow("Background with found lights",img_bg)
+            fname = os.path.join(loc,"coords2d_tmp.txt")
+            print("coords2d saved in tmpfile:",fname)
+            coords2d_write(fname,coords2d)
             
             print("You happy? Enter to accept, p to reprocess, h to redo nans by hand, anything else to redo")
             theinput = input("")
@@ -426,8 +445,8 @@ def sequential_fotography(strip=None,
     
     # params
     nleds = len(strip)
-    ind = 0
-    t = 1
+    ind = -1
+    t = 0
     
     xlist = []
     ylist = []
@@ -507,18 +526,13 @@ def sequential_fotography(strip=None,
                     started = True
                 
             if started and t%delta_t == 0: # Interlacing turning on/off lights and cam picture
-                
-                # reset
-                
-                strip[ind] = color_off
-                # strip[ind+1]   = color_on
-                strip.show()
-                
-                coords2d[ind] = (np.nanmedian(xlist),np.nanmedian(ylist))
+                # coords2d[ind] = (np.nanmedian(xlist),np.nanmedian(ylist))
                 print("   Done",coords2d[ind])
                 
-                xlist = []
-                ylist = []
+                # xlist = []
+                # ylist = []
+                
+                
                 
                 # print(t,started)
                 ind += 1
@@ -527,33 +541,56 @@ def sequential_fotography(strip=None,
                     print(" > We got em all")
                     break
                 
+                # reset
+                strip[ind-1] = color_off
+                # strip[ind+1]   = color_on
+                # strip.show()
+                # strip[ind] = color_on
+                strip.show()
             #elif started and (t+delta_t//2)%delta_t == 0: # Interlacing turning on/off lights and cam picture
+            
+            elif started and t == 1 and ind % 50 == 0:
+                print("(auto) update background..")
+                ret, img_bg = cam.read()
+                if grayscale:
+                    img_bg = cv2.cvtColor(img_bg, cv2.COLOR_BGR2GRAY)
+                img_name = os.path.join(loc,"led_{}background.png".format(ind))
+                if save_images:
+                    cv2.imwrite(img_name, img_bg)
                 
-            elif started and t == delta_t//3-1:
+                # time.sleep(0.25)
+                
+            elif started and t == 2:
                 
                 strip[ind] = color_on
                 strip.show()
                 
-            elif started and t >= delta_t//2 -1 and t <= delta_t//2+1: #t >= delta_t//3 and t <= 2*delta_t//3:#(t+delta_t//2)%delta_t == 0:#
+                # time.sleep(0.25)
+                
+                
+            elif started and t >2:#= delta_t//2 -1 and t <= delta_t//2+1: #t >= delta_t//3 and t <= 2*delta_t//3:#(t+delta_t//2)%delta_t == 0:#
                 
                 if (t+delta_t//2)%delta_t == 0 and save_images:
                     img_name = os.path.join(loc,"led_{}.png".format(ind))
                     cv2.imwrite(img_name, frame)
                     print("   {} written!".format(img_name))
                 
-                n_pieces = 3 # its the 3 from above here
-                lower_level = 0. # lower level fraction of max level
+                lower_level = 0.2 # lower level fraction of max level
                 
-                factor = t*(lower_level*n_pieces-n_pieces)/((n_pieces-2)*delta_t)+1-(lower_level-1)/(n_pieces-2)
+                # The 2 here is the 2 from t>2 above here.
+                factor = (t-2)*(lower_level-1.)/(delta_t-2.) + 1.     #t*(lower_level*n_pieces-n_pieces)/((n_pieces-2)*delta_t)+1-(lower_level-1)/(n_pieces-2)
                 strip[ind] = (factor*color_on[0],factor*color_on[1],factor*color_on[2])
                 strip.show()
             
                 if do_findlight:
                     xy = find_light(frame,**findlight_kwargs)
-                    xlist.append(xy[0])
-                    ylist.append(xy[1])
-                    # coords2d[ind] = xy
-                    # print("   Done",coords2d[ind])
+                    # xlist.append(xy[0])
+                    # ylist.append(xy[1])
+                    coords2d[ind] = xy
+                    
+                    if not np.isnan(xy).any():
+                        t = delta_t-1
+                        # print("   Done",t,coords2d[ind])
                 else:
                     xy = None
                     
@@ -952,8 +989,8 @@ class coords2dto3dObject(object):
             'nan':{'val':1,'c':'gray'},
             'toofar':{'val':2,'c':'c'},
             'oriind_origin':{'val':0.5,'c':'r'},
-            'oriind_zdir':{'val':0.6,'c':'b'},
             'oriind_xdir':{'val':0.7,'c':'gold'},
+            'oriind_zdir':{'val':0.6,'c':'b'},
             }
     
     oriind_strip_colors = [colors.red,colors.blue,colors.gold]
@@ -969,6 +1006,12 @@ class coords2dto3dObject(object):
         
         self.strip = kwargs.get('strip',None)
         self.fname = kwargs.get('fname',self.fname)
+        
+        self.help()
+    
+    def help(self):
+        print("Leds display: Origin (red), x-dir (gold), z-dir (blue)")
+        print("Legend: NaN (gray), toofar (cyan)")
     
     def initialize_fig(self,*args,**kwargs):
         
@@ -1200,12 +1243,18 @@ class coords2dto3dObject(object):
         
         ## Plots
         # Clear
-        self.ax_distperind.lines.clear()
-        self.ax_distdistr.lines.clear()
-        self.ax_xyzind.lines.clear()
-        self.ax_xyzind2.lines.clear()
-        self.ax_3d.lines.clear()
-        self.ax_3d2.lines.clear()
+        # self.ax_distperind.lines.clear()
+        # self.ax_distdistr.lines.clear()
+        # self.ax_xyzind.lines.clear()
+        # self.ax_xyzind2.lines.clear()
+        # self.ax_3d.lines.clear()
+        # self.ax_3d2.lines.clear()
+        self.ax_distperind.cla()
+        self.ax_distdistr.cla()
+        self.ax_xyzind.cla()
+        self.ax_xyzind2.cla()
+        self.ax_3d.cla()
+        self.ax_3d2.cla()
         
         # Distance plots
         self.ax_distperind_lines[0] = self.ax_distperind.axvline(distcutoff,c='k')
@@ -1326,7 +1375,9 @@ def iterative_pair_coords2d_to_coords3d(coords2d1,coords2d2,
 
 def main():
     
-    # From calibatrion
+    loc = config.sequentialfotography_loc
+    
+    # From camera calibatrion
     distortions = config.distortions
     camera_matrix = config.camera_matrix
     new_camera_matrix = config.new_camera_matrix
@@ -1342,7 +1393,7 @@ def main():
     if coords2d_list is None:
         coords2d_list = []
         for i in range(n_viewpoints):
-            fname = os.path.join("_tmp","coords2d_{}.txt".format(i))
+            fname = os.path.join(loc,"coords2d_{}.txt".format(i))
             coords2d_list.append( coords2d_read(fname) )
             
     
@@ -1356,7 +1407,7 @@ def main():
         show_coords_onlights(coords3d)
     
     if config.save_coords3d and coords3d is not None:
-        print(" > Saving coords")
+        print(" > Saving coords",config.savecoords3d_fname)
         np.savetxt(config.savecoords3d_fname,coords3d)
     
     

@@ -16,8 +16,8 @@ coords3d_fname = "coords.txt"
 ## makecoords3d
 getcoords2d_nviewpoints = 2
 
-getcoords2d_fromangles = True # in calibrate.makecoords3d get new coords2d?
-do_2d_to_3d = False
+getcoords2d_fromangles = False # in calibrate.makecoords3d get new coords2d?
+do_2d_to_3d = True
 
 # Sequential_photography
 sequentialfotography_skiptoreprocess = False # For the first viewpoint, skip to ?
@@ -34,7 +34,7 @@ findlight_method = "neuralnet" # "neuralnet" or "simplematt", see below
 reprocess_drawradius = 15
 
 # combine_coords3d: Combine multiple 3d to single set
-combinecoords3d_referenceinds_default = 306,300,206 # Origin (red), z-point/unit length (blue), x-point (gold): 
+combinecoords3d_referenceinds_default = 319,308,531 # Origin (red), z-point/unit length (blue), x-point (gold): 
 combinecoords3d_ind_coords3d = 0 # for now, simply pick one
 
 # Fix bad coords
@@ -96,4 +96,4 @@ new_camera_matrix = np.array([[633.53369141  , 0.  ,       307.62247084],
 findlight_simplematt_threshold = 80
 
 # neuralnet
-findlight_neuralnet_fname = "litledlights/calibrate/neuralnets/neuralnet_findlight_bg_15_20240722.onnx"
+findlight_neuralnet_fname = "litledlights/calibrate/neuralnets/neuralnet_findlight_bg_15_20240723.onnx"

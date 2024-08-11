@@ -203,7 +203,7 @@ def clap_for_fireworks():
     soha = SoundHandle(device,window=window)
     
     # Some settings
-    soha.spawnfireworks_cutoff = 0.02
+    soha.spawnfireworks_cutoff = 0.12
     
     print(objects)
     # input()
@@ -214,6 +214,112 @@ def clap_for_fireworks():
                     spawn_func=check_if_spawn_fireworks,
                     objects=objects,
                     t0=t0,dt=dt)
+                    
+                    
+def soundpiemel():
+    
+    
+    # Input device
+    device = DeviceClass()
+    stream = device.get_stream()
+    
+    window = 200 # ms
+    soha = SoundHandle(device,window=window)
+    
+    # Some settings
+    
+    # input()
+    with stream:
+        with utils.get_strip() as strip:
+            do_soundpiemel(strip,stream,soha)
+            
+def do_soundpiemel(strip,stream,soha):
+    
+    
+    def render_piemel(labda):
+        
+        color = colors.Color((330/360,0.588,0.5),ctype='hsv')
+        
+        x0,y0,z0 = -1.,0,0
+        
+        ball_r = 0.3
+        
+        # BALL
+        ind = np.linalg.norm(strip.xyz-np.array((x0,y0,z0)),axis=1) < ball_r
+        strip[ind] = color
+        
+        # Linear drag 
+        dragCoeff = 2.
+        theta = 2*np.pi*45/360.
+        v0 = 5
+        vx0 = v0*np.cos(theta)
+        vy0 = v0*np.sin(theta)
+        vterm = dragCoeff * 9.81
+        h=0
+        tmax = 0.6
+        # Shaft
+        def xfunc(t):
+            return dragCoeff * vx0 *(1 - np.exp((-t) / dragCoeff))
+        def invxfunc(x):
+            return -dragCoeff * np.log(1-(x-x0)/(dragCoeff*vx0))
+        def zfunc(t):
+            return (z0+h) - vterm * t + (vy0 + vterm) * dragCoeff * (1 - np.exp((-t) / dragCoeff))
+        
+        tvals = invxfunc(strip.x)
+        zvals = zfunc(tvals)
+        ind = np.logical_and(tvals > 0., tvals < tmax, strip.z < zvals )
+        
+        import matplotlib.pyplot as plt
+        
+        plt.plot(strip.x,zvals)
+        plt.plot(strip.x,strip.z)
+        
+        plt.show()
+        
+        strip[ind] = color
+        
+        
+        
+        
+        
+    
+    # Settings
+    t0 = 0.
+    dt = 0.1
+    tmax = 300
+    
+    
+    # Start vals
+    labda = 0.
+    t = t0
+    
+    
+    while True:
+        time_startloop = time.time()
+        
+        
+        
+        # Render
+        # states = anistrip.render(anistrip.t)
+        
+        # strip.set_all(states)
+        render_piemel(labda)
+        strip.show()
+        
+        # Update sound buffer
+        soha.update_yarr()
+        
+        
+        print("End loop, comp.time: {0} (dt: {1})".format(time.time()-time_startloop,dt))
+        t += dt
+        time.sleep(max(0,dt-time.time()+time_startloop))
+        
+        if t > tmax:
+            print("Max t ({0}) reached".format(tmax))
+            break
+
+
+    
     
 class EqualizerClass(SoundHandle):
     

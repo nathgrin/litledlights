@@ -513,7 +513,7 @@ def main():
     t0 = 0.
     dt = 0.1
     
-    border = [0.9,0,1.8] # abs vals of borders
+    border = [0.9,0,1.2] # abs vals of borders
     
     bat_speed = 1
     

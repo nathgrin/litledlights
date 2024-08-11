@@ -47,6 +47,8 @@ class ledstrip(*parentclasses):
                 val = value['rgb']
             else:
                 val = value
+            if np.any(np.isnan(val)): # IGNORE NANS
+                return
             super().__setitem__(key,val)
         
     def __setitem__(self, key,value):
@@ -71,6 +73,7 @@ class ledstrip(*parentclasses):
         else:
             self.__setitem__one(key,value)
             
+            
     def clear(self):
         self.fill( (0,0,0) )
         
@@ -92,6 +95,10 @@ class ledstrip(*parentclasses):
     
     def set_coords3d(self,coords3d: coords.Coords3d) -> None:
         self.coords3d = coords3d
+        self.xyz = self.coords3d.xyz
+        self.x = self.coords3d.x
+        self.y = self.coords3d.y
+        self.z = self.coords3d.z
         
     def __repr__(self):
         return "<{0} nleds: {1} havecoords: {2}>".format(type(self).__name__,self.n,self.coords3d is not None)

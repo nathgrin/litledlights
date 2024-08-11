@@ -3,6 +3,7 @@ import time
 import numpy as np
 
 import colors
+from colors import Color
 
 
 import utils
@@ -87,7 +88,7 @@ def moving_plane(
             
             if pos > pmax:
                 break
-            
+                
         strip.fill( color_off )
         strip.show()
         
@@ -136,6 +137,7 @@ def rotating_plane(
         
         normal = np.dot( misc_func.rotationmtx( rotation_axis, 2*np.pi*dt/period ) , normal )
         
+        # print(color_off)
         strip.fill(color_off)
         
         
@@ -159,10 +161,185 @@ def rotating_plane(
     strip.fill( color_off )
     strip.show()
         
+def travellingwave(strip=None,
+        
+        period = 5., # time
+        k = np.array((1,1,1)), # space
+        
+        amplitude = 0.25,
+        mean = 0.25,
+        
+        
+        dt: float=0.1,
+        tmax: float=100.,
+        ):
+    
+    strip = get_strip() if strip is None else strip
+    
+    omega = 2*np.pi/period
+    
+    hue = 0.42
+    
+    t = 0
+     
+    while True:
+        
+        timetime = time.time()
+        
+        
+        vals = mean+amplitude*np.cos(np.dot(k,strip.xyz.transpose())-omega*t)
+        
+        # print(vals)
+        
+        colors = [Color( (hue,0.7,val), ctype="hsv") for val in vals ]
+        
+        
+        # print(colors)
+        
+        strip.set_all(colors)
+        strip.show()
+        
+        
+        
+        print("End loop, comp.time: {0} (dt: {1})".format(time.time()-timetime,dt))
+        t += dt
+        time.sleep(max(0,dt-time.time()+timetime))
+        
+        if t > tmax:
+            print("Max t ({0}) reached".format(tmax))
+            break
+        
+        
+
+def fourierplay(strip=None,
+        
+        dt: float=0.1,
+        tmax: float=300.,
+        ):
+    
+    strip = get_strip() if strip is None else strip
+    
+    xyzT = strip.xyz.transpose()
+    
+    def sum_series(omega,wavenumber,ampl):
+        
+        vals = np.zeros(len(strip))
+        
+        for o,k,a in zip(omega,wavenumber,ampl):
+            vals += a*np.cos(np.dot(k,xyzT)-o*t)#
+            # print(vals)
+        return vals
+    
+    fourierspace = []
+    omega = [0,5.]#np.arange(1,10.5,0.5)
+    print(omega)
+    wavenumber = [np.array((kk,0,kk)) for kk in np.arange(9,36,3) ]#np.zeros(3) 
+    ampl = [1./np.linalg.norm(k) for k in wavenumber ]
+    
+    wavenumber = [np.zeros(3)] + wavenumber
+    ampl = [0.2] + ampl
+    
+    
+    norm = 0.5
+    
+    hue = 0.42
+    
+    t = 0
+     
+    while True:
+        
+        timetime = time.time()
+        
+        
+        vals = sum_series(omega,wavenumber,ampl)
+        
+        vals = vals*3+0.1
+        
+        ind = vals < 0
+        vals[ind] = 0.
+        ind = vals > 1
+        vals[ind] = 1.
+        
+        # vals = norm*vals/np.nanmax(vals)
+        
+        # print(vals)
+        
+        # colors = [Color( (hue,0.7,val), ctype="hsv") for val in vals ]
+        colors = [Color( (val,0.7,0.5), ctype="hsv") for val in vals ]
+        
+        
+        # print(colors)
+        
+        strip.set_all(colors)
+        strip.show()
+        
+        
+        
+        print("End loop, comp.time: {0} (dt: {1})".format(time.time()-timetime,dt))
+        t += dt
+        time.sleep(max(0,dt-time.time()+timetime))
+        
+        if t > tmax:
+            print("Max t ({0}) reached".format(tmax))
+            break
+        
+        
+def travellingsphericalwave(strip=None,
+        
+        period = 5., # time
+        k = 1., # space
+        
+        amplitude = 0.25,
+        mean = 0.25,
+        
+        
+        dt: float=0.1,
+        tmax: float=100.,
+        ):
+    
+    strip = get_strip() if strip is None else strip
+    
+    omega = 2*np.pi/period
+    
+    r = np.sum(np.power(strip.xyz,2),axis=1)
+    
+    
+    hue = 0.42
+    
+    t = 0
+     
+    while True:
+        
+        timetime = time.time()
+        
+        
+        vals = mean+amplitude*(np.cos(k*r-omega*t)+np.sin(k*r+omega*t))/(2*r)/20.
+        ind = r == 0
+        vals[ind] = 0.
+        print(np.nanmax(vals))
+        # print(vals)
+        
+        colors = [Color( (hue,0.7,val), ctype="hsv") for val in vals ]
+        
+        
+        # print(colors)
+        
+        strip.set_all(colors)
+        strip.show()
+        
+        
+        
+        print("End loop, comp.time: {0} (dt: {1})".format(time.time()-timetime,dt))
+        t += dt
+        time.sleep(max(0,dt-time.time()+timetime))
+        
+        if t > tmax:
+            print("Max t ({0}) reached".format(tmax))
+            break
         
 
         
-def fireworks(
+def fireworks(strip=None,
         
         period: float = 5.,
         thickness: float=0.1,
@@ -180,13 +357,7 @@ def fireworks(
     if strip.coords3d.xyz is None:
         print("Plane warning: No xyz")
         return -1
-      
-    while True:
-        t += dt
-        
-        if t % period == 0: # launch fireworks # make sure period is full multiple of dt xD
-            print("Not implemented yet")
-        
+  
       
 def huphollandhup(strip=None,
         
@@ -273,14 +444,14 @@ def piemel(strip=None,
     ball1 = (0,0,0)
     ball2 = (-0.5,0,0)
     
-    ind = np.square(strip.coords3d.x-ball1[0])+np.square(strip.y-ball1[1])+np.square(strip.z-ball1[2]) <= radius*radius
+    ind = np.square(strip.x-ball1[0])+np.square(strip.y-ball1[1])+np.square(strip.z-ball1[2]) <= radius*radius
     strip[ind] = color
     
-    ind = np.square(strip.coords3d.x-ball2[0])+np.square(strip.y-ball2[1])+np.square(strip.z-ball2[2]) <= radius*radius
+    ind = np.square(strip.x-ball2[0])+np.square(strip.y-ball2[1])+np.square(strip.z-ball2[2]) <= radius*radius
     strip[ind] = color
     
     pillar = (-0.25,0,0)
-    ind1 = np.square(strip.coords3d.x-pillar[0])+np.square(strip.y-pillar[1]) <= 0.75*0.75*radius*radius
+    ind1 = np.square(strip.x-pillar[0])+np.square(strip.y-pillar[1]) <= 0.75*0.75*radius*radius
     ind2 = strip.z > 0
     ind = np.logical_and( ind1, ind2 )
     strip[ind] = color
