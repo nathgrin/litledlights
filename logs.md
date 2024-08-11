@@ -29,3 +29,8 @@
 - and the lights work now too. cloned old repo and works. 
 - use activate.sh to activate venv and pylll and lll <option> to play lights
 - git is up and running again too
+
+### 2024-08-10
+
+- install libaudioport2
+- see requirements.txt (watch out for conflicting numpy versions)
