@@ -140,7 +140,6 @@ def coords3d_from_iterative_LS_triangulation(coords2d1,coords2d2,camera_matrix):
     from calibrate.triangulation_stolen import iterative_LS_triangulation
     coords3d,flags = iterative_LS_triangulation(coords2d1,proj_l,coords2d2,proj_r)
     # print(flags)
-    
     ind = flags != 1
     coords3d[ind] = np.nan
     # print(coords3d,flags)
