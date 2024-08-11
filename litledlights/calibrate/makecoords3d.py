@@ -791,11 +791,11 @@ def calc_neighbour_distances(coords3d):
     # print(thecopy[ind1],thecopy[ind2])
     
     # Actual distance
-    # dists_fwd = np.sqrt(np.sum(np.square(coords3d-fwd),axis=1))
-    # dists_bwd = np.sqrt(np.sum(np.square(coords3d-bwd),axis=1))
+    dists_fwd = np.sqrt(np.sum(np.square(coords3d-fwd),axis=1))
+    dists_bwd = np.sqrt(np.sum(np.square(coords3d-bwd),axis=1))
     
-    dists_fwd = np.nanmax(np.abs(coords3d-fwd),axis=1)
-    dists_bwd = np.nanmax(np.abs(coords3d-bwd),axis=1)
+    # dists_fwd = np.nanmax(np.abs(coords3d-fwd),axis=1)
+    # dists_bwd = np.nanmax(np.abs(coords3d-bwd),axis=1)
     
     return dists_fwd,dists_bwd
 
