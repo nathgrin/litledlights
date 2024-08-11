@@ -1386,7 +1386,7 @@ def main():
     n_viewpoints = config.getcoords2d_nviewpoints # how many images do we use
     
     coords2d_list = None
-    if config.getcoords2d_fromangles and config.connact_ledlights and not config.dbg:
+    if config.getcoords2d_fromangles and config.connect_ledlights and not config.dbg:
         coords2d_list = get_coords2d_from_multiple_angles(n_viewpoints)
         coords2d_list = [c2d.transpose() for c2d in coords2d_list]
     

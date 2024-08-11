@@ -6,7 +6,7 @@ print(".This.Is.Config.")
 nleds = 700
 dbg = False
 
-connect_ledlights = False
+connect_ledlights = True
 
 
 coords3d_fname = "coords.txt"
@@ -16,7 +16,7 @@ coords3d_fname = "coords.txt"
 ## makecoords3d
 getcoords2d_nviewpoints = 2
 
-getcoords2d_fromangles = False # in calibrate.makecoords3d get new coords2d?
+getcoords2d_fromangles = True # in calibrate.makecoords3d get new coords2d?
 do_2d_to_3d = True
 
 # Sequential_photography
@@ -96,4 +96,4 @@ new_camera_matrix = np.array([[633.53369141  , 0.  ,       307.62247084],
 findlight_simplematt_threshold = 80
 
 # neuralnet
-findlight_neuralnet_fname = "litledlights/calibrate/neuralnets/neuralnet_findlight_bg_15_20240723.onnx"
+findlight_neuralnet_fname = "litledlights/calibrate/neuralnets/neuralnet_findlight_bg_15_20240725.onnx"
