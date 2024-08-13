@@ -15,6 +15,7 @@ def getpictures():
     img_list = []
     
     print(" > Space to save img, Escape to quit ")
+    print("   Get %i images"%(config.calibratecamera_nimg))
     
     while True:
         ret, frame = cam.read()
@@ -104,7 +105,7 @@ def main():
             img = cv2.imread(img_name)
             img_list.append(img)
     
-    ncorners_xy = (7,7)
+    ncorners_xy = (6,8)
     while True:
         print("Using ncorners_xy={0}".format(ncorners_xy))
         try:
@@ -141,6 +142,8 @@ def main():
     new_camera_matrix_str = "new_camera_matrix = np.array({0})".format(newcameramtx)
     print(new_camera_matrix_str)
     
+    
+    open(fname,'w').close()
     with open(fname,'a') as thefile:
         thefile.write(distortion_str)
         thefile.write(camera_matrix_str)
