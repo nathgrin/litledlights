@@ -41,16 +41,13 @@ def coords2d_read(fname: str) -> list[tuple[float,float]]:
     return out
 
 class WebcamVideoStream:
-    def __init__(self, camname="Webcam", src=0, grayscale=False):
+    def __init__(self, camname:str, src):#:, grayscale: bool=False):
         self.camname = camname
-        self.grayscale = grayscale
         
         # initialize the video camera stream and read the first frame
         # from the stream
         self.stream = cv2.VideoCapture(src)
         (self.flag, self.frame) = self.stream.read()
-        if self.flag:
-            self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
         # initialize the variable used to indicate if the thread should
         # be stopped
         self.stopped = False
@@ -60,6 +57,7 @@ class WebcamVideoStream:
    
     def start(self):
         self.thread.start()
+        return self
         
     
     def update(self):
@@ -71,8 +69,7 @@ class WebcamVideoStream:
             # otherwise, read the next frame from the stream
             if self.stream.isOpened():
                 (self.flag, self.frame) = self.stream.read()
-                if self.flag:
-                    self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
+        
     def read(self):
         # return the frame most recently read
         return self.flag,self.frame
@@ -109,7 +106,8 @@ def initiate_sequential_fotography(loc: str=None,skip_to_reprocess: bool=None):
             print("FIX NANS NOT IMPLEMENTED")
             do_fixnans = False
         else:
-            coords2d1,coords2d2 = sequential_fotography_doublecam(loc=loc)
+            # coords2d1,coords2d2 = sequential_fotography_doublecam(loc=loc)
+            simple_sequential_fotography_doublecam(loc=loc)
         
         # print(coords2d)
         for i,coords2d in enumerate(coords2d1,coords2d2):
@@ -147,6 +145,60 @@ def initiate_sequential_fotography(loc: str=None,skip_to_reprocess: bool=None):
             print(" > Happy!")
     return coords2d1,coords2d2
     
+    
+def simple_sequential_fotography_doublecam(strip=None,
+                        loc: str="_tmp",
+                            ) -> np.ndarray:
+                                
+    
+    grayscale = False
+    
+    # Cams
+    ind_star = 0 # TODO put this in config
+    ind_moon = 2
+    stream_moon = WebcamVideoStream("Moon", ind_moon).start()
+    stream_star = WebcamVideoStream("Star", ind_star).start()
+    # stream_moon.start()
+    # stream_star.start()
+    # if stream_moon.stream is None or not stream_moon.stream.isOpened():
+       # raise BufferError('Error: unable to open video source (moon):', ind_moon)
+    # if stream_star.stream is None or not stream_star.stream.isOpened():
+       # raise BufferError('Error: unable to open video source (star):', ind_star)
+    
+    try:
+        
+        
+        cv2.namedWindow('Stream', cv2.WINDOW_NORMAL)
+        
+        while True:
+            # cv2.imshow("Stream2",stream_star.frame)
+            
+            # ret,img_moon = stream_moon.read()
+            # ret,img_star = stream_star.read()
+            img_moon = stream_moon.frame
+            img_star = stream_star.frame
+            
+            # print(img_moon)
+            # print(img_star)
+            
+            preview_moon = img_moon
+            preview_star = img_star
+                
+            # Preview
+            sidebyside = np.hstack((preview_moon,preview_star))
+            cv2.imshow("Stream",sidebyside)
+            
+            if cv2.waitKey(50) & 0xFF == ord('q'):
+                break
+    
+    finally:
+        stream_moon.exit()
+        stream_star.exit()
+        # thread2.exit()
+        cv2.destroyAllWindows()
+
+
+    return None,None
     
 def sequential_fotography_doublecam(strip=None,
                             color_off = (0,0,0),
@@ -192,6 +244,8 @@ def sequential_fotography_doublecam(strip=None,
     ind_moon = 2
     stream_moon = WebcamVideoStream("Moon", ind_moon,grayscale)
     stream_star = WebcamVideoStream("Star", ind_star,grayscale)
+    stream_moon.start()
+    stream_star.start()
     if stream_moon.stream is None or not stream_moon.stream.isOpened():
        raise BufferError('Error: unable to open video source (moon):', ind_moon)
     if stream_star.stream is None or not stream_star.stream.isOpened():
@@ -204,7 +258,7 @@ def sequential_fotography_doublecam(strip=None,
         findlight_kwargs['nnmodel'] = findlight_neuralnet
         print("Initiating neuralnet")
         if stream_moon.flag:
-            find_light(stream_moon.img,findlight_kwargs)
+            find_light(stream_moon.read()[1],**findlight_kwargs)
         
     elif config.findlight_method == "simplematt":
         findlight_threshold = config.findlight_threshold# if findlight_threshold is None else findlight_threshold
@@ -237,8 +291,6 @@ def sequential_fotography_doublecam(strip=None,
     
     try:
         
-        stream_moon.start()
-        stream_star.start()
         
         cv2.namedWindow('Stream', cv2.WINDOW_NORMAL)
         
@@ -246,7 +298,7 @@ def sequential_fotography_doublecam(strip=None,
             # cv2.imshow("Stream2",stream_star.frame)
             
             ret,img_moon = stream_moon.read()
-            ret,img_star = stream_star.frame
+            ret,img_star = stream_star.read()
             
             if preview_subtract:
                 preview_moon = cv2.subtract(img_moon,img_bg_moon)
@@ -371,10 +423,10 @@ def sequential_fotography_doublecam(strip=None,
                 if do_findlight:
                     xy_moon = find_light(img_moon,**findlight_kwargs)
                     if not np.isnan(xy_moon).any():
-                        coords2d_moon[ind] = xy
+                        coords2d_moon[ind] = xy_moon
                     xy_star = find_light(img_star,**findlight_kwargs)
                     if not np.isnan(xy_star).any():
-                        coords2d_star[ind] = xy
+                        coords2d_star[ind] = xy_star
                     
                     # if not np.isnan(xy_moon).any() and not np.isnan(xy_star).any():
                     if not np.isnan(coords2d_moon[ind]).any() and not np.isnan(coords2d_star[ind]).any():
@@ -387,8 +439,8 @@ def sequential_fotography_doublecam(strip=None,
                 print("   ",t,"%.02f"%(time.time()-start),xy_moon,xy_star)
                 # time.sleep(1)
               
-        print()
-        print("Active threads", threading.activeCount())
+        # print()
+        # print("Active threads", threading.activeCount())
     finally:
         stream_moon.exit()
         stream_star.exit()
