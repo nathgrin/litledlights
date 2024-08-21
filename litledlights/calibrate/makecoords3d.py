@@ -41,45 +41,130 @@ def coords2d_read(fname: str) -> list[tuple[float,float]]:
     return out
 
 class WebcamVideoStream:
-    def __init__(self, camname:str, src):#:, grayscale: bool=False):
+    def __init__(self, camname:str, src, grayscale: bool=False, resolution: tuple[int,int] = None):
         self.camname = camname
+        self.grayscale = grayscale
         
-        # initialize the video camera stream and read the first frame
-        # from the stream
-        self.stream = cv2.VideoCapture(src)
-        (self.flag, self.frame) = self.stream.read()
+        self.src = src
+        
+        self.cap = None
+        
+        
+        # RESIZE but not by direct call ..
+        self.cap_width,self.cap_height = config.webcam_resolution if resolution is None else resolution # _grab will resize
+        # self.cap_width,self.cap_height = 160,120
+        # self.cap_width,self.cap_height = 640,480
+        self.do_resize = False # will check in initiate whether to do this or not
+        
         # initialize the variable used to indicate if the thread should
         # be stopped
         self.stopped = False
         
+        
+        
         # start the thread to read frames from the video stream
         self.thread = threading.Thread(target=self.update, args=())
-   
-    def start(self):
-        self.thread.start()
-        return self
         
+        
+        
+    def start(self):
+        self.initiate()
+        self.thread.start()
+        
+        
+   
+    def initiate(self):
+        
+        check = False
+        
+        while not check: # Apparantly this loop is uselss and does nothing
+            print("Initiate cam ",self.camname)
+            # initialize the video camera stream and read the first frame
+            # from the stream
+            self.cap = cv2.VideoCapture(self.src)
+            # assert self.cap.isOpened()
+            # ret_val , frame = self.cap.read() # call the camera once does htis help with the set?
+            # self.cap.set(cv2.CAP_PROP_MODE, cv2.CAP_MODE_GRAY) # only for lib4vl backend
+            self.cap.set(cv2.CAP_PROP_FOURCC,cv2.VideoWriter_fourcc('M','J','P','G'))
+            # self.cap.set(cv2.CAP_PROP_FOURCC,cv2.VideoWriter_fourcc('Y','U','Y','V'))
+            
+            # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH,1280)#320)
+            # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT,720)#240)
+            
+            # self.cap.set(cv2.CAP_PROP_FPS,10.)
+            
+            check = self.cap.isOpened()
+            if self.cap.isOpened():
+                # (self.flag, self.frame) = self.cap.read()
+                # flag, frame = self.cap.read()
+                
+                # self.cap_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                # self.cap_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                
+                self._grab()
+                
+                check = self.flag
+                
+                
+                if self.flag:
+                    cap_width,cap_height = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)),int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                    self.do_resize = not (cap_width == self.cap_width and cap_height == self.cap_height)
+                
+                # print(self.camname,"WIDTH,HEIGHT",self.cap_width,self.cap_height,self.cap.get(cv2.CAP_PROP_FPS))
+            if not check:
+                self.cap.release()
     
     def update(self):
         # keep looping infinitely until the thread is stopped
         while True:
             # if the thread indicator variable is set, stop the thread
             if self.stopped:
+                self.exit()
                 return
             # otherwise, read the next frame from the stream
-            if self.stream.isOpened():
-                (self.flag, self.frame) = self.stream.read()
-        
+            self._grab()
+    
+    def _grab(self):
+        if self.cap.isOpened():
+            flag, frame = self.cap.read()
+            if flag:
+                if self.do_resize:
+                    frame = cv2.resize(frame,(self.cap_width,self.cap_height))
+                if self.grayscale:
+                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                    
+                self.flag = flag
+                self.frame = frame
+                
+            # else:
+                # self.restart_cam()
+    
+    
+    def restart_cam(self):
+        self.cap.release()
+        self.initiate()
+    
     def read(self):
         # return the frame most recently read
-        return self.flag,self.frame
+        if not self.flag:
+            # print(self.camname,"FLAG",self.flag)
+            # self.restart()
+            if self.grayscale: # NOTE order of cap_width and height
+                out = np.zeros((self.cap_height,self.cap_width,1))
+            else:
+                out = np.zeros((self.cap_height,self.cap_width,3))
+        else:
+            out = self.frame
+        # print(self.camname,out.shape)
+        return self.flag,out
     def stop(self):
         # indicate that the thread should be stopped
         self.stopped = True
         
     def exit(self):
         self.stop()
-        self.stream.release()
+        if self.cap is not None:
+            self.cap.release()
         
 
 def get_coords2d_from_doublecam():
@@ -106,13 +191,16 @@ def initiate_sequential_fotography(loc: str=None,skip_to_reprocess: bool=None):
             print("FIX NANS NOT IMPLEMENTED")
             do_fixnans = False
         else:
-            # coords2d1,coords2d2 = sequential_fotography_doublecam(loc=loc)
-            simple_sequential_fotography_doublecam(loc=loc)
+            coords2d1,coords2d2 = sequential_fotography_doublecam(loc=loc)
+            # simple_sequential_fotography_doublecam(loc=loc)
         
         # print(coords2d)
-        for i,coords2d in enumerate(coords2d1,coords2d2):
+        for i,coords2d in enumerate((coords2d1,coords2d2)):
             print("doing coords2d",i)
             if coords2d is not None:
+                if np.sum(np.isnan(coords2d)) == len(coords2d):
+                    print( "ALL nan!, skip.")
+                    continue
                 # print(coords2d)
                 print("NaN/tot: {}/{}".format(np.sum(np.isnan(coords2d))//2,len(coords2d))) # divide by 2 because counts x&y nan-values
                 
@@ -154,15 +242,15 @@ def simple_sequential_fotography_doublecam(strip=None,
     grayscale = False
     
     # Cams
-    ind_star = 0 # TODO put this in config
-    ind_moon = 2
-    stream_moon = WebcamVideoStream("Moon", ind_moon).start()
-    stream_star = WebcamVideoStream("Star", ind_star).start()
-    # stream_moon.start()
-    # stream_star.start()
-    # if stream_moon.stream is None or not stream_moon.stream.isOpened():
+    ind_star = config.CAMERA_ind_star
+    ind_moon = config.CAMERA_ind_moon
+    stream_moon = WebcamVideoStream("Moon", ind_moon)
+    stream_star = WebcamVideoStream("Star", ind_star)
+    stream_moon.start()
+    stream_star.start()
+    # if stream_moon.cap is None or not stream_moon.cap.isOpened():
        # raise BufferError('Error: unable to open video source (moon):', ind_moon)
-    # if stream_star.stream is None or not stream_star.stream.isOpened():
+    # if stream_star.cap is None or not stream_star.cap.isOpened():
        # raise BufferError('Error: unable to open video source (star):', ind_star)
     
     try:
@@ -173,16 +261,18 @@ def simple_sequential_fotography_doublecam(strip=None,
         while True:
             # cv2.imshow("Stream2",stream_star.frame)
             
-            # ret,img_moon = stream_moon.read()
-            # ret,img_star = stream_star.read()
-            img_moon = stream_moon.frame
-            img_star = stream_star.frame
+            ret,img_moon = stream_moon.read()
+            ret,img_star = stream_star.read()
+            # img_moon = stream_moon.frame
+            # img_star = stream_star.frame
             
             # print(img_moon)
             # print(img_star)
             
             preview_moon = img_moon
             preview_star = img_star
+            
+            print("Shape",preview_moon.shape,preview_star.shape)
                 
             # Preview
             sidebyside = np.hstack((preview_moon,preview_star))
@@ -200,6 +290,13 @@ def simple_sequential_fotography_doublecam(strip=None,
 
     return None,None
     
+def find_light_func(dst,img,findlight_kwargs):
+    res = find_light(img,**findlight_kwargs)
+    dst[0] = res[0]
+    dst[1] = res[1]
+    return dst
+    
+    
 def sequential_fotography_doublecam(strip=None,
                             color_off = (0,0,0),
                             color_on: tuple[int,int,int] = None,
@@ -207,8 +304,12 @@ def sequential_fotography_doublecam(strip=None,
                             delta_t: int = None,# in arbitrary units
                             loc: str=None,
                             
+                            bg_autoupdate_every: int = None,
+                            
                             grayscale: bool = None,
                             save_images: bool = None,
+                            
+                            doublecam_mode: int = None,
                             
                             do_findlight: bool = None
                             ) -> np.ndarray:
@@ -223,7 +324,8 @@ def sequential_fotography_doublecam(strip=None,
     
     
     
-    help_msg = "Press h for help,\n space to start or Pause,\n b for new background image,\n f to toggle background subtract of preview"
+    help_msg = "Press h for help,\n space to start or Pause,\n b for new background image,\n f to toggle background subtract of preview\n p to toggle update_preview"
+    # help_msg += "\n d for doublecam_mode (0: Moon, 1: Star, 2: Both)"
     
     # kwargs
     color_on = config.sequentialfotography_coloron if color_on is None else color_on
@@ -231,7 +333,12 @@ def sequential_fotography_doublecam(strip=None,
     loc = config.sequentialfotography_loc if loc is None else loc
     grayscale = config.sequentialfotography_grayscale if grayscale is None else grayscale
     do_findlight = config.sequentialfotography_dofindlight if do_findlight is None else do_findlight
-    save_images = config.sequationalfotography_saveimages if save_images is None else save_images
+    save_images = config.sequentialfotography_saveimages if save_images is None else save_images
+    doublecam_mode = config.sequentialfotography_doublecammode if doublecam_mode is None else doublecam_mode
+    bg_autoupdate_every = config.sequentialfotography_bg_autoupdate_every if bg_autoupdate_every is None else bg_autoupdate_every
+    
+    doublecam_do_moon = doublecam_mode == 0 or doublecam_mode == 2
+    doublecam_do_star = doublecam_mode == 1 or doublecam_mode == 2
     
     # Strip
     strip = get_strip() if strip is None else strip
@@ -240,25 +347,33 @@ def sequential_fotography_doublecam(strip=None,
     
     
     # Cams
-    ind_star = 0 # TODO put this in config
-    ind_moon = 2
+    ind_moon = config.CAMERA_ind_moon
+    ind_star = config.CAMERA_ind_star
+    # MOON
     stream_moon = WebcamVideoStream("Moon", ind_moon,grayscale)
+    if doublecam_do_moon:
+        stream_moon.start()
+        if stream_moon.cap is None or not stream_moon.cap.isOpened():
+           raise BufferError('Error: unable to open video source (moon):', ind_moon)
+    # STAR
     stream_star = WebcamVideoStream("Star", ind_star,grayscale)
-    stream_moon.start()
-    stream_star.start()
-    if stream_moon.stream is None or not stream_moon.stream.isOpened():
-       raise BufferError('Error: unable to open video source (moon):', ind_moon)
-    if stream_star.stream is None or not stream_star.stream.isOpened():
-       raise BufferError('Error: unable to open video source (star):', ind_star)
-    
+    if doublecam_do_star:
+        stream_star.start()
+        if stream_star.cap is None or not stream_star.cap.isOpened():
+           raise BufferError('Error: unable to open video source (star):', ind_star)
+        
     # Findlight
     findlight_kwargs = {}
     if config.findlight_method == "neuralnet":
         findlight_neuralnet = load_neuralnet(config.findlight_neuralnet_fname)
         findlight_kwargs['nnmodel'] = findlight_neuralnet
         print("Initiating neuralnet")
-        if stream_moon.flag:
-            find_light(stream_moon.read()[1],**findlight_kwargs)
+        if doublecam_do_moon:
+            if stream_moon.flag:
+                find_light(stream_moon.read()[1],**findlight_kwargs)
+        elif doublecam_do_star:
+            if stream_star.flag:
+                find_light(stream_star.read()[1],**findlight_kwargs)
         
     elif config.findlight_method == "simplematt":
         findlight_threshold = config.findlight_threshold# if findlight_threshold is None else findlight_threshold
@@ -266,11 +381,10 @@ def sequential_fotography_doublecam(strip=None,
         
     
     # BG img
-    ret,img_bg_moon = stream_moon.read()
-    ret,img_bg_star = stream_star.read()
-    if grayscale:
-        img_bg_moon = cv2.cvtColor(img_bg_moon, cv2.COLOR_BGR2GRAY)
-        img_bg_star = cv2.cvtColor(img_bg_star, cv2.COLOR_BGR2GRAY)
+    if doublecam_do_moon:
+        ret,img_bg_moon = stream_moon.read()
+    if doublecam_do_star:
+        ret,img_bg_star = stream_star.read()
     
     # Prep params
     nleds = len(strip)
@@ -279,10 +393,16 @@ def sequential_fotography_doublecam(strip=None,
     
     started = False
     preview_subtract = True
+    update_preview = True
     
     
     coords2d_moon = [ (np.nan,np.nan) for x in range(nleds) ]
     coords2d_star = [ (np.nan,np.nan) for x in range(nleds) ]
+    
+    # if grayscale:
+        # img_bg_moon = np.zeros((stream_moon.cap_height,stream_moon.cap_width))
+    # else:
+        # img_bg_star = np.zeros((stream_star.cap_height,stream_star.cap_width,3))
     
     start = time.time()
     
@@ -297,23 +417,42 @@ def sequential_fotography_doublecam(strip=None,
         while True:
             # cv2.imshow("Stream2",stream_star.frame)
             
-            ret,img_moon = stream_moon.read()
-            ret,img_star = stream_star.read()
+            if doublecam_do_moon:
+                ret,img_moon = stream_moon.read()
+            if doublecam_do_star:
+                ret,img_star = stream_star.read()
             
-            if preview_subtract:
-                preview_moon = cv2.subtract(img_moon,img_bg_moon)
-                preview_star = cv2.subtract(img_star,img_bg_star)
-            else:
-                preview_moon = img_moon
-                preview_star = img_star
-                
-            # Preview
-            sidebyside = np.hstack((preview_moon,preview_star))
-            cv2.imshow("Stream",sidebyside)
+            if update_preview:
+                if preview_subtract:
+                    # print("MOON",img_moon.shape ,"BG",img_bg_moon.shape)
+                    # print("STAR",img_star.shape ,"BG",img_bg_star.shape)
+                    if doublecam_do_moon:
+                        preview_moon = cv2.subtract(img_moon,img_bg_moon)
+                    if doublecam_do_star:
+                        preview_star = cv2.subtract(img_star,img_bg_star)
+                else:
+                    if doublecam_do_moon:
+                        preview_moon = img_moon
+                    if doublecam_do_star:
+                        preview_star = img_star
+                    
+                # Preview
+                if doublecam_mode == 2:
+                    sidebyside = np.hstack((preview_moon,preview_star))
+                    cv2.imshow("Stream",sidebyside)
+                else:
+                    if doublecam_do_moon:
+                        cv2.imshow("Stream",preview_moon)
+                    elif doublecam_do_star:
+                        cv2.imshow("Stream",preview_star)
+                    else:
+                        print("This should never have happened?!")
 
             # now, subtract bg anyway
-            img_moon = cv2.subtract(img_moon,img_bg_moon)
-            img_moon = cv2.subtract(img_moon,img_bg_moon)
+            if doublecam_do_moon:
+                img_moon = cv2.subtract(img_moon,img_bg_moon)
+            if doublecam_do_star:
+                img_star = cv2.subtract(img_star,img_bg_star)
             
             # loop
             if started:
@@ -339,14 +478,36 @@ def sequential_fotography_doublecam(strip=None,
                 print("update background..")
                 
                 # BG img
-                ret,img_bg_moon = stream_moon.read()
-                ret,img_bg_star = stream_star.read()
-                if grayscale:
-                    img_bg_moon = cv2.cvtColor(img_bg_moon, cv2.COLOR_BGR2GRAY)
-                    img_bg_star = cv2.cvtColor(img_bg_star, cv2.COLOR_BGR2GRAY)
+                if doublecam_do_moon:
+                    ret,img_bg_moon = stream_moon.read()
+                if doublecam_do_star:
+                    ret,img_bg_star = stream_star.read()
                 
                 if save_images:
+                    print("SAVE IMAGES NOT IMPLEMENTED")
                     cv2.imwrite(img_name, img_bg)
+                
+            elif k == ord('p'):
+                update_preview = not update_preview # toggle
+                print("update_preview turned",update_preview)
+            elif False: #k == ord('d'): # NO dont do this it causes seg faults and so on.
+                doublecam_mode = (doublecam_mode + 1) % 3 # toggle
+                
+                doublecam_do_moon = doublecam_mode == 0 or doublecam_mode == 2
+                doublecam_do_star = doublecam_mode == 1 or doublecam_mode == 2
+                
+                print("doublecam_mode turned",doublecam_mode,"(Moon:",doublecam_do_moon,"Star:",doublecam_do_star,")")
+                
+                if doublecam_do_moon:
+                    if stream_moon.stopped:
+                        stream_moon.start()
+                else:
+                    stream_moon.exit()
+                if doublecam_do_star:
+                    if stream_star.stopped:
+                        stream_star.start()
+                else:
+                    stream_star.exit()
                 
             elif k%256 == 32:
                 # SPACE pressed
@@ -370,7 +531,7 @@ def sequential_fotography_doublecam(strip=None,
                 
                 # print(t,started)
                 ind += 1
-                print(' - Led',ind)
+                print(' - Led',ind,"(ETA: %.1f min)"%( nleds*(time.time()-start)/(60*ind) if ind != 0 else 0. ) )
                 if ind == nleds:
                     print(" > We got em all")
                     break
@@ -383,15 +544,16 @@ def sequential_fotography_doublecam(strip=None,
                 strip.show()
             #elif started and (t+delta_t//2)%delta_t == 0: # Interlacing turning on/off lights and cam picture
             
-            elif started and t == 1 and ind % 50 == 0:
+            elif started and t == 1 and ind % bg_autoupdate_every == 0:
                 print("(auto) update background..")
                 
                 # BG img
-                ret,img_bg_moon = stream_moon.read()
-                ret,img_bg_star = stream_star.read()
-                if grayscale:
-                    img_bg_moon = cv2.cvtColor(img_bg_moon, cv2.COLOR_BGR2GRAY)
-                    img_bg_star = cv2.cvtColor(img_bg_star, cv2.COLOR_BGR2GRAY)
+                if doublecam_do_moon:
+                    ret,img_bg_moon = stream_moon.read()
+                if doublecam_do_star:
+                    ret,img_bg_star = stream_star.read()
+                
+                
                 if save_images:
                     img_name = os.path.join(loc,"led_{}background.png".format(ind))
                     cv2.imwrite(img_name, img_bg)
@@ -421,15 +583,31 @@ def sequential_fotography_doublecam(strip=None,
                 strip.show()
             
                 if do_findlight:
-                    xy_moon = find_light(img_moon,**findlight_kwargs)
+                    
+                    xy_moon = [np.nan,np.nan]
+                    if doublecam_do_moon:
+                        thread_moon = threading.Thread(target=find_light_func,args=(xy_moon,img_moon,findlight_kwargs))
+                        thread_moon.start()
+                    xy_star = [np.nan,np.nan]
+                    if doublecam_do_star:
+                        thread_star = threading.Thread(target=find_light_func,args=(xy_star,img_star,findlight_kwargs))
+                        thread_star.start()
+                    
+                    
+                    if doublecam_do_moon:
+                        thread_moon.join()
+                    if doublecam_do_star:
+                        thread_star.join()
+                    
+                    # xy_moon = find_light(img_moon,**findlight_kwargs)
                     if not np.isnan(xy_moon).any():
                         coords2d_moon[ind] = xy_moon
-                    xy_star = find_light(img_star,**findlight_kwargs)
+                    # xy_star = find_light(img_star,**findlight_kwargs)
                     if not np.isnan(xy_star).any():
                         coords2d_star[ind] = xy_star
                     
                     # if not np.isnan(xy_moon).any() and not np.isnan(xy_star).any():
-                    if not np.isnan(coords2d_moon[ind]).any() and not np.isnan(coords2d_star[ind]).any():
+                    if (doublecam_mode ==2 and not np.isnan(coords2d_moon[ind]).any() and not np.isnan(coords2d_star[ind]).any()) or (doublecam_do_moon and not np.isnan(coords2d_moon[ind]).any()) or (doublecam_do_star and not np.isnan(coords2d_star[ind]).any()):
                         t = delta_t-1
                         # print("   Done",t,coords2d[ind])
                 else:

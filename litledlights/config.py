@@ -13,6 +13,11 @@ coords3d_fname = "coords.txt"
 
 ### Calibrate
 
+# Cameras
+CAMERA_ind_moon = 0 # Index for src for cv2.VideoCapture(src) 
+CAMERA_ind_star = 2
+webcam_resolution = (320,240) # tuple[int,int] e.g., (640,480) (width, height) number of pixels
+
 ## makecoords3d
 getcoords2d_nviewpoints = 2
 
@@ -24,9 +29,11 @@ sequentialfotography_skiptoreprocess = False # For the first viewpoint, skip to 
 sequentialfotography_coloron = (115,115,115)#(115,115,115) # tuple[int,int,int]
 sequentialfotography_deltat = 12 # int, how many cycles (frames) between images
 sequentialfotography_loc = "_tmp" # str, location for storing imgs
+sequentialfotography_bg_autoupdate_every = 50 # int, every so many leds a new background img is taken
 sequentialfotography_grayscale = False # bool, make grayscale?
 sequentialfotography_dofindlight = True # bool, findlight in loop?
-sequationalfotography_saveimages = False # bool, save images during loop?
+sequentialfotography_saveimages = False # bool, save images during loop?
+sequentialfotography_doublecammode = 1 # int, 0: Moon, 1: Star, 2: Both
 
 # Find light in image
 findlight_method = "neuralnet" # "neuralnet" or "simplematt", see below
